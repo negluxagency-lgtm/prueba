@@ -25,7 +25,7 @@ export function DetailedRevenueChart({ data, loading, range, setRange }: Detaile
     const totalRevenue = data.reduce((acc, curr) => acc + curr.total, 0);
 
     return (
-        <div className="h-[400px] md:h-[450px] w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl md:rounded-[2rem] p-5 md:p-8 shadow-2xl backdrop-blur-sm flex flex-col">
+        <div className="h-[450px] md:h-[450px] w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl md:rounded-[2rem] p-5 md:p-8 shadow-2xl backdrop-blur-sm flex flex-col">
             <div className="mb-6 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
                 <div>
                     <h3 className="text-zinc-400 text-[10px] md:text-sm font-bold uppercase tracking-widest mb-1">Ingresos ({range === 'week' ? 'Semana' : range === 'month' ? 'Mes' : 'Año'})</h3>
@@ -42,7 +42,7 @@ export function DetailedRevenueChart({ data, loading, range, setRange }: Detaile
                 </select>
             </div>
 
-            <div className="h-[300px] md:h-full md:flex-1 w-full">
+            <div className="h-[280px] md:h-full md:flex-1 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={data} margin={{ top: 10, right: 10, left: 40, bottom: 0 }}>
                         <defs>

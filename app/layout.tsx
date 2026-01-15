@@ -30,7 +30,7 @@ export default function RootLayout({
         <Sidebar />
 
         {/* CONTENIDO PRINCIPAL */}
-        <div className="flex-1 overflow-y-auto bg-[#0a0a0a] relative pb-20 md:pb-0">
+        <div className="flex-1 overflow-y-auto bg-[#0a0a0a] relative pt-10 md:pt-0 pb-20 md:pb-0">
           {children}
         </div>
 

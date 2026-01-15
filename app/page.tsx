@@ -75,7 +75,7 @@ export default function BarberDashboard() {
 
   return (
     <>
-      <main className="flex-1 pt-10 px-4 pb-24 md:p-10 max-w-3xl md:max-w-6xl mx-auto w-full md:pb-10">
+      <main className="flex-1 p-2 md:p-10 max-w-3xl md:max-w-6xl mx-auto w-full pb-20 md:pb-10">
         <DashboardHeader
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}

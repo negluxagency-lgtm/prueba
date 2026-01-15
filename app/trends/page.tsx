@@ -9,7 +9,7 @@ export default function TrendsPage() {
   const { loading, chartData, metrics, range, setRange } = useTrends();
 
   return (
-    <main className="flex-1 p-3 md:p-10 max-w-4xl md:max-w-6xl mx-auto w-full pb-24 md:pb-10">
+    <main className="flex-1 p-2 md:p-10 max-w-4xl md:max-w-6xl mx-auto w-full pb-24 md:pb-10">
       <header className="mb-4 md:mb-12">
         <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-2">
           Analytics <span className="text-amber-500">Center</span>
