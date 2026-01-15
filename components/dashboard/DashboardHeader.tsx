@@ -23,7 +23,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ selectedDate, 
                             onChange={(e) => setSelectedDate(e.target.value)}
                             className="bg-zinc-900 border border-zinc-800 text-amber-500 text-[10px] md:text-sm font-bold px-2.5 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl focus:outline-none focus:border-amber-500 transition-all cursor-pointer appearance-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full"
                         />
-                        <CalendarIcon className="absolute right-2.5 md:right-3 top-2 md:top-3 text-amber-500 pointer-events-none opacity-50 w-[10px] h-[10px] md:w-3 md:h-3" />
+                        <CalendarIcon className="hidden md:block absolute right-2.5 md:right-3 top-2 md:top-3 text-amber-500 pointer-events-none opacity-50 w-[10px] h-[10px] md:w-3 md:h-3" />
                     </div>
                 </div>
             </div>
