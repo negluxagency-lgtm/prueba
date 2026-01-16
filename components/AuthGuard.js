@@ -100,15 +100,15 @@ export default function AuthGuard({ children }) {
 
   // SI HAY SESIÓN (Muestra la App)
   return (
-    <div>
+    <>
       <button
         onClick={handleLogout}
-        className="fixed top-[44px] right-4 md:top-6 md:right-8 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 border border-zinc-800 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] md:text-xs font-bold uppercase tracking-wider transition-all z-[1000] backdrop-blur-md"
+        className="fixed top-[44px] right-4 md:top-6 md:right-8 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-500 hover:text-white border border-zinc-800 px-3 py-1 md:px-4 md:py-2 rounded-xl text-[8px] md:text-xs font-black uppercase tracking-widest transition-all z-[9999] backdrop-blur-xl shadow-2xl active:scale-95"
       >
         Salir
       </button>
       {children}
-    </div>
+    </>
   );
 }
 
