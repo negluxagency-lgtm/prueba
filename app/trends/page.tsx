@@ -18,22 +18,21 @@ export default function TrendsPage() {
       </header>
 
       {/* KPI GRID */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
         {[
-          { label: 'Ingresos', val: `${metrics.totalRevenue}€`, icon: DollarSign, trend: range, color: 'text-amber-500' },
-          { label: 'Citas', val: metrics.totalClients, icon: Calendar, trend: range, color: 'text-blue-500' },
-          { label: 'Ticket Medio', val: `${metrics.avgTicket}€`, icon: TrendingUp, trend: 'Avg', color: 'text-green-500' },
+          { label: 'Ingresos', val: `${metrics.totalRevenue}€`, icon: DollarSign, trend: range, color: 'text-green-500' },
+          { label: 'Citas', val: metrics.totalClients, icon: Calendar, trend: range, color: 'text-amber-500' },
+          { label: 'Ticket Medio', val: `${metrics.avgTicket}€`, icon: TrendingUp, trend: 'Avg', color: 'text-blue-500' },
+          { label: 'No-Shows', val: metrics.noShows, icon: Users, trend: range, color: 'text-red-500' },
         ].map((stat, i) => (
-          <div key={i} className={`bg-zinc-900/80 border border-zinc-800 p-4 md:p-6 rounded-2xl md:rounded-3xl flex flex-col justify-between hover:border-amber-500/30 transition-colors animate-in fade-in zoom-in duration-300 ${i === 2 ? 'col-span-2 md:col-span-1' : ''}`} style={{ animationDelay: `${i * 100}ms` }}>
+          <div key={i} className="bg-zinc-900/80 border border-zinc-800 p-4 md:p-6 rounded-2xl md:rounded-3xl flex flex-col justify-between hover:border-amber-500/30 transition-colors animate-in fade-in zoom-in duration-300" style={{ animationDelay: `${i * 100}ms` }}>
             <div className="flex justify-between items-start mb-2 md:mb-4">
               <div className={`p-2 md:p-3 rounded-lg md:rounded-xl bg-zinc-800/50 ${stat.color}`}>
                 <stat.icon className="w-[18px] h-[18px] md:w-5 md:h-5" />
               </div>
-              <span className="text-[8px] md:text-[10px] font-bold bg-zinc-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded md:rounded-lg text-zinc-400 capitalize">{
-                stat.trend === 'week' ? 'Semana' :
-                  stat.trend === 'month' ? 'Mes' :
-                    stat.trend === 'year' ? 'Año' : stat.trend
-              }</span>
+              <span className="text-[8px] md:text-[10px] font-bold bg-zinc-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded md:rounded-lg text-zinc-400 capitalize">
+                {stat.trend === 'week' ? 'Semana' : stat.trend === 'month' ? 'Mes' : stat.trend === 'year' ? 'Año' : stat.trend}
+              </span>
             </div>
             <div>
               <p className="text-zinc-500 text-[8px] md:text-[10px] uppercase font-black mb-1">{stat.label}</p>

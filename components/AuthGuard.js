@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase'; // Corregido: antes apuntaba a lib/supabaseClient
 
@@ -99,7 +101,12 @@ export default function AuthGuard({ children }) {
   // SI HAY SESIÓN (Muestra la App)
   return (
     <div>
-      <button onClick={handleLogout} style={styles.logoutBtn}>Cerrar Sesión</button>
+      <button
+        onClick={handleLogout}
+        className="fixed top-[44px] right-4 md:top-6 md:right-8 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 border border-zinc-800 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] md:text-xs font-bold uppercase tracking-wider transition-all z-[1000] backdrop-blur-md"
+      >
+        Salir
+      </button>
       {children}
     </div>
   );
@@ -111,6 +118,5 @@ const styles = {
   card: { width: '100%', maxWidth: '380px', padding: '3rem 2rem', background: '#111', borderRadius: '24px', border: '1px solid #27272a', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', color: 'white' },
   form: { display: 'flex', flexDirection: 'column', gap: '15px' },
   input: { padding: '16px', borderRadius: '12px', background: '#18181b', border: '1px solid #27272a', fontSize: '14px', color: 'white', outline: 'none' },
-  button: { padding: '16px', background: '#f59e0b', color: 'black', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '900', transition: 'all 0.2s', marginTop: '10px' },
-  logoutBtn: { position: 'fixed', top: '20px', right: '20px', background: '#18181b', color: '#71717a', border: '1px solid #27272a', padding: '8px 16px', borderRadius: '12px', cursor: 'pointer', zIndex: 1000, fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }
+  button: { padding: '16px', background: '#f59e0b', color: 'black', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '900', transition: 'all 0.2s', marginTop: '10px' }
 };

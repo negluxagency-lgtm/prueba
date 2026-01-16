@@ -13,6 +13,7 @@ export interface TrendsMetrics {
     totalClients: number;
     avgTicket: number;
     retentionRate: number;
+    noShows: number;
 }
 
 export type TimeRange = 'week' | 'month' | 'year';
@@ -26,6 +27,7 @@ export function useTrends() {
         totalClients: 0,
         avgTicket: 0,
         retentionRate: 0,
+        noShows: 0,
     });
 
     const getDayName = (dateString: string) => {
@@ -66,11 +68,14 @@ export function useTrends() {
         const totalCli = appointments.length;
         const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
 
+        const totalNoShows = appointments.filter(cita => !cita.confirmada).length;
+
         setMetrics({
             totalRevenue: totalRev,
             totalClients: totalCli,
             avgTicket: avgTkt,
             retentionRate: 0,
+            noShows: totalNoShows,
         });
 
         // 2. Prepare Chart Data

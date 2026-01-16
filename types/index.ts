@@ -7,6 +7,7 @@ export interface Appointment {
     Hora: string;
     Telefono: string;
     Precio: string | number;
+    confirmada?: boolean;
 }
 
 export interface AppointmentFormData {
@@ -16,6 +17,7 @@ export interface AppointmentFormData {
     Hora: string;
     Telefono: string;
     Precio: string;
+    confirmada?: boolean;
 }
 
 export interface MessageRow {

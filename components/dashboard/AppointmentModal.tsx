@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { AppointmentFormData } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -62,6 +62,12 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                             <div className="grid grid-cols-2 gap-4">
                                 <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />
                                 <input type="time" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Hora || ""} onChange={(e) => setFormData({ ...formData, Hora: e.target.value })} />
+                            </div>
+                            <div className="flex items-center gap-3 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 cursor-pointer group" onClick={() => setFormData({ ...formData, confirmada: !formData.confirmada })}>
+                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${formData.confirmada ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 group-hover:border-zinc-400'}`}>
+                                    {formData.confirmada && <Check size={14} className="text-black" strokeWidth={4} />}
+                                </div>
+                                <span className="text-zinc-300 text-sm font-bold uppercase select-none">Pagado</span>
                             </div>
                             <input type="number" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Precio (€)" value={formData.Precio || ""} onChange={(e) => setFormData({ ...formData, Precio: e.target.value })} />
 

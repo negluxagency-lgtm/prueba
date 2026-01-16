@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 export default function BarberDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const { appointments, monthlyRevenue, saveCita, deleteCita, loading } = useAppointments(selectedDate);
+  const { appointments, monthlyRevenue, saveCita, deleteCita, toggleConfirmation, loading } = useAppointments(selectedDate);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -22,7 +22,8 @@ export default function BarberDashboard() {
     Dia: selectedDate,
     Hora: "",
     Telefono: "",
-    Precio: ""
+    Precio: "",
+    confirmada: false
   };
 
   const [formData, setFormData] = useState<AppointmentFormData>(defaultFormData);
@@ -41,7 +42,8 @@ export default function BarberDashboard() {
       Dia: cita.Dia,
       Hora: cita.Hora,
       Telefono: cita.Telefono || "",
-      Precio: String(cita.Precio)
+      Precio: String(cita.Precio),
+      confirmada: !!cita.confirmada
     });
     setIsModalOpen(true);
   };
@@ -57,6 +59,19 @@ export default function BarberDashboard() {
         return 'Cita guardada correctamente';
       },
       error: (err) => `Error: ${err}`
+    });
+  };
+
+  const handleToggleConfirmation = async (id: number, currentStatus: boolean) => {
+    const promise = toggleConfirmation(id, currentStatus).then(res => {
+      if (!res.success) throw new Error(res.error);
+      return res;
+    });
+
+    toast.promise(promise, {
+      loading: 'Actualizando estado...',
+      success: 'Estado actualizado',
+      error: (err) => `Error: ${err.message}`
     });
   };
 
@@ -96,6 +111,7 @@ export default function BarberDashboard() {
               selectedDate={selectedDate}
               onEdit={openEditCitaModal}
               onDelete={handleDelete}
+              onToggleConfirmation={handleToggleConfirmation}
               loading={loading}
             />
           </div>

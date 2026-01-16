@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, MessageCircle, Pencil, Trash2 } from 'lucide-react';
+import { Check, Clock, MessageCircle, Pencil, Trash2 } from 'lucide-react';
 import { Appointment } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -10,10 +10,11 @@ interface AppointmentTableProps {
     selectedDate: string;
     onEdit: (cita: Appointment) => void;
     onDelete: (id: number) => void;
+    onToggleConfirmation: (id: number, currentStatus: boolean) => void;
     loading?: boolean;
 }
 
-export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments, selectedDate, onEdit, onDelete, loading }) => {
+export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments, selectedDate, onEdit, onDelete, onToggleConfirmation, loading }) => {
     const fechaVisual = new Date(selectedDate + "T12:00:00").toLocaleDateString('es-ES', {
         weekday: 'long', day: 'numeric', month: 'long'
     });
@@ -33,6 +34,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                         <tr>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Cliente</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">WhatsApp</th>
+                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Estado</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Hora</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-amber-500/80">Precio</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-right">Acciones</th>
@@ -44,7 +46,8 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                             Array.from({ length: 5 }).map((_, i) => (
                                 <tr key={i}>
                                     <td className="px-6 py-4"><Skeleton className="h-5 w-32" /></td>
-                                    <td className="px-6 py-4"><div className="flex justify-center"><Skeleton className="h-7 w-24 rounded-xl" /></div></td>
+                                    <td className="px-6 py-4 text-center"><Skeleton className="h-7 w-24 mx-auto" /></td>
+                                    <td className="px-6 py-4 text-center"><Skeleton className="h-7 w-20 mx-auto" /></td>
                                     <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
                                     <td className="px-6 py-4"><Skeleton className="h-5 w-12" /></td>
                                     <td className="px-6 py-4"><div className="flex justify-end gap-2"><Skeleton className="h-7 w-7 rounded-lg" /><Skeleton className="h-7 w-7 rounded-lg" /></div></td>
@@ -76,6 +79,22 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             ) : (
                                                 <span className="text-zinc-600 text-[7px] md:text-xs italic">Sin Telefono</span>
                                             )}
+                                        </td>
+                                        <td className="px-3 py-1 md:px-8 md:py-6 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onToggleConfirmation(cita.id, !!cita.confirmada);
+                                                }}
+                                                className={`inline-flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[7px] md:text-xs font-black transition-all border ${cita.confirmada
+                                                    ? 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
+                                                    : 'bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-zinc-500'
+                                                    }`}
+                                            >
+                                                <Check className={`w-2 h-2 md:w-4 md:h-4 ${cita.confirmada ? 'opacity-100' : 'opacity-20'}`} strokeWidth={4} />
+                                                {cita.confirmada ? 'CONFIRMADA' : 'PENDIENTE'}
+                                            </button>
                                         </td>
 
                                         <td className="px-3 py-1 md:px-8 md:py-6 text-amber-500 font-mono text-[11px] md:text-lg font-bold">

@@ -57,7 +57,8 @@ export function useAppointments(selectedDate: string) {
                         Dia: formData.Dia,
                         Hora: formData.Hora,
                         Telefono: formData.Telefono,
-                        Precio: formData.Precio
+                        Precio: formData.Precio,
+                        confirmada: formData.confirmada
                     })
                     .eq('id', editingId);
                 error = updateError;
@@ -71,7 +72,8 @@ export function useAppointments(selectedDate: string) {
                         Dia: formData.Dia,
                         Hora: formData.Hora,
                         Telefono: formData.Telefono,
-                        Precio: formData.Precio
+                        Precio: formData.Precio,
+                        confirmada: formData.confirmada ?? false
                     }]);
                 error = insertError;
             }
@@ -80,6 +82,40 @@ export function useAppointments(selectedDate: string) {
             getCitas();
             return { success: true };
         } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    };
+
+    const toggleConfirmation = async (id: number, currentStatus: boolean) => {
+        // ACTUALIZACIÓN OPTIMISTA: cambiamos el estado local de inmediato
+        const originalAppointments = [...appointments];
+        setAppointments(prev => prev.map(cita =>
+            cita.id === id ? { ...cita, confirmada: !currentStatus } : cita
+        ));
+
+        try {
+            console.log(`Intentando cambiar cita ${id} a confirmada: ${!currentStatus}`);
+            const { data, error } = await supabase
+                .from('citas')
+                .update({ confirmada: !currentStatus })
+                .eq('id', id)
+                .select();
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                console.warn("⚠️ No se actualizó ninguna fila. ¿Permisos RLS?");
+                throw new Error("No tienes permisos para actualizar esta cita");
+            }
+
+            console.log("✅ DB actualizada con éxito:", data[0]);
+            // No llamamos a getCitas() aquí para evitar parpadeos, 
+            // confiamos en el estado optimista y en la suscripción Realtime.
+            return { success: true };
+        } catch (err: any) {
+            console.error("❌ Error en persistencia:", err.message);
+            // REVERSIÓN: si falla la DB, volvemos al estado anterior
+            setAppointments(originalAppointments);
             return { success: false, error: err.message };
         }
     };
@@ -99,10 +135,14 @@ export function useAppointments(selectedDate: string) {
         getCitas();
         const subscription = supabase
             .channel('citas-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'citas' }, () => getCitas())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'citas' }, () => {
+                // Pequeño retardo para evitar que el fetch ocurra antes de que 
+                // la DB haya terminado de propagar el cambio
+                setTimeout(() => getCitas(), 500);
+            })
             .subscribe();
         return () => { supabase.removeChannel(subscription); };
     }, [selectedDate]);
 
-    return { appointments, monthlyRevenue, loading, error, saveCita, deleteCita, refreshAppointments: getCitas };
+    return { appointments, monthlyRevenue, loading, error, saveCita, deleteCita, toggleConfirmation, refreshAppointments: getCitas };
 }
