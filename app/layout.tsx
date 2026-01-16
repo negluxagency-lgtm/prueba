@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/Toaster";
 import type { Metadata } from 'next';
 import { Sidebar } from "@/components/layout/Sidebar";
 import AuthGuard from "@/components/AuthGuard";
+import LogoutButton from "@/components/LogoutButton";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -34,6 +35,7 @@ export default function RootLayout({
 
             {/* CONTENIDO PRINCIPAL */}
             <div className="flex-1 overflow-y-auto bg-[#0a0a0a] relative pt-10 md:pt-0 pb-20 md:pb-0">
+              <LogoutButton />
               {children}
             </div>
 
