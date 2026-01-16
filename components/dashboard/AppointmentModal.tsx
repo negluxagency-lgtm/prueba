@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check } from 'lucide-react';
+import { X } from 'lucide-react';
 import { AppointmentFormData } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -37,7 +37,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.9, opacity: 0, y: 20 }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl overflow-hidden relative"
+                        className="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-[2.5rem] p-6 md:p-8 shadow-2xl overflow-hidden relative"
                     >
                         {/* Background Texture for Modal */}
                         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E")` }}></div>
@@ -59,15 +59,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                                 <option>Corte + Barba</option>
                                 <option>Afeitado Clásico</option>
                             </select>
-                            <div className="grid grid-cols-2 gap-4">
-                                <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />
-                                <input type="time" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Hora || ""} onChange={(e) => setFormData({ ...formData, Hora: e.target.value })} />
-                            </div>
-                            <div className="flex items-center gap-3 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 cursor-pointer group" onClick={() => setFormData({ ...formData, confirmada: !formData.confirmada })}>
-                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${formData.confirmada ? 'bg-amber-500 border-amber-500' : 'border-zinc-600 group-hover:border-zinc-400'}`}>
-                                    {formData.confirmada && <Check size={14} className="text-black" strokeWidth={4} />}
-                                </div>
-                                <span className="text-zinc-300 text-sm font-bold uppercase select-none">Pagado</span>
+                            <div className="grid grid-cols-2 gap-3">
+                                <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 md:px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />
+                                <input type="time" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 md:px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Hora || ""} onChange={(e) => setFormData({ ...formData, Hora: e.target.value })} />
                             </div>
                             <input type="number" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Precio (€)" value={formData.Precio || ""} onChange={(e) => setFormData({ ...formData, Precio: e.target.value })} />
 

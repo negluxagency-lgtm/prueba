@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Appointment } from "@/types";
 
-export interface DailyRevenue {
+export interface ChartDataPoint {
     name: string;
-    total: number;
+    revenue: number;
+    clients: number;
+    avgTicket: number;
+    noShows: number;
     date: string;
 }
 
@@ -20,7 +23,7 @@ export type TimeRange = 'week' | 'month' | 'year';
 
 export function useTrends() {
     const [loading, setLoading] = useState(true);
-    const [chartData, setChartData] = useState<DailyRevenue[]>([]);
+    const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
     const [range, setRange] = useState<TimeRange>('week');
     const [metrics, setMetrics] = useState<TrendsMetrics>({
         totalRevenue: 0,
@@ -30,9 +33,20 @@ export function useTrends() {
         noShows: 0,
     });
 
-    const getDayName = (dateString: string) => {
-        const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-        return days[new Date(dateString).getDay()];
+    const getLabel = (dateString: string, currentRange: TimeRange) => {
+        const date = new Date(dateString + "T12:00:00");
+        if (currentRange === 'week') {
+            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            return days[date.getDay()];
+        }
+        if (currentRange === 'month') {
+            return date.getDate().toString();
+        }
+        if (currentRange === 'year') {
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            return months[date.getMonth()];
+        }
+        return dateString;
     };
 
     const fetchTrends = async () => {
@@ -46,11 +60,16 @@ export function useTrends() {
             if (range === 'month') startDate.setDate(now.getDate() - 30);
             if (range === 'year') startDate.setFullYear(now.getFullYear(), 0, 1); // From Jan 1st
 
-            const { data, error } = await supabase
+            let query = supabase
                 .from('citas')
                 .select('*')
-                .gte('Dia', startDate.toISOString().split('T')[0])
                 .order('Dia', { ascending: true });
+
+            if (range !== 'year') {
+                query = query.gte('Dia', startDate.toISOString().split('T')[0]);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 
@@ -86,19 +105,36 @@ export function useTrends() {
         });
 
         // 2. Prepare Chart Data
-        // Group by Date
-        const grouped: Record<string, number> = {};
+        const dataMap: Record<string, { rev: number; cli: number; no: number }> = {};
+
         appointments.forEach(app => {
-            grouped[app.Dia] = (grouped[app.Dia] || 0) + (Number(app.Precio) || 0);
+            // Clave de agrupamiento: Por día para semana/mes, por mes para año
+            const groupKey = range === 'year' ? app.Dia.substring(0, 7) : app.Dia;
+
+            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0 };
+
+            dataMap[groupKey].rev += (Number(app.Precio) || 0);
+            dataMap[groupKey].cli += 1;
+
+            // Lógica de No-Show
+            const appDate = new Date(`${app.Dia}T${app.Hora}`);
+            if (!app.confirmada && appDate < nowAtProcessing) {
+                dataMap[groupKey].no += 1;
+            }
         });
 
-        // Sort dates
-        const sortedDates = Object.keys(grouped).sort();
-        const finalData = sortedDates.map(date => ({
-            name: getDayName(date),
-            date: date,
-            total: grouped[date]
-        }));
+        const sortedKeys = Object.keys(dataMap).sort();
+        const finalData: ChartDataPoint[] = sortedKeys.map(key => {
+            const item = dataMap[key];
+            return {
+                name: getLabel(range === 'year' ? `${key}-01` : key, range),
+                date: key,
+                revenue: item.rev,
+                clients: item.cli,
+                avgTicket: item.cli > 0 ? Math.round(item.rev / item.cli) : 0,
+                noShows: item.no
+            };
+        });
 
         setChartData(finalData);
     };
