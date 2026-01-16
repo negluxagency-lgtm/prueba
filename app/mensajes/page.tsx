@@ -118,9 +118,12 @@ function ChatInterface() {
                                     )}
                                 </div>
                             </div>
-                            <button className="p-2 md:p-3 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-white">
+                            <a
+                                href={`tel:${selectedConversation.tlf}`}
+                                className="p-2 md:p-3 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-white flex items-center justify-center"
+                            >
                                 <Phone className="w-[18px] h-[18px] md:w-5 md:h-5" />
-                            </button>
+                            </a>
                         </div>
 
                         {/* MESSAGES AREA */}
