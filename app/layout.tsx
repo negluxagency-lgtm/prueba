@@ -3,6 +3,7 @@ import { Space_Grotesk } from 'next/font/google';
 import { Toaster } from "@/components/ui/Toaster";
 import type { Metadata } from 'next';
 import { Sidebar } from "@/components/layout/Sidebar";
+import AuthGuard from "@/components/AuthGuard";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -26,15 +27,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={`${spaceGrotesk.className} flex flex-col md:flex-row h-screen bg-[#0a0a0a] text-zinc-100 overflow-hidden`}>
-        <Sidebar />
+      <body className={`${spaceGrotesk.className} antialiased bg-black text-white selection:bg-amber-500/30`}>
+        <AuthGuard>
+          <div className="flex h-screen overflow-hidden">
+            <Sidebar />
 
-        {/* CONTENIDO PRINCIPAL */}
-        <div className="flex-1 overflow-y-auto bg-[#0a0a0a] relative pt-10 md:pt-0 pb-20 md:pb-0">
-          {children}
-        </div>
+            {/* CONTENIDO PRINCIPAL */}
+            <div className="flex-1 overflow-y-auto bg-[#0a0a0a] relative pt-10 md:pt-0 pb-20 md:pb-0">
+              {children}
+            </div>
 
-        <Toaster />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                className: 'bg-zinc-900 border border-zinc-800 text-white rounded-2xl shadow-2xl',
+              }}
+            />
+          </div>
+        </AuthGuard>
       </body>
     </html>
   );

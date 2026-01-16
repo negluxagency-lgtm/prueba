@@ -9,12 +9,10 @@ import { AppointmentTable } from "@/components/dashboard/AppointmentTable";
 import { AppointmentModal } from "@/components/dashboard/AppointmentModal";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { toast } from "sonner";
-import AuthGuard from "@/components/AuthGuard";
 
 export default function BarberDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const { appointments, monthlyRevenue, saveCita, deleteCita, loading } = useAppointments(selectedDate);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -73,9 +71,8 @@ export default function BarberDashboard() {
       error: (err) => `Error al eliminar: ${err}`
     });
   };
-
   return (
-    <AuthGuard>
+    <>
       <main className="flex-1 p-2 md:p-10 max-w-3xl md:max-w-6xl mx-auto w-full pb-20 md:pb-10">
         <DashboardHeader
           selectedDate={selectedDate}
@@ -112,6 +109,6 @@ export default function BarberDashboard() {
         initialData={formData}
         isEditing={!!editingId}
       />
-    </AuthGuard>
+    </>
   );
 }
