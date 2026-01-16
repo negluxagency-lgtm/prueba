@@ -209,7 +209,7 @@ export default function ProductosPage() {
                                                         setSelectedProduct(prod);
                                                         setIsSellModalOpen(true);
                                                     }}
-                                                    className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 md:px-6 md:py-3 rounded-lg md:rounded-2xl text-[9px] md:text-sm font-black uppercase tracking-tighter transition-all shadow-lg active:scale-95 flex items-center gap-1 md:gap-2 ml-auto mr-2 md:mr-6"
+                                                    className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 md:px-6 md:py-3 rounded-lg md:rounded-2xl text-[9px] md:text-sm font-black uppercase tracking-tighter transition-all shadow-lg active:scale-95 flex items-center gap-1 md:gap-2 md:ml-auto mr-2 md:mr-6"
                                                 >
                                                     <ShoppingCart className="w-3 h-3 md:w-4 md:h-4" />
                                                     Vender

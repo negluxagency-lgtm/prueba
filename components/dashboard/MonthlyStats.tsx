@@ -11,7 +11,7 @@ import {
     ResponsiveContainer,
     Cell
 } from 'recharts';
-import { Target, TrendingUp } from 'lucide-react';
+import { Target } from 'lucide-react';
 
 interface MonthlyStatsProps {
     revenue: number;
@@ -20,6 +20,7 @@ interface MonthlyStatsProps {
 }
 
 const MonthlyStats: React.FC<MonthlyStatsProps> = ({ revenue, cuts, products }) => {
+    // Datos y objetivos estáticos (puedes parametrizarlos si lo deseas)
     const data = [
         {
             name: 'Cortes',
@@ -44,12 +45,13 @@ const MonthlyStats: React.FC<MonthlyStatsProps> = ({ revenue, cuts, products }) 
         }
     ];
 
-    // Calcular el progreso porcentual para la visualización (0-100)
+    // Calculamos porcentaje visual para la barra (tope 100%)
     const chartData = data.map(item => ({
         ...item,
         progress: Math.min((item.actual / item.objetivo) * 100, 100)
     }));
 
+    // Tooltip personalizado
     const CustomTooltip = ({ active, payload }: any) => {
         if (active && payload && payload.length) {
             const item = payload[0].payload;
@@ -62,7 +64,7 @@ const MonthlyStats: React.FC<MonthlyStatsProps> = ({ revenue, cuts, products }) 
                         <span className="text-zinc-400 text-sm">{item.objetivo}{item.suffix}</span>
                     </p>
                     <p className="text-xs text-zinc-500 mt-1">
-                        {Math.round((item.actual / item.objetivo) * 100)}% del objetivo mensual
+                        {Math.round((item.actual / item.objetivo) * 100)}% del objetivo
                     </p>
                 </div>
             );
@@ -71,47 +73,45 @@ const MonthlyStats: React.FC<MonthlyStatsProps> = ({ revenue, cuts, products }) 
     };
 
     return (
-        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] border border-zinc-800 p-4 md:p-6 shadow-2xl w-full max-w-sm">
-            <div className="flex items-center justify-between mb-3 md:mb-4 px-2">
-                <div className="flex items-center gap-2 md:gap-3">
-                    <div className="bg-amber-500/10 p-1.5 rounded-lg">
-                        <Target className="text-amber-500 w-3.5 h-3.5 md:w-4 md:h-4" />
-                    </div>
-                    <div>
-                        <h3 className="text-zinc-100 font-bold text-sm md:text-base text-center md:text-left">Objetivos Mensuales</h3>
-                    </div>
+        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] border border-zinc-800 p-6 shadow-2xl w-full h-full flex flex-col">
+            {/* Encabezado */}
+            <div className="flex items-center gap-3 mb-6 shrink-0">
+                <div className="bg-amber-500/10 p-2 rounded-lg">
+                    <Target className="text-amber-500 w-5 h-5" />
                 </div>
+                <h3 className="text-zinc-100 font-bold text-base md:text-lg">Objetivos Mensuales</h3>
             </div>
 
-            <div className="h-[60px] md:h-[90px] w-full">
+            {/* Gráfico */}
+            <div className="flex-1 w-full min-h-[210px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={chartData}
                         layout="vertical"
-                        margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
+                        margin={{ top: 0, right: 30, left: 10, bottom: 0 }}
+                        barSize={32}
                     >
                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#27272a" />
-                        <XAxis
-                            type="number"
-                            hide
-                            domain={[0, 100]}
-                        />
+                        <XAxis type="number" hide domain={[0, 100]} />
                         <YAxis
                             dataKey="name"
                             type="category"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#71717a', fontSize: 8, fontWeight: 700, textAnchor: 'start', dx: -70 }}
-                            width={70}
+                            tick={{ fill: '#a1a1aa', fontSize: 11, fontWeight: 600, textAnchor: 'end', dx: -10 }}
+                            width={80}
                         />
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                        <Tooltip
+                            content={<CustomTooltip />}
+                            cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 8 }}
+                        />
                         <Bar
                             dataKey="progress"
-                            radius={[0, 2, 2, 0]}
-                            barSize={8}
+                            radius={[0, 6, 6, 0] as any}
+                            background={{ fill: '#18181b', radius: [0, 6, 6, 0] }}
                         >
                             {chartData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={0.8} />
+                                <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                         </Bar>
                     </BarChart>

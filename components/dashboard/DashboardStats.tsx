@@ -19,16 +19,15 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ appointments, mo
                     <p className="text-xl md:text-3xl font-mono font-bold">{appointments.length}</p>
                 </div>
                 <div className="bg-zinc-900/80 border border-zinc-800 p-3 md:p-6 rounded-xl md:rounded-3xl min-w-[100px] md:min-w-[140px] border-l-4 border-l-amber-500 shadow-xl">
-                    <p className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Caja</p>
+                    <p className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Caja Esperada Hoy</p>
                     <p className="text-xl md:text-3xl font-mono font-bold text-amber-500">{totalGanancias}€</p>
                 </div>
-                {/* NUEVA TARJETA MENSUAL (SOLO MÓVIL) */}
-                <div className="md:hidden bg-zinc-900/80 border border-zinc-800 p-3 rounded-xl min-w-[110px] border-l-4 border-l-green-500 shadow-xl flex flex-col justify-between">
-                    <div className="flex justify-between items-start">
-                        <p className="text-[8px] text-zinc-500 uppercase font-black mb-0.5">Mensual</p>
-                        <TrendingUp size={10} className="text-green-500/50" />
-                    </div>
-                    <p className="text-xl font-mono font-bold text-green-500">{monthlyRevenue}€</p>
+                {/* CAJA REAL (SOLO CONFIRMADAS) */}
+                <div className="bg-zinc-900/80 border border-zinc-800 p-3 md:p-6 rounded-xl md:rounded-3xl min-w-[100px] md:min-w-[140px] border-l-4 border-l-emerald-500 shadow-xl">
+                    <p className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Caja Real Hoy</p>
+                    <p className="text-xl md:text-3xl font-mono font-bold text-emerald-500">
+                        {appointments.filter(a => a.confirmada).reduce((acc, curr) => acc + (Number(curr.Precio) || 0), 0)}€
+                    </p>
                 </div>
             </div>
             <button

@@ -10,25 +10,25 @@ interface AppointmentTableProps {
     selectedDate: string;
     onEdit: (cita: Appointment) => void;
     onDelete: (id: number) => void;
-    onToggleConfirmation: (id: number, currentStatus: boolean) => void;
+    onUpdateStatus: (id: number, status: 'pendiente' | 'confirmada' | 'cancelada') => void;
     loading?: boolean;
 }
 
-export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments, selectedDate, onEdit, onDelete, onToggleConfirmation, loading }) => {
+export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments, selectedDate, onEdit, onDelete, onUpdateStatus, loading }) => {
     const fechaVisual = new Date(selectedDate + "T12:00:00").toLocaleDateString('es-ES', {
         weekday: 'long', day: 'numeric', month: 'long'
     });
     const fechaFormateada = fechaVisual.charAt(0).toUpperCase() + fechaVisual.slice(1);
 
     return (
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg md:rounded-[2rem] overflow-hidden backdrop-blur-sm shadow-2xl">
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg md:rounded-[2rem] backdrop-blur-sm shadow-2xl">
             <div className="px-3 py-1.5 md:px-8 md:py-6 border-b border-zinc-800 bg-zinc-800/20">
                 <h3 className="font-bold text-[10px] md:text-xl flex items-center gap-2 md:gap-4 text-zinc-300">
                     <Clock size={12} className="text-amber-500 w-3 h-3 md:w-5 md:h-5" /> Agenda — <span className="text-zinc-500 font-normal">{fechaFormateada}</span>
                 </h3>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-visible">
                 <table className="w-full text-left border-collapse">
                     <thead className="text-zinc-500 text-[8px] md:text-xs uppercase tracking-[0.2em] bg-black/40">
                         <tr>
@@ -81,20 +81,59 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             )}
                                         </td>
                                         <td className="px-3 py-1 md:px-8 md:py-6 text-center">
-                                            <button
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onToggleConfirmation(cita.id, !!cita.confirmada);
-                                                }}
-                                                className={`inline-flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[7px] md:text-xs font-black transition-all border ${cita.confirmada
-                                                    ? 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
-                                                    : 'bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-zinc-500'
-                                                    }`}
-                                            >
-                                                <Check className={`w-2 h-2 md:w-4 md:h-4 ${cita.confirmada ? 'opacity-100' : 'opacity-20'}`} strokeWidth={4} />
-                                                {cita.confirmada ? 'CONFIRMADA' : 'PENDIENTE'}
-                                            </button>
+                                            <div className="relative group/status inline-block">
+                                                <button
+                                                    type="button"
+                                                    className={`inline-flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[7px] md:text-xs font-black transition-all border ${cita.cancelada
+                                                        ? 'bg-red-500/20 text-red-500 border-red-500/50 hover:bg-red-500/30'
+                                                        : cita.confirmada
+                                                            ? 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
+                                                            : 'bg-amber-500/20 text-amber-500 border-amber-500/50 hover:bg-amber-500/30'
+                                                        }`}
+                                                >
+                                                    <Check className={`w-2 h-2 md:w-4 md:h-4 opacity-100`} strokeWidth={4} />
+                                                    {cita.cancelada ? 'CANCELADA' : cita.confirmada ? 'CONFIRMADA' : 'PENDIENTE'}
+                                                </button>
+
+                                                {/* STATUS DROPDOWN MENU - Smart Positioning based on index */}
+                                                <div className={`absolute left-1/2 -translate-x-1/2 w-36 hidden group-hover/status:block z-[100] ${appointments.length > 2 && index >= appointments.length - 2
+                                                    ? 'bottom-full pb-2'
+                                                    : 'top-full pt-2'
+                                                    }`}>
+                                                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/50">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onUpdateStatus(cita.id, 'pendiente');
+                                                            }}
+                                                            className="w-full text-left px-4 py-3 text-[10px] md:text-xs font-bold text-amber-500 hover:bg-zinc-800/80 transition-colors flex items-center gap-3"
+                                                        >
+                                                            <div className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
+                                                            PENDIENTE
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onUpdateStatus(cita.id, 'confirmada');
+                                                            }}
+                                                            className="w-full text-left px-4 py-3 text-[10px] md:text-xs font-bold text-green-500 hover:bg-zinc-800/80 transition-colors flex items-center gap-3 border-t border-zinc-800/50"
+                                                        >
+                                                            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                                                            CONFIRMADA
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onUpdateStatus(cita.id, 'cancelada');
+                                                            }}
+                                                            className="w-full text-left px-4 py-3 text-[10px] md:text-xs font-bold text-red-500 hover:bg-zinc-800/80 transition-colors flex items-center gap-3 border-t border-zinc-800/50"
+                                                        >
+                                                            <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                                                            CANCELADA
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </td>
 
                                         <td className="px-3 py-1 md:px-8 md:py-6 text-amber-500 font-mono text-[11px] md:text-lg font-bold">

@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Appointment, AppointmentFormData } from "@/types";
 
+export type AppointmentStatus = 'pendiente' | 'confirmada' | 'cancelada';
+
 export function useAppointments(selectedDate: string) {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(false);
@@ -74,7 +76,7 @@ export function useAppointments(selectedDate: string) {
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada,
-                        productos: formData.productos
+                        producto: formData.productos
                     })
                     .eq('id', editingId);
                 error = updateError;
@@ -90,7 +92,7 @@ export function useAppointments(selectedDate: string) {
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada ?? false,
-                        productos: formData.productos ?? false
+                        producto: formData.productos ?? false
                     }]);
                 error = insertError;
             }
@@ -103,18 +105,25 @@ export function useAppointments(selectedDate: string) {
         }
     };
 
-    const toggleConfirmation = async (id: number, currentStatus: boolean) => {
-        // ACTUALIZACIÓN OPTIMISTA: cambiamos el estado local de inmediato
+    const updateAppointmentStatus = async (id: number, verifyStatus: AppointmentStatus) => {
+        // Mapeo de estados a valores de BD
+        let dbValues = { confirmada: false, cancelada: false };
+        if (verifyStatus === 'confirmada') dbValues = { confirmada: true, cancelada: false };
+        if (verifyStatus === 'cancelada') dbValues = { confirmada: false, cancelada: true };
+
+        // Pendiente es { confirmada: false, cancelada: false }
+
+        // ACTUALIZACIÓN OPTIMISTA
         const originalAppointments = [...appointments];
         setAppointments(prev => prev.map(cita =>
-            cita.id === id ? { ...cita, confirmada: !currentStatus } : cita
+            cita.id === id ? { ...cita, ...dbValues } : cita
         ));
 
         try {
-            console.log(`Intentando cambiar cita ${id} a confirmada: ${!currentStatus}`);
+            console.log(`Cambiando cita ${id} a estado: ${verifyStatus}`);
             const { data, error } = await supabase
                 .from('citas')
-                .update({ confirmada: !currentStatus })
+                .update(dbValues)
                 .eq('id', id)
                 .select();
 
@@ -126,12 +135,10 @@ export function useAppointments(selectedDate: string) {
             }
 
             console.log("✅ DB actualizada con éxito:", data[0]);
-            // No llamamos a getCitas() aquí para evitar parpadeos, 
-            // confiamos en el estado optimista y en la suscripción Realtime.
             return { success: true };
         } catch (err: any) {
             console.error("❌ Error en persistencia:", err.message);
-            // REVERSIÓN: si falla la DB, volvemos al estado anterior
+            // REVERSIÓN
             setAppointments(originalAppointments);
             return { success: false, error: err.message };
         }
@@ -153,13 +160,22 @@ export function useAppointments(selectedDate: string) {
         const subscription = supabase
             .channel('citas-realtime')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'citas' }, () => {
-                // Pequeño retardo para evitar que el fetch ocurra antes de que 
-                // la DB haya terminado de propagar el cambio
                 setTimeout(() => getCitas(), 500);
             })
             .subscribe();
         return () => { supabase.removeChannel(subscription); };
     }, [selectedDate]);
 
-    return { appointments, monthlyRevenue, monthlyCuts, monthlyProducts, loading, error, saveCita, deleteCita, toggleConfirmation, refreshAppointments: getCitas };
+    return {
+        appointments,
+        monthlyRevenue,
+        monthlyCuts,
+        monthlyProducts,
+        loading,
+        error,
+        saveCita,
+        deleteCita,
+        updateAppointmentStatus, // Nueva función expuesta
+        refreshAppointments: getCitas
+    };
 }

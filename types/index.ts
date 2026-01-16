@@ -8,6 +8,7 @@ export interface Appointment {
     Telefono: string;
     Precio: string | number;
     confirmada?: boolean;
+    cancelada?: boolean;
     productos?: boolean;
 }
 

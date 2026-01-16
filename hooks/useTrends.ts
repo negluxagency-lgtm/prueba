@@ -38,17 +38,29 @@ export function useTrends() {
     });
 
     const getLabel = (dateString: string, currentRange: TimeRange) => {
-        const date = new Date(dateString + "T12:00:00");
+        if (!dateString) return '';
+
+        // Parsing robusto asumiendo formato YYYY-MM-DD procedente de la DB
+        const parts = dateString.split('-');
+        if (parts.length < 3) return dateString; // Fallback si el formato no es estándar
+
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Meses 0-indexados
+        const day = parseInt(parts[2], 10);
+
+        // Usamos UTC para evitar que la hora local afecte al día de la semana
+        const date = new Date(Date.UTC(year, month, day));
+
         if (currentRange === 'week') {
             const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-            return days[date.getDay()];
+            return days[date.getUTCDay()];
         }
         if (currentRange === 'month') {
-            return date.getDate().toString();
+            return date.getUTCDate().toString();
         }
         if (currentRange === 'year') {
             const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-            return months[date.getMonth()];
+            return months[date.getUTCMonth()];
         }
         return dateString;
     };
@@ -87,20 +99,14 @@ export function useTrends() {
 
     const processMetrics = (appointments: Appointment[]) => {
         // 1. Calculate General Metrics (based on selected range)
-        const totalRev = appointments.reduce((sum, item) => sum + (Number(item.Precio) || 0), 0);
-        const totalCli = appointments.length;
-        const totalCuts = appointments.filter(a => a.Servicio !== 'Venta de Producto').length;
-        const totalProducts = appointments.filter(a => a.Servicio === 'Venta de Producto').length;
+        // Solo sumamos ingresos de citas CONFIRMADAS
+        const totalRev = appointments.reduce((sum, item) => sum + (item.confirmada ? (Number(item.Precio) || 0) : 0), 0);
+        const totalCli = appointments.filter(a => a.confirmada).length;
+        const totalCuts = appointments.filter(a => a.Servicio !== 'Venta de Producto' && a.confirmada).length;
+        const totalProducts = appointments.filter(a => a.Servicio === 'Venta de Producto' && a.confirmada).length;
         const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
 
-        const nowAtProcessing = new Date();
-        const totalNoShows = appointments.filter(cita => {
-            // Solo cuenta si NO está confirmada
-            if (cita.confirmada) return false;
-            // Y solo si la cita YA PASÓ (comparando fecha y hora)
-            const appointmentDate = new Date(`${cita.Dia}T${cita.Hora}`);
-            return appointmentDate < nowAtProcessing;
-        }).length;
+        const totalNoShows = appointments.filter(cita => cita.cancelada).length;
 
         setMetrics({
             totalRevenue: totalRev,
@@ -112,37 +118,71 @@ export function useTrends() {
             noShows: totalNoShows,
         });
 
-        // 2. Prepare Chart Data
+        // 2. Prepare Chart Data (Filling Gaps)
         const dataMap: Record<string, { rev: number; cli: number; no: number }> = {};
 
-        appointments.forEach(app => {
-            // Clave de agrupamiento: Por día para semana/mes, por mes para año
-            const groupKey = range === 'year' ? app.Dia.substring(0, 7) : app.Dia;
+        // Find min/max range based on SELECTION, not data
+        const now = new Date();
+        const start = new Date();
 
+        if (range === 'week') start.setDate(now.getDate() - 7);
+        if (range === 'month') start.setDate(now.getDate() - 30);
+
+        // Convertir a formato YYYY-MM-DD local para el bucle
+        // Ojo: Usamos UTC para iterar consistentemente
+        const current = new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()));
+        const end = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+        appointments.forEach(app => {
+            const groupKey = range === 'year' ? app.Dia.substring(0, 7) : app.Dia;
             if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0 };
 
-            dataMap[groupKey].rev += (Number(app.Precio) || 0);
-            dataMap[groupKey].cli += 1;
+            // Solo sumamos al gráfico si está confirmada
+            if (app.confirmada) {
+                dataMap[groupKey].rev += (Number(app.Precio) || 0);
+                dataMap[groupKey].cli += 1;
+            }
 
-            // Lógica de No-Show
-            const appDate = new Date(`${app.Dia}T${app.Hora}`);
-            if (!app.confirmada && appDate < nowAtProcessing) {
+            if (app.cancelada) {
                 dataMap[groupKey].no += 1;
             }
         });
 
-        const sortedKeys = Object.keys(dataMap).sort();
-        const finalData: ChartDataPoint[] = sortedKeys.map(key => {
-            const item = dataMap[key];
-            return {
-                name: getLabel(range === 'year' ? `${key}-01` : key, range),
-                date: key,
-                revenue: item.rev,
-                clients: item.cli,
-                avgTicket: item.cli > 0 ? Math.round(item.rev / item.cli) : 0,
-                noShows: item.no
-            };
-        });
+        const finalData: ChartDataPoint[] = [];
+
+        if (range === 'year') {
+            // Para año no rellenamos dias, sino meses (logic complex, keeping simple for now or iterating months)
+            // Manteniendo logica simple de ordenamiento para año por ahora
+            const sortedKeys = Object.keys(dataMap).sort();
+            sortedKeys.forEach(key => {
+                const item = dataMap[key];
+                finalData.push({
+                    name: getLabel(`${key}-01`, range),
+                    date: key,
+                    revenue: item.rev,
+                    clients: item.cli,
+                    avgTicket: item.cli > 0 ? Math.round(item.rev / item.cli) : 0,
+                    noShows: item.no
+                });
+            });
+        } else {
+            // Para semana/mes: Rellenar huecos diarios usando el rango estricto
+            while (current <= end) {
+                const isoDate = current.toISOString().split('T')[0];
+                const item = dataMap[isoDate] || { rev: 0, cli: 0, no: 0 };
+
+                finalData.push({
+                    name: getLabel(isoDate, range),
+                    date: isoDate,
+                    revenue: item.rev,
+                    clients: item.cli,
+                    avgTicket: item.cli > 0 ? Math.round(item.rev / item.cli) : 0,
+                    noShows: item.no
+                });
+
+                current.setDate(current.getDate() + 1);
+            }
+        }
 
         setChartData(finalData);
     };

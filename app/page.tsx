@@ -22,7 +22,7 @@ export default function Dashboard() {
     loading,
     deleteCita,
     saveCita,
-    toggleConfirmation
+    updateAppointmentStatus
   } = useAppointments(selectedDate);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,12 +35,12 @@ export default function Dashboard() {
   // Cálculos para ObjectiveRings
   const stats = {
     ingresos: {
-      actual: allAppointments.reduce((sum, a) => sum + (Number(a.Precio) || 0), 0),
+      actual: allAppointments.filter(a => a.confirmada).reduce((sum, a) => sum + (Number(a.Precio) || 0), 0),
       objetivo: 500, // Objetivo diario personalizable
       label: 'Ingresos del Día'
     },
     cortes: {
-      actual: appointments.length,
+      actual: appointments.filter(a => a.confirmada).length,
       objetivo: 15,
       label: 'Cortes Realizados'
     },
@@ -83,8 +83,8 @@ export default function Dashboard() {
     });
   };
 
-  const handleToggleConfirmation = async (id: number, currentStatus: boolean) => {
-    const promise = toggleConfirmation(id, currentStatus).then(res => {
+  const handleUpdateStatus = async (id: number, status: 'pendiente' | 'confirmada' | 'cancelada') => {
+    const promise = updateAppointmentStatus(id, status).then(res => {
       if (!res.success) throw new Error(res.error);
       return res;
     });
@@ -103,7 +103,15 @@ export default function Dashboard() {
         setSelectedDate={setSelectedDate}
       />
 
-      <div className="flex flex-col lg:flex-row gap-6 mb-10 items-start">
+      <div className="mb-8">
+        <DashboardStats
+          appointments={appointments}
+          monthlyRevenue={monthlyRevenue}
+          onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
+        />
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 mb-10 items-stretch">
         <div className="w-full lg:flex-1">
           <ObjectiveRings
             ingresos={stats.ingresos}
@@ -111,13 +119,8 @@ export default function Dashboard() {
             productos={stats.productos}
           />
         </div>
-        <div className="w-full lg:w-auto flex flex-col gap-6 items-end">
-          <DashboardStats
-            appointments={appointments}
-            monthlyRevenue={monthlyRevenue}
-            onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
-          />
-          <div className="hidden md:block">
+        <div className="w-full lg:flex-1 flex flex-col gap-6 items-end">
+          <div className="hidden md:block w-full">
             <MonthlyStats
               revenue={monthlyRevenue}
               cuts={monthlyCuts}
@@ -133,7 +136,7 @@ export default function Dashboard() {
           selectedDate={selectedDate}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onToggleConfirmation={handleToggleConfirmation}
+          onUpdateStatus={handleUpdateStatus}
           loading={loading}
         />
 
