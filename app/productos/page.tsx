@@ -154,7 +154,7 @@ export default function ProductosPage() {
                                 <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Producto</th>
                                 <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Unidades Vendidas</th>
                                 <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-amber-500/80">Precio</th>
-                                <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-right">Venta</th>
+                                <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-right"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800/40">
@@ -165,7 +165,7 @@ export default function ProductosPage() {
                                         <td className="px-3 py-2 md:px-8 md:py-6"><Skeleton className="h-5 w-40" /></td>
                                         <td className="px-3 py-2 md:px-8 md:py-6"><Skeleton className="h-5 w-20 mx-auto" /></td>
                                         <td className="px-3 py-2 md:px-8 md:py-6"><Skeleton className="h-5 w-16" /></td>
-                                        <td className="px-3 py-2 md:px-8 md:py-6"><Skeleton className="h-10 w-24 ml-auto" /></td>
+                                        <td className="px-3 py-2 md:px-8 md:py-6"><Skeleton className="h-10 w-24 ml-auto mr-4" /></td>
                                     </tr>
                                 ))
                             ) : (
@@ -209,7 +209,7 @@ export default function ProductosPage() {
                                                         setSelectedProduct(prod);
                                                         setIsSellModalOpen(true);
                                                     }}
-                                                    className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 md:px-6 md:py-3 rounded-lg md:rounded-2xl text-[9px] md:text-sm font-black uppercase tracking-tighter transition-all shadow-lg active:scale-95 flex items-center gap-1 md:gap-2 ml-auto"
+                                                    className="bg-amber-500 hover:bg-amber-600 text-black px-3 py-1.5 md:px-6 md:py-3 rounded-lg md:rounded-2xl text-[9px] md:text-sm font-black uppercase tracking-tighter transition-all shadow-lg active:scale-95 flex items-center gap-1 md:gap-2 ml-auto mr-2 md:mr-6"
                                                 >
                                                     <ShoppingCart className="w-3 h-3 md:w-4 md:h-4" />
                                                     Vender

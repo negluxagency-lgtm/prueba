@@ -8,6 +8,8 @@ import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { AppointmentTable } from "@/components/dashboard/AppointmentTable";
 import { AppointmentModal } from "@/components/dashboard/AppointmentModal";
 import { ProductSalesTable } from '@/components/dashboard/ProductSalesTable';
+import ObjectiveRings from "@/components/dashboard/ObjectiveRings";
+import MonthlyStats from "@/components/dashboard/MonthlyStats";
 import { toast } from "sonner";
 
 export default function Dashboard() {
@@ -15,6 +17,8 @@ export default function Dashboard() {
   const {
     appointments: allAppointments,
     monthlyRevenue,
+    monthlyCuts,
+    monthlyProducts,
     loading,
     deleteCita,
     saveCita,
@@ -24,9 +28,28 @@ export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCita, setEditingCita] = useState<Appointment | null>(null);
 
-  // Separar citas de ventas usando el Servicio como identificador (mientras se confirma el bool)
+  // Separar citas de ventas usando el Servicio como identificador
   const appointments = allAppointments.filter(a => a.Servicio !== 'Venta de Producto');
   const productSales = allAppointments.filter(a => a.Servicio === 'Venta de Producto');
+
+  // Cálculos para ObjectiveRings
+  const stats = {
+    ingresos: {
+      actual: allAppointments.reduce((sum, a) => sum + (Number(a.Precio) || 0), 0),
+      objetivo: 500, // Objetivo diario personalizable
+      label: 'Ingresos del Día'
+    },
+    cortes: {
+      actual: appointments.length,
+      objetivo: 15,
+      label: 'Cortes Realizados'
+    },
+    productos: {
+      actual: productSales.length,
+      objetivo: 3,
+      label: 'Ventas Productos'
+    }
+  };
 
   const handleEdit = (cita: Appointment) => {
     setEditingCita(cita);
@@ -80,12 +103,28 @@ export default function Dashboard() {
         setSelectedDate={setSelectedDate}
       />
 
-      <div className="flex justify-end mb-8 md:mb-3">
-        <DashboardStats
-          appointments={appointments}
-          monthlyRevenue={monthlyRevenue}
-          onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
-        />
+      <div className="flex flex-col lg:flex-row gap-6 mb-10 items-start">
+        <div className="w-full lg:flex-1">
+          <ObjectiveRings
+            ingresos={stats.ingresos}
+            cortes={stats.cortes}
+            productos={stats.productos}
+          />
+        </div>
+        <div className="w-full lg:w-auto flex flex-col gap-6 items-end">
+          <DashboardStats
+            appointments={appointments}
+            monthlyRevenue={monthlyRevenue}
+            onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
+          />
+          <div className="hidden md:block">
+            <MonthlyStats
+              revenue={monthlyRevenue}
+              cuts={monthlyCuts}
+              products={monthlyProducts}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="space-y-10">

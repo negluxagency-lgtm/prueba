@@ -6,6 +6,8 @@ export function useAppointments(selectedDate: string) {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(false);
     const [monthlyRevenue, setMonthlyRevenue] = useState(0);
+    const [monthlyCuts, setMonthlyCuts] = useState(0);
+    const [monthlyProducts, setMonthlyProducts] = useState(0);
     const [error, setError] = useState<string | null>(null);
 
     const getCitas = async () => {
@@ -33,6 +35,19 @@ export function useAppointments(selectedDate: string) {
             if (!monthError && monthData) {
                 const total = monthData.reduce((acc, curr) => acc + (Number(curr.Precio) || 0), 0);
                 setMonthlyRevenue(total);
+
+                // Conteo de cortes (no ventas) y productos (solo ventas)
+                const { data: monthCountData } = await supabase
+                    .from('citas')
+                    .select('Servicio')
+                    .gte('Dia', startOfMonth);
+
+                if (monthCountData) {
+                    const cuts = monthCountData.filter(c => c.Servicio !== 'Venta de Producto').length;
+                    const prods = monthCountData.filter(c => c.Servicio === 'Venta de Producto').length;
+                    setMonthlyCuts(cuts);
+                    setMonthlyProducts(prods);
+                }
             }
 
         } catch (err: any) {
@@ -146,5 +161,5 @@ export function useAppointments(selectedDate: string) {
         return () => { supabase.removeChannel(subscription); };
     }, [selectedDate]);
 
-    return { appointments, monthlyRevenue, loading, error, saveCita, deleteCita, toggleConfirmation, refreshAppointments: getCitas };
+    return { appointments, monthlyRevenue, monthlyCuts, monthlyProducts, loading, error, saveCita, deleteCita, toggleConfirmation, refreshAppointments: getCitas };
 }

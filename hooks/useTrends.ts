@@ -14,6 +14,8 @@ export interface ChartDataPoint {
 export interface TrendsMetrics {
     totalRevenue: number;
     totalClients: number;
+    totalCuts: number;
+    totalProducts: number;
     avgTicket: number;
     retentionRate: number;
     noShows: number;
@@ -28,6 +30,8 @@ export function useTrends() {
     const [metrics, setMetrics] = useState<TrendsMetrics>({
         totalRevenue: 0,
         totalClients: 0,
+        totalCuts: 0,
+        totalProducts: 0,
         avgTicket: 0,
         retentionRate: 0,
         noShows: 0,
@@ -85,6 +89,8 @@ export function useTrends() {
         // 1. Calculate General Metrics (based on selected range)
         const totalRev = appointments.reduce((sum, item) => sum + (Number(item.Precio) || 0), 0);
         const totalCli = appointments.length;
+        const totalCuts = appointments.filter(a => a.Servicio !== 'Venta de Producto').length;
+        const totalProducts = appointments.filter(a => a.Servicio === 'Venta de Producto').length;
         const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
 
         const nowAtProcessing = new Date();
@@ -99,6 +105,8 @@ export function useTrends() {
         setMetrics({
             totalRevenue: totalRev,
             totalClients: totalCli,
+            totalCuts,
+            totalProducts,
             avgTicket: avgTkt,
             retentionRate: 0,
             noShows: totalNoShows,

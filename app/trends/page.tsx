@@ -5,6 +5,7 @@ import { DetailedRevenueChart } from '@/components/trends/DetailedRevenueChart';
 import { TrendingUp, Users, DollarSign, Calendar } from 'lucide-react';
 import { useTrends } from '@/hooks/useTrends';
 import { MetricType } from '@/components/trends/DetailedRevenueChart';
+import { MonthlyTrends } from '@/components/dashboard/MonthlyTrends';
 
 export default function TrendsPage() {
   const { loading, chartData, metrics, range, setRange } = useTrends();
@@ -31,8 +32,8 @@ export default function TrendsPage() {
             key={i}
             onClick={() => setActiveMetric(stat.id)}
             className={`cursor-pointer bg-zinc-900/80 border p-4 md:p-6 rounded-2xl md:rounded-3xl flex flex-col justify-between transition-all animate-in fade-in zoom-in duration-300 ${activeMetric === stat.id
-                ? 'border-amber-500 ring-1 ring-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
-                : 'border-zinc-800 hover:border-zinc-700'
+              ? 'border-amber-500 ring-1 ring-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
+              : 'border-zinc-800 hover:border-zinc-700'
               }`}
             style={{ animationDelay: `${i * 100}ms` }}
           >
@@ -54,6 +55,14 @@ export default function TrendsPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="md:hidden">
+        <MonthlyTrends
+          revenue={metrics.totalRevenue}
+          cuts={metrics.totalCuts}
+          products={metrics.totalProducts}
+        />
       </div>
 
       <DetailedRevenueChart
