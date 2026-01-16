@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Product } from '@/types';
-import { Package, DollarSign, Image as ImageIcon, ShoppingCart } from 'lucide-react';
+import { Package, DollarSign, Image as ImageIcon, ShoppingCart, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SellProductModal } from '@/components/productos/SellProductModal';
+import { AddProductModal } from '@/components/productos/AddProductModal';
 import { toast } from 'sonner';
 
 export default function ProductosPage() {
@@ -14,6 +15,7 @@ export default function ProductosPage() {
     const [loading, setLoading] = useState(true);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     const fetchProductos = async () => {
         try {
@@ -29,6 +31,26 @@ export default function ProductosPage() {
             console.error('Error fetching products:', error.message || error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAddProduct = async (nombre: string, precio: number) => {
+        try {
+            const { error } = await supabase
+                .from('productos')
+                .insert([{
+                    nombre,
+                    precio,
+                    venta: 0
+                }]);
+
+            if (error) throw error;
+
+            toast.success(`Producto añadido: ${nombre}`);
+            fetchProductos();
+        } catch (error: any) {
+            console.error('Error añadiendo producto:', error);
+            toast.error('Error al añadir el producto');
         }
     };
 
@@ -101,11 +123,20 @@ export default function ProductosPage() {
 
     return (
         <main className="flex-1 p-4 md:p-10 max-w-4xl md:max-w-6xl mx-auto w-full pb-24 md:pb-10">
-            <header className="mb-8 md:mb-12">
-                <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-2">
-                    Gestión de <span className="text-amber-500">Productos</span>
-                </h1>
-                <p className="text-zinc-500 font-medium text-sm md:text-base">Control de stock y precios a la venta.</p>
+            <header className="mb-8 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-2">
+                        Gestión de <span className="text-amber-500">Productos</span>
+                    </h1>
+                    <p className="text-zinc-500 font-medium text-sm md:text-base">Control de stock y precios a la venta.</p>
+                </div>
+                <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="group bg-amber-500 hover:bg-amber-600 text-black px-6 py-4 rounded-2xl md:rounded-[1.5rem] font-black uppercase tracking-tighter transition-all shadow-[0_0_30px_rgba(245,158,11,0.2)] hover:shadow-[0_0_40px_rgba(245,158,11,0.4)] flex items-center justify-center gap-3 active:scale-95"
+                >
+                    <Plus size={20} strokeWidth={3} className="group-hover:rotate-90 transition-transform duration-300" />
+                    Nuevo Producto
+                </button>
             </header>
 
             <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg md:rounded-[2rem] overflow-hidden backdrop-blur-sm shadow-2xl">
@@ -205,6 +236,12 @@ export default function ProductosPage() {
                 onClose={() => setIsSellModalOpen(false)}
                 onConfirm={handleSellProduct}
                 product={selectedProduct}
+            />
+
+            <AddProductModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onConfirm={handleAddProduct}
             />
         </main>
     );
