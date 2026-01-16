@@ -7,56 +7,54 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { AppointmentTable } from "@/components/dashboard/AppointmentTable";
 import { AppointmentModal } from "@/components/dashboard/AppointmentModal";
-import { EmptyState } from "@/components/dashboard/EmptyState";
+import { ProductSalesTable } from '@/components/dashboard/ProductSalesTable';
 import { toast } from "sonner";
 
-export default function BarberDashboard() {
+export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const { appointments, monthlyRevenue, saveCita, deleteCita, toggleConfirmation, loading } = useAppointments(selectedDate);
+  const {
+    appointments: allAppointments,
+    monthlyRevenue,
+    loading,
+    deleteCita,
+    saveCita,
+    toggleConfirmation
+  } = useAppointments(selectedDate);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingCita, setEditingCita] = useState<Appointment | null>(null);
 
-  const defaultFormData: AppointmentFormData = {
-    Nombre: "",
-    Servicio: "Corte Normal",
-    Dia: selectedDate,
-    Hora: "",
-    Telefono: "",
-    Precio: "",
-    confirmada: false
-  };
+  // Separar citas de ventas usando el Servicio como identificador (mientras se confirma el bool)
+  const appointments = allAppointments.filter(a => a.Servicio !== 'Venta de Producto');
+  const productSales = allAppointments.filter(a => a.Servicio === 'Venta de Producto');
 
-  const [formData, setFormData] = useState<AppointmentFormData>(defaultFormData);
-
-  const openNewCitaModal = () => {
-    setEditingId(null);
-    setFormData({ ...defaultFormData, Dia: selectedDate });
+  const handleEdit = (cita: Appointment) => {
+    setEditingCita(cita);
     setIsModalOpen(true);
   };
 
-  const openEditCitaModal = (cita: Appointment) => {
-    setEditingId(cita.id);
-    setFormData({
-      Nombre: cita.Nombre,
-      Servicio: cita.Servicio,
-      Dia: cita.Dia,
-      Hora: cita.Hora,
-      Telefono: cita.Telefono || "",
-      Precio: String(cita.Precio),
-      confirmada: !!cita.confirmada
+  const handleDelete = async (id: number) => {
+    const promise = deleteCita(id);
+    toast.promise(promise, {
+      loading: 'Eliminando...',
+      success: (result) => {
+        if (!result.success) throw new Error(result.error);
+        return 'Registro eliminado';
+      },
+      error: (err) => `Error al eliminar: ${err}`
     });
-    setIsModalOpen(true);
   };
 
   const handleSave = async (data: AppointmentFormData) => {
-    const promise = saveCita(data, editingId);
+    const promise = saveCita(data, editingCita?.id || null);
 
     toast.promise(promise, {
       loading: 'Guardando...',
       success: (result) => {
         if (!result.success) throw new Error(result.error);
         setIsModalOpen(false);
-        return 'Cita guardada correctamente';
+        setEditingCita(null);
+        return 'Registro guardado correctamente';
       },
       error: (err) => `Error: ${err}`
     });
@@ -75,56 +73,64 @@ export default function BarberDashboard() {
     });
   };
 
-  const handleDelete = async (id: number) => {
-    const promise = deleteCita(id);
-    toast.promise(promise, {
-      loading: 'Eliminando...',
-      success: (result) => {
-        if (!result.success) throw new Error(result.error);
-        return 'Cita eliminada';
-      },
-      error: (err) => `Error al eliminar: ${err}`
-    });
-  };
   return (
-    <>
-      <main className="flex-1 p-2 md:p-10 max-w-3xl md:max-w-6xl mx-auto w-full pb-20 md:pb-10">
-        <DashboardHeader
+    <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full pb-24 md:pb-10">
+      <DashboardHeader
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+      />
+
+      <div className="flex justify-end mb-8 md:mb-3">
+        <DashboardStats
+          appointments={appointments}
+          monthlyRevenue={monthlyRevenue}
+          onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
+        />
+      </div>
+
+      <div className="space-y-10">
+        <AppointmentTable
+          appointments={appointments}
           selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onToggleConfirmation={handleToggleConfirmation}
+          loading={loading}
         />
 
-        <div className="flex justify-end mb-8 md:mb-3">
-          <DashboardStats
-            appointments={appointments}
-            monthlyRevenue={monthlyRevenue}
-            onNewAppointment={openNewCitaModal}
-          />
-        </div>
-
-        {(!loading && appointments.length === 0) ? (
-          <EmptyState onAction={openNewCitaModal} />
-        ) : (
-          <div className="pb-8">
-            <AppointmentTable
-              appointments={appointments}
-              selectedDate={selectedDate}
-              onEdit={openEditCitaModal}
-              onDelete={handleDelete}
-              onToggleConfirmation={handleToggleConfirmation}
-              loading={loading}
-            />
-          </div>
-        )}
-      </main>
+        <ProductSalesTable
+          sales={productSales}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
+      </div>
 
       <AppointmentModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => { setIsModalOpen(false); setEditingCita(null); }}
         onSave={handleSave}
-        initialData={formData}
-        isEditing={!!editingId}
+        initialData={editingCita ? {
+          Nombre: editingCita.Nombre,
+          Servicio: editingCita.Servicio,
+          Dia: editingCita.Dia,
+          Hora: editingCita.Hora,
+          Telefono: String(editingCita.Telefono),
+          Precio: String(editingCita.Precio),
+          confirmada: !!editingCita.confirmada,
+          productos: !!editingCita.productos
+        } : {
+          Nombre: '',
+          Servicio: 'Corte Normal',
+          Dia: selectedDate,
+          Hora: '',
+          Telefono: '',
+          Precio: '',
+          productos: false,
+          confirmada: false
+        }}
+        isEditing={!!editingCita}
       />
-    </>
+    </main>
   );
 }

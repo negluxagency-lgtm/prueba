@@ -8,6 +8,7 @@ export interface Appointment {
     Telefono: string;
     Precio: string | number;
     confirmada?: boolean;
+    productos?: boolean;
 }
 
 export interface AppointmentFormData {
@@ -18,6 +19,7 @@ export interface AppointmentFormData {
     Telefono: string;
     Precio: string;
     confirmada?: boolean;
+    productos?: boolean;
 }
 
 export interface MessageRow {
@@ -45,4 +47,12 @@ export interface Conversation {
     lastTimestamp: string;
     lastId: number;
     clientName?: string;
+}
+export interface Product {
+    id: number;
+    created_at: string;
+    nombre: string;
+    precio: number | string;
+    foto: string;
+    venta?: number;
 }

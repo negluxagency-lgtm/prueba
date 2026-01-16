@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, TrendingUp, MessageSquare, Scissors } from "lucide-react";
+import { Calendar, TrendingUp, MessageSquare, Scissors, Package } from "lucide-react";
 
 export function Sidebar() {
     const pathname = usePathname();
@@ -23,6 +23,10 @@ export function Sidebar() {
 
                 <Link href="/trends" className="p-4">
                     <TrendingUp className={`${isActive("/trends")} hover:text-amber-500 transition-colors cursor-pointer`} size={26} />
+                </Link>
+
+                <Link href="/productos" className="p-4">
+                    <Package className={`${isActive("/productos")} hover:text-amber-500 transition-colors cursor-pointer`} size={26} />
                 </Link>
 
                 <Link href="/mensajes" className="p-4">
