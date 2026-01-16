@@ -1,11 +1,15 @@
 "use client";
 
 import { supabase } from "@/lib/supabase";
+import { usePathname } from "next/navigation";
 
 export default function LogoutButton() {
+    const pathname = usePathname();
     const handleLogout = async () => {
         await supabase.auth.signOut();
     };
+
+    if (pathname !== "/") return null;
 
     return (
         <button
