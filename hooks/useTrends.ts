@@ -68,7 +68,14 @@ export function useTrends() {
         const totalCli = appointments.length;
         const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
 
-        const totalNoShows = appointments.filter(cita => !cita.confirmada).length;
+        const nowAtProcessing = new Date();
+        const totalNoShows = appointments.filter(cita => {
+            // Solo cuenta si NO está confirmada
+            if (cita.confirmada) return false;
+            // Y solo si la cita YA PASÓ (comparando fecha y hora)
+            const appointmentDate = new Date(`${cita.Dia}T${cita.Hora}`);
+            return appointmentDate < nowAtProcessing;
+        }).length;
 
         setMetrics({
             totalRevenue: totalRev,
