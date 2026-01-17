@@ -9,7 +9,7 @@ export interface Appointment {
     Precio: string | number;
     confirmada?: boolean;
     cancelada?: boolean;
-    productos?: boolean;
+    producto?: boolean;
 }
 
 export interface AppointmentFormData {
@@ -20,7 +20,7 @@ export interface AppointmentFormData {
     Telefono: string;
     Precio: string;
     confirmada?: boolean;
-    productos?: boolean;
+    producto?: boolean;
 }
 
 export interface MessageRow {

@@ -121,25 +121,42 @@ export default function ProductosPage() {
             });
 
             // 1. Crear Cita Especial (Venta)
-            const { data: citaData, error: citaError } = await supabase
-                .from('citas')
-                .insert([{
-                    Nombre: saleNombre,
-                    Telefono: saleTlf,
-                    confirmada: true,
-                    Hora: horaActual,
-                    Dia: diaActual,
-                    Precio: salePrecio,
-                    Servicio: 'Venta de Producto'
-                }])
-                .select();
+            let ventaId = null;
+            const maxRetries = 3;
 
-            if (citaError) {
-                console.error('Error de Supabase al insertar cita:', citaError.message, citaError.details);
-                throw citaError;
+            for (let i = 0; i < maxRetries; i++) {
+                const { data: citaData, error: citaError } = await supabase
+                    .from('citas')
+                    .insert([{
+                        Nombre: saleNombre,
+                        Telefono: String(saleTlf),
+                        confirmada: true,
+                        Hora: horaActual,
+                        Dia: diaActual,
+                        Precio: salePrecio,
+                        Servicio: 'Venta de Producto',
+                        producto: true
+                    }])
+                    .select();
+
+                if (citaError) {
+                    if (citaError.code === '23505') {
+                        // Silently retry on duplicate key
+                        continue;
+                    }
+                    console.error('Error de Supabase al insertar cita:', citaError.message, citaError.details);
+                    throw citaError;
+                }
+
+                // Si tuvo éxito, salimos del bucle
+                console.log('Venta registrada correctamente en citas:', citaData);
+                ventaId = citaData;
+                break;
             }
 
-            console.log('Cita de venta creada correctamente:', citaData);
+            if (!ventaId) {
+                throw new Error("No se pudo registrar la venta. Por favor intente de nuevo.");
+            }
 
             // 2. Actualizar contador de ventas y restar stock
             const { error: prodError } = await supabase

@@ -37,12 +37,12 @@ export default function Dashboard() {
   const stats = {
     ingresos: {
       actual: allAppointments.filter(a => a.confirmada).reduce((sum, a) => sum + (Number(a.Precio) || 0), 0),
-      objetivo: 500, // Objetivo diario personalizable
+      objetivo: 1000, // Objetivo diario personalizable
       label: 'Ingresos del Día'
     },
     cortes: {
       actual: appointments.filter(a => a.confirmada).length,
-      objetivo: 15,
+      objetivo: 50,
       label: 'Cortes Realizados'
     },
     productos: {
@@ -130,6 +130,15 @@ export default function Dashboard() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Stats row for Desktop (Hidden on mobile as it's already in the rings container) */}
+      <div className="hidden md:flex mb-6 md:mb-10 lg:px-4">
+        <DashboardStats
+          appointments={appointments}
+          monthlyRevenue={monthlyRevenue}
+          onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
+        />
       </div>
 
       <div className="space-y-4 md:space-y-10">
