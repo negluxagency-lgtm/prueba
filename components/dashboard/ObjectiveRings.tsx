@@ -34,6 +34,15 @@ interface ObjectiveRingsProps {
 }
 
 const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, productos }) => {
+    const [isMobile, setIsMobile] = React.useState(false);
+
+    React.useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     // Configuración de colores y radios para Recharts
     const data = [
         {
@@ -91,12 +100,12 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
                         {metrics.map((metric, idx) => (
                             <div key={idx} className="group flex items-center justify-between p-1 md:p-3 rounded-lg md:rounded-xl hover:bg-zinc-800/40 transition-all border border-transparent hover:border-zinc-800">
                                 <div className="flex items-center gap-1 md:gap-3">
-                                    <div className={cn("p-0.5 md:p-2 rounded-lg flex items-center justify-center", metric.bgColor, metric.color)}>
+                                    <div className={cn("hidden md:flex p-0.5 md:p-2 rounded-lg items-center justify-center", metric.bgColor, metric.color)}>
                                         <div className="w-2.5 h-2.5 md:w-4 md:h-4 *:w-full *:h-full text-xs">
                                             {metric.icon}
                                         </div>
                                     </div>
-                                    <div>
+                                    <div className="pl-2.5 md:pl-0">
                                         <p className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-wider leading-tight">{metric.label}</p>
                                         <p className={cn("text-[11px] md:text-lg font-bold leading-none md:leading-normal", metric.color)}>
                                             {metric.actual}{metric.label.includes('Ingresos') ? '€' : ''}
@@ -109,7 +118,6 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
                                     <span className={cn("hidden md:block font-black text-xl", metric.color)}>
                                         {metric.percentage}%
                                     </span>
-                                    <ChevronRight size={12} className="hidden md:block text-zinc-700 md:w-3.5 md:h-3.5 group-hover:text-zinc-500 group-hover:translate-x-0.5 transition-all" />
                                 </div>
                             </div>
                         ))}
@@ -117,14 +125,14 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
                 </div>
 
                 {/* Gráfico Radial (Derecha) */}
-                <div className="relative w-[120px] h-[120px] md:h-[240px] md:w-[240px] shrink-0 -ml-20 md:ml-0">
+                <div className="relative w-[120px] h-[120px] md:h-[240px] md:w-[240px] shrink-0 -ml-[84px] md:ml-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <RadialBarChart
                             cx="50%"
                             cy="50%"
                             innerRadius="30%"
                             outerRadius="100%"
-                            barSize={12}
+                            barSize={isMobile ? 8 : 12}
                             data={data}
                             startAngle={90}
                             endAngle={450}

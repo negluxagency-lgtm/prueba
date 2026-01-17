@@ -86,10 +86,11 @@ export function DetailedRevenueChart({ data, activeMetric, loading, range, setRa
                         <XAxis
                             dataKey="name"
                             stroke="#52525b"
-                            fontSize={12}
+                            fontSize={10}
                             tickLine={false}
                             axisLine={false}
                             dy={10}
+                            ticks={range === 'month' ? ['5', '10', '15', '20', '25', '30'] : undefined}
                         />
                         <YAxis
                             stroke="#52525b"
