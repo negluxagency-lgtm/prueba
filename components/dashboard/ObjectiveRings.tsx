@@ -87,7 +87,7 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
     ];
 
     return (
-        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] shadow-2xl pl-1 pr-2 py-6 md:p-6 border border-zinc-800 overflow-hidden">
+        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] shadow-2xl pl-1 pr-2 py-6 md:p-6 border border-zinc-800 overflow-visible">
             {/* Título pegado a la parte superior */}
             <h3 className="text-zinc-500 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-2 md:mb-4 pl-2 text-left">
                 Objetivos del Día
@@ -125,7 +125,7 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
                 </div>
 
                 {/* Gráfico Radial (Derecha) */}
-                <div className="relative w-[120px] h-[120px] md:h-[240px] md:w-[240px] shrink-0 -ml-[84px] md:ml-0">
+                <div className="relative w-[120px] h-[120px] md:h-[240px] md:w-[240px] shrink-0 transform -translate-x-[15px] md:translate-x-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <RadialBarChart
                             cx="50%"
