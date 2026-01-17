@@ -13,7 +13,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: 'Wolf Barbershop - Operations',
+  title: 'Nelux Barbershop - Operations',
   description: 'Premium Barber Management System',
   themeColor: '#f59e0b',
   icons: {

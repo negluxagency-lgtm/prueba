@@ -1,7 +1,7 @@
 "use client";
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ChartDataPoint, TimeRange } from '@/hooks/useTrends';
+import { ChartDataPoint, TimeRange, TrendsMetrics } from '@/hooks/useTrends';
 
 export type MetricType = 'revenue' | 'clients' | 'avgTicket' | 'noShows';
 
@@ -11,6 +11,8 @@ interface DetailedRevenueChartProps {
     loading?: boolean;
     range: TimeRange;
     setRange: (range: TimeRange) => void;
+    metrics: TrendsMetrics;
+    previousMetrics: TrendsMetrics | null;
 }
 
 const METRIC_LABELS: Record<MetricType, string> = {
@@ -27,25 +29,35 @@ const METRIC_KEYS: Record<MetricType, keyof ChartDataPoint> = {
     noShows: 'noShows'
 };
 
-export function DetailedRevenueChart({ data, activeMetric, loading, range, setRange }: DetailedRevenueChartProps) {
+const METRIC_TO_METRICS_KEY: Record<MetricType, keyof TrendsMetrics> = {
+    revenue: 'totalRevenue',
+    clients: 'totalClients',
+    avgTicket: 'avgTicket',
+    noShows: 'noShows'
+}
+
+export function DetailedRevenueChart({ data, activeMetric, loading, range, setRange, metrics, previousMetrics }: DetailedRevenueChartProps) {
     if (loading) {
         return <div className="h-[400px] w-full bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl backdrop-blur-sm animate-pulse flex items-center justify-center text-zinc-700 ">Cargando Datos...</div>;
     }
 
     const currentKey = METRIC_KEYS[activeMetric];
+    const metricsKey = METRIC_TO_METRICS_KEY[activeMetric];
 
-    // Calculate generic trend (last vs first)
-    const lastVal = Number(data[data.length - 1]?.[currentKey]) || 0;
-    const firstVal = Number(data[0]?.[currentKey]) || 0;
+    // Calculate trend vs previous period
+    const currentTotal = metrics?.[metricsKey] || 0;
+    const previousTotal = previousMetrics?.[metricsKey] || 0;
 
-    const growth = firstVal !== 0
-        ? ((lastVal - firstVal) / firstVal) * 100
-        : 0;
+    const growth = previousTotal !== 0
+        ? ((currentTotal - previousTotal) / previousTotal) * 100
+        : (currentTotal > 0 ? 100 : 0);
 
     const growthFormatted = isNaN(growth) || !isFinite(growth) ? "0.0" : growth.toFixed(1);
     const isPositive = growth >= 0;
 
-    const totalValue = data.reduce((acc, curr) => acc + (Number(curr[currentKey]) || 0), 0);
+    // Use passed metrics for total display to ensure consistency with top cards, 
+    // fallback to data reduction if metrics missing for some reason
+    const totalValue = currentTotal;
     const suffix = (activeMetric === 'revenue' || activeMetric === 'avgTicket') ? '€' : '';
 
     return (
@@ -68,7 +80,7 @@ export function DetailedRevenueChart({ data, activeMetric, loading, range, setRa
                     className="w-full sm:w-auto bg-zinc-800 text-zinc-300 text-[10px] md:text-xs font-bold py-2 px-4 rounded-xl border border-zinc-700 outline-none hover:bg-zinc-700 cursor-pointer transition-colors"
                 >
                     <option value="week">Esta Semana</option>
-                    <option value="month">Mes Pasado</option>
+                    <option value="month">Este Mes</option>
                     <option value="year">Este Año</option>
                 </select>
             </div>

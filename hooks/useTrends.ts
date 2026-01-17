@@ -38,6 +38,15 @@ export function useTrends(referenceDate?: string) {
         retentionRate: 0,
         noShows: 0,
     });
+    const [previousMetrics, setPreviousMetrics] = useState<TrendsMetrics>({
+        totalRevenue: 0,
+        totalClients: 0,
+        totalCuts: 0,
+        totalProducts: 0,
+        avgTicket: 0,
+        retentionRate: 0,
+        noShows: 0,
+    });
 
     const getLabel = (dateString: string, currentRange: TimeRange) => {
         if (!dateString) return '';
@@ -67,37 +76,102 @@ export function useTrends(referenceDate?: string) {
         return dateString;
     };
 
+    const formatDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const calculateMetrics = (data: Appointment[]): TrendsMetrics => {
+        const totalRev = data.reduce((sum, item) => sum + (item.confirmada ? (Number(item.Precio) || 0) : 0), 0);
+        const totalCli = data.filter(a => a.confirmada).length;
+        const totalCuts = data.filter(a => a.Servicio !== 'Venta de Producto' && a.confirmada).length;
+        const totalProducts = data.filter(a => a.Servicio === 'Venta de Producto' && a.confirmada).length;
+        const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
+        const totalNoShows = data.filter(cita => cita.cancelada).length;
+
+        return {
+            totalRevenue: totalRev,
+            totalClients: totalCli,
+            totalCuts,
+            totalProducts,
+            avgTicket: avgTkt,
+            retentionRate: 0,
+            noShows: totalNoShows,
+        };
+    };
+
     const fetchTrends = async () => {
         try {
             setLoading(true);
 
-            // Usar la fecha de referencia si existe, de lo contrario usar hoy
+            // 1. Current Period Dates
             const refDate = referenceDate ? new Date(referenceDate) : new Date();
             let startDate = new Date(refDate);
+            let endDate = new Date(refDate);
 
-            if (range === 'week') startDate.setDate(refDate.getDate() - 7);
-            if (range === 'month') startDate = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
-            if (range === 'year') startDate.setFullYear(refDate.getFullYear(), 0, 1); // From Jan 1st
-
-            let query = supabase
-                .from('citas')
-                .select('*')
-                .order('Dia', { ascending: true });
-
+            if (range === 'week') {
+                startDate.setDate(refDate.getDate() - 7);
+            }
             if (range === 'month') {
-                const lastDay = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0);
-                query = query
-                    .gte('Dia', startDate.toISOString().split('T')[0])
-                    .lte('Dia', lastDay.toISOString().split('T')[0]);
-            } else if (range === 'week') {
-                query = query.gte('Dia', startDate.toISOString().split('T')[0]);
+                startDate = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+                endDate = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0);
+            }
+            if (range === 'year') {
+                startDate.setFullYear(refDate.getFullYear(), 0, 1);
+                endDate.setFullYear(refDate.getFullYear(), 11, 31);
             }
 
-            const { data, error } = await query;
+            // 2. Previous Period Dates
+            let prevStartDate = new Date(startDate);
+            let prevEndDate = new Date(startDate);
 
-            if (error) throw error;
+            if (range === 'week') {
+                prevStartDate.setDate(startDate.getDate() - 7);
+                prevEndDate.setDate(startDate.getDate() - 1);
+            }
+            if (range === 'month') {
+                prevStartDate.setMonth(startDate.getMonth() - 1);
+                prevEndDate = new Date(startDate.getFullYear(), startDate.getMonth(), 0);
+            }
+            if (range === 'year') {
+                prevStartDate.setFullYear(startDate.getFullYear() - 1);
+                prevEndDate.setFullYear(startDate.getFullYear() - 1, 11, 31);
+            }
 
-            if (data) processMetrics(data as Appointment[], refDate);
+            const currentStartStr = formatDate(startDate);
+            const currentEndStr = range === 'week' ? formatDate(new Date()) : formatDate(endDate);
+            const prevStartStr = formatDate(prevStartDate);
+            const prevEndStr = formatDate(prevEndDate);
+
+            // 3. Parallel Queries
+            const currentQuery = supabase
+                .from('citas')
+                .select('*')
+                .gte('Dia', currentStartStr)
+                .lte('Dia', currentEndStr)
+                .order('Dia', { ascending: true });
+
+            const previousQuery = supabase
+                .from('citas')
+                .select('*')
+                .gte('Dia', prevStartStr)
+                .lte('Dia', prevEndStr);
+
+            const [currentRes, prevRes] = await Promise.all([currentQuery, previousQuery]);
+
+            if (currentRes.error) throw currentRes.error;
+            if (prevRes.error) throw prevRes.error;
+
+            // 4. Process
+            if (currentRes.data) {
+                processMetrics(currentRes.data as Appointment[], refDate);
+            }
+            if (prevRes.data) {
+                setPreviousMetrics(calculateMetrics(prevRes.data as Appointment[]));
+            }
+
         } catch (err) {
             console.error("Error fetching trends:", err);
         } finally {
@@ -106,38 +180,18 @@ export function useTrends(referenceDate?: string) {
     };
 
     const processMetrics = (appointments: Appointment[], refDate: Date) => {
-        // 1. Calculate General Metrics (based on selected range)
-        const totalRev = appointments.reduce((sum, item) => sum + (item.confirmada ? (Number(item.Precio) || 0) : 0), 0);
-        const totalCli = appointments.filter(a => a.confirmada).length;
-        const totalCuts = appointments.filter(a => a.Servicio !== 'Venta de Producto' && a.confirmada).length;
-        const totalProducts = appointments.filter(a => a.Servicio === 'Venta de Producto' && a.confirmada).length;
-        const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
+        // Set Current Metrics
+        setMetrics(calculateMetrics(appointments));
 
-        const totalNoShows = appointments.filter(cita => cita.cancelada).length;
-
-        setMetrics({
-            totalRevenue: totalRev,
-            totalClients: totalCli,
-            totalCuts,
-            totalProducts,
-            avgTicket: avgTkt,
-            retentionRate: 0,
-            noShows: totalNoShows,
-        });
-
-        // 2. Prepare Chart Data (Filling Gaps)
+        // Prepare Chart Data (Filling Gaps)
         const dataMap: Record<string, { rev: number; cli: number; no: number; cuts: number; prods: number }> = {};
+        const start = range === 'week' ? new Date(new Date(refDate).setDate(refDate.getDate() - 7))
+            : range === 'month' ? new Date(refDate.getFullYear(), refDate.getMonth(), 1)
+                : new Date(refDate.getFullYear(), 0, 1);
 
-        const start = new Date(refDate);
-        let end = new Date(refDate);
-
-        if (range === 'week') {
-            start.setDate(refDate.getDate() - 7);
-        }
-        if (range === 'month') {
-            start.setFullYear(refDate.getFullYear(), refDate.getMonth(), 1);
-            end = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0); // Último día del mes
-        }
+        const end = range === 'week' ? new Date(refDate)
+            : range === 'month' ? new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0)
+                : new Date(refDate.getFullYear(), 11, 31);
 
         const current = new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()));
         const finalEnd = new Date(Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()));
@@ -149,17 +203,10 @@ export function useTrends(referenceDate?: string) {
             if (app.confirmada) {
                 dataMap[groupKey].rev += (Number(app.Precio) || 0);
                 dataMap[groupKey].cli += 1;
-
-                if (app.Servicio !== 'Venta de Producto') {
-                    dataMap[groupKey].cuts += 1;
-                } else {
-                    dataMap[groupKey].prods += 1;
-                }
+                if (app.Servicio !== 'Venta de Producto') dataMap[groupKey].cuts += 1;
+                else dataMap[groupKey].prods += 1;
             }
-
-            if (app.cancelada) {
-                dataMap[groupKey].no += 1;
-            }
+            if (app.cancelada) dataMap[groupKey].no += 1;
         });
 
         const finalData: ChartDataPoint[] = [];
@@ -205,7 +252,6 @@ export function useTrends(referenceDate?: string) {
                 current.setDate(current.getDate() + 1);
             }
         }
-
         setChartData(finalData);
     };
 
@@ -225,5 +271,5 @@ export function useTrends(referenceDate?: string) {
         };
     }, [range, referenceDate]); // Refetch when range OR referenceDate changes
 
-    return { loading, chartData, metrics, range, setRange };
+    return { loading, chartData, metrics, previousMetrics, range, setRange };
 }

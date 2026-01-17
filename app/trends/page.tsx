@@ -8,7 +8,7 @@ import { MetricType } from '@/components/trends/DetailedRevenueChart';
 import { MonthlyTrends } from '@/components/dashboard/MonthlyTrends';
 
 export default function TrendsPage() {
-  const { loading, chartData, metrics, range, setRange } = useTrends();
+  const { loading, chartData, metrics, previousMetrics, range, setRange } = useTrends();
   const [activeMetric, setActiveMetric] = React.useState<MetricType>('revenue');
 
   return (
@@ -63,6 +63,8 @@ export default function TrendsPage() {
         loading={loading}
         range={range}
         setRange={setRange}
+        metrics={metrics}
+        previousMetrics={previousMetrics}
       />
 
       <div className="mt-8">

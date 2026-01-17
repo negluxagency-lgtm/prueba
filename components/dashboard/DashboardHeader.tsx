@@ -11,7 +11,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ selectedDate, 
         <header className="mb-2 md:mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
             <div>
                 <h1 className="text-2xl md:text-4xl font-black italic tracking-tighter uppercase leading-tight">
-                    Wolf <span className="text-amber-500 text-3xl md:text-5xl">Barbershop</span>
+                    Nelux  <span className="text-amber-500 text-3xl md:text-5xl"> Barbershop</span>
                 </h1>
                 <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-4 mt-4 md:mt-2">
                     <span className="hidden md:flex items-center gap-1.5 md:gap-2 text-zinc-500 font-medium text-[10px] md:text-sm">
