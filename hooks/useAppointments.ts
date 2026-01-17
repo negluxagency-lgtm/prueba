@@ -76,7 +76,7 @@ export function useAppointments(selectedDate: string) {
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada,
-                        producto: formData.productos
+                        producto: formData.producto
                     })
                     .eq('id', editingId);
                 error = updateError;
@@ -92,7 +92,7 @@ export function useAppointments(selectedDate: string) {
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada ?? false,
-                        producto: formData.productos ?? false
+                        producto: formData.producto ?? false
                     }]);
                 error = insertError;
             }
