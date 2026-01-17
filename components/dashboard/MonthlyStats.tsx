@@ -108,7 +108,7 @@ const MonthlyStats: React.FC<MonthlyStatsProps> = ({ revenue, cuts, products }) 
                         <Bar
                             dataKey="progress"
                             radius={[0, 6, 6, 0] as any}
-                            background={{ fill: '#18181b', radius: [0, 6, 6, 0] }}
+                            background={{ fill: '#18181b', radius: [0, 6, 6, 0] as any }}
                         >
                             {chartData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.color} />
