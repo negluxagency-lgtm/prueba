@@ -56,4 +56,5 @@ export interface Product {
     precio: number | string;
     foto: string;
     venta?: number;
+    stock?: number;
 }

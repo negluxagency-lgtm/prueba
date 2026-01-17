@@ -12,20 +12,20 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ appointments, mo
     const totalGanancias = appointments.reduce((total, cita) => total + (Number(cita.Precio) || 0), 0);
 
     return (
-        <div className="flex w-full md:w-auto items-center justify-between md:justify-start gap-2">
-            <div className="flex gap-2 md:gap-4 flex-1 md:flex-none overflow-x-auto scrollbar-hide pr-2 md:pr-0">
-                <div className="bg-zinc-900/80 border border-zinc-800 p-3 md:p-6 rounded-xl md:rounded-3xl min-w-[80px] md:min-w-[120px]">
-                    <p className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Citas</p>
-                    <p className="text-xl md:text-3xl font-mono font-bold">{appointments.length}</p>
+        <div className="flex flex-col md:flex-row w-auto items-end md:items-center justify-end gap-2 h-full">
+            <div className="flex flex-col md:flex-row gap-2 md:gap-4 w-full md:w-auto h-full">
+                <div className="bg-zinc-900/80 border border-zinc-800 p-2.5 md:p-6 rounded-xl md:rounded-3xl flex-1 md:flex-none flex flex-col justify-center">
+                    <p className="text-[7px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Citas</p>
+                    <p className="text-base md:text-3xl font-bold">{appointments.length}</p>
                 </div>
-                <div className="bg-zinc-900/80 border border-zinc-800 p-3 md:p-6 rounded-xl md:rounded-3xl min-w-[100px] md:min-w-[140px] border-l-4 border-l-amber-500 shadow-xl">
-                    <p className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Caja Esperada Hoy</p>
-                    <p className="text-xl md:text-3xl font-mono font-bold text-amber-500">{totalGanancias}€</p>
+                <div className="bg-zinc-900/80 border border-zinc-800 p-2.5 md:p-6 rounded-xl md:rounded-3xl flex-1 md:flex-none border-l-2 md:border-l-4 border-l-amber-500 shadow-xl flex flex-col justify-center">
+                    <p className="text-[7px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Caja Esperada</p>
+                    <p className="text-base md:text-3xl font-bold text-amber-500">{totalGanancias}€</p>
                 </div>
                 {/* CAJA REAL (SOLO CONFIRMADAS) */}
-                <div className="bg-zinc-900/80 border border-zinc-800 p-3 md:p-6 rounded-xl md:rounded-3xl min-w-[100px] md:min-w-[140px] border-l-4 border-l-emerald-500 shadow-xl">
-                    <p className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Caja Real Hoy</p>
-                    <p className="text-xl md:text-3xl font-mono font-bold text-emerald-500">
+                <div className="bg-zinc-900/80 border border-zinc-800 p-2.5 md:p-6 rounded-xl md:rounded-3xl flex-1 md:flex-none border-l-2 md:border-l-4 border-l-emerald-500 shadow-xl flex flex-col justify-center">
+                    <p className="text-[7px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Caja Real</p>
+                    <p className="text-base md:text-3xl font-bold text-emerald-500">
                         {appointments.filter(a => a.confirmada).reduce((acc, curr) => acc + (Number(curr.Precio) || 0), 0)}€
                     </p>
                 </div>

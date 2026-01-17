@@ -6,6 +6,8 @@ export interface ChartDataPoint {
     name: string;
     revenue: number;
     clients: number;
+    cuts: number;
+    products: number;
     avgTicket: number;
     noShows: number;
     date: string;
@@ -23,10 +25,10 @@ export interface TrendsMetrics {
 
 export type TimeRange = 'week' | 'month' | 'year';
 
-export function useTrends() {
+export function useTrends(referenceDate?: string) {
     const [loading, setLoading] = useState(true);
     const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-    const [range, setRange] = useState<TimeRange>('week');
+    const [range, setRange] = useState<TimeRange>('month');
     const [metrics, setMetrics] = useState<TrendsMetrics>({
         totalRevenue: 0,
         totalClients: 0,
@@ -69,19 +71,25 @@ export function useTrends() {
         try {
             setLoading(true);
 
-            const now = new Date();
-            let startDate = new Date();
+            // Usar la fecha de referencia si existe, de lo contrario usar hoy
+            const refDate = referenceDate ? new Date(referenceDate) : new Date();
+            let startDate = new Date(refDate);
 
-            if (range === 'week') startDate.setDate(now.getDate() - 7);
-            if (range === 'month') startDate.setDate(now.getDate() - 30);
-            if (range === 'year') startDate.setFullYear(now.getFullYear(), 0, 1); // From Jan 1st
+            if (range === 'week') startDate.setDate(refDate.getDate() - 7);
+            if (range === 'month') startDate = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+            if (range === 'year') startDate.setFullYear(refDate.getFullYear(), 0, 1); // From Jan 1st
 
             let query = supabase
                 .from('citas')
                 .select('*')
                 .order('Dia', { ascending: true });
 
-            if (range !== 'year') {
+            if (range === 'month') {
+                const lastDay = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0);
+                query = query
+                    .gte('Dia', startDate.toISOString().split('T')[0])
+                    .lte('Dia', lastDay.toISOString().split('T')[0]);
+            } else if (range === 'week') {
                 query = query.gte('Dia', startDate.toISOString().split('T')[0]);
             }
 
@@ -89,7 +97,7 @@ export function useTrends() {
 
             if (error) throw error;
 
-            if (data) processMetrics(data as Appointment[]);
+            if (data) processMetrics(data as Appointment[], refDate);
         } catch (err) {
             console.error("Error fetching trends:", err);
         } finally {
@@ -97,9 +105,8 @@ export function useTrends() {
         }
     };
 
-    const processMetrics = (appointments: Appointment[]) => {
+    const processMetrics = (appointments: Appointment[], refDate: Date) => {
         // 1. Calculate General Metrics (based on selected range)
-        // Solo sumamos ingresos de citas CONFIRMADAS
         const totalRev = appointments.reduce((sum, item) => sum + (item.confirmada ? (Number(item.Precio) || 0) : 0), 0);
         const totalCli = appointments.filter(a => a.confirmada).length;
         const totalCuts = appointments.filter(a => a.Servicio !== 'Venta de Producto' && a.confirmada).length;
@@ -119,28 +126,35 @@ export function useTrends() {
         });
 
         // 2. Prepare Chart Data (Filling Gaps)
-        const dataMap: Record<string, { rev: number; cli: number; no: number }> = {};
+        const dataMap: Record<string, { rev: number; cli: number; no: number; cuts: number; prods: number }> = {};
 
-        // Find min/max range based on SELECTION, not data
-        const now = new Date();
-        const start = new Date();
+        const start = new Date(refDate);
+        let end = new Date(refDate);
 
-        if (range === 'week') start.setDate(now.getDate() - 7);
-        if (range === 'month') start.setDate(now.getDate() - 30);
+        if (range === 'week') {
+            start.setDate(refDate.getDate() - 7);
+        }
+        if (range === 'month') {
+            start.setFullYear(refDate.getFullYear(), refDate.getMonth(), 1);
+            end = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0); // Último día del mes
+        }
 
-        // Convertir a formato YYYY-MM-DD local para el bucle
-        // Ojo: Usamos UTC para iterar consistentemente
         const current = new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()));
-        const end = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        const finalEnd = new Date(Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()));
 
         appointments.forEach(app => {
             const groupKey = range === 'year' ? app.Dia.substring(0, 7) : app.Dia;
-            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0 };
+            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
 
-            // Solo sumamos al gráfico si está confirmada
             if (app.confirmada) {
                 dataMap[groupKey].rev += (Number(app.Precio) || 0);
                 dataMap[groupKey].cli += 1;
+
+                if (app.Servicio !== 'Venta de Producto') {
+                    dataMap[groupKey].cuts += 1;
+                } else {
+                    dataMap[groupKey].prods += 1;
+                }
             }
 
             if (app.cancelada) {
@@ -151,31 +165,39 @@ export function useTrends() {
         const finalData: ChartDataPoint[] = [];
 
         if (range === 'year') {
-            // Para año no rellenamos dias, sino meses (logic complex, keeping simple for now or iterating months)
-            // Manteniendo logica simple de ordenamiento para año por ahora
-            const sortedKeys = Object.keys(dataMap).sort();
-            sortedKeys.forEach(key => {
-                const item = dataMap[key];
+            const startOfYear = new Date(refDate.getFullYear(), 0, 1);
+            const iterDate = new Date(startOfYear);
+
+            while (iterDate.getFullYear() === refDate.getFullYear()) {
+                const monthKey = iterDate.toISOString().substring(0, 7);
+                const item = dataMap[monthKey] || { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
+
                 finalData.push({
-                    name: getLabel(`${key}-01`, range),
-                    date: key,
+                    name: getLabel(`${monthKey}-01`, 'year'),
+                    date: monthKey,
                     revenue: item.rev,
                     clients: item.cli,
+                    cuts: item.cuts,
+                    products: item.prods,
                     avgTicket: item.cli > 0 ? Math.round(item.rev / item.cli) : 0,
                     noShows: item.no
                 });
-            });
+
+                iterDate.setMonth(iterDate.getMonth() + 1);
+                if (iterDate.getFullYear() > refDate.getFullYear()) break;
+            }
         } else {
-            // Para semana/mes: Rellenar huecos diarios usando el rango estricto
-            while (current <= end) {
+            while (current <= finalEnd) {
                 const isoDate = current.toISOString().split('T')[0];
-                const item = dataMap[isoDate] || { rev: 0, cli: 0, no: 0 };
+                const item = dataMap[isoDate] || { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
 
                 finalData.push({
                     name: getLabel(isoDate, range),
                     date: isoDate,
                     revenue: item.rev,
                     clients: item.cli,
+                    cuts: item.cuts,
+                    products: item.prods,
                     avgTicket: item.cli > 0 ? Math.round(item.rev / item.cli) : 0,
                     noShows: item.no
                 });
@@ -189,7 +211,19 @@ export function useTrends() {
 
     useEffect(() => {
         fetchTrends();
-    }, [range]); // Refetch when range changes
+
+        // Suscripción en tiempo real
+        const channel = supabase
+            .channel('trends-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'citas' }, () => {
+                fetchTrends();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [range, referenceDate]); // Refetch when range OR referenceDate changes
 
     return { loading, chartData, metrics, range, setRange };
 }

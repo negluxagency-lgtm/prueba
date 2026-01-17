@@ -50,19 +50,11 @@ export default function TrendsPage() {
               {loading ? (
                 <div className="h-6 md:h-8 w-12 md:w-16 bg-zinc-800 rounded animate-pulse" />
               ) : (
-                <p className="text-xl md:text-2xl font-mono font-bold text-white">{stat.val}</p>
+                <p className="text-xl md:text-2xl font-bold text-white">{stat.val}</p>
               )}
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="md:hidden">
-        <MonthlyTrends
-          revenue={metrics.totalRevenue}
-          cuts={metrics.totalCuts}
-          products={metrics.totalProducts}
-        />
       </div>
 
       <DetailedRevenueChart
@@ -72,6 +64,14 @@ export default function TrendsPage() {
         range={range}
         setRange={setRange}
       />
+
+      <div className="mt-8">
+        <MonthlyTrends
+          revenue={metrics.totalRevenue}
+          cuts={metrics.totalCuts}
+          products={metrics.totalProducts}
+        />
+      </div>
     </main>
   );
 }

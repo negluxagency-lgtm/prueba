@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useAppointments } from "@/hooks/useAppointments";
+import { useTrends } from "@/hooks/useTrends";
 import { Appointment, AppointmentFormData } from "@/types";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
@@ -9,7 +10,7 @@ import { AppointmentTable } from "@/components/dashboard/AppointmentTable";
 import { AppointmentModal } from "@/components/dashboard/AppointmentModal";
 import { ProductSalesTable } from '@/components/dashboard/ProductSalesTable';
 import ObjectiveRings from "@/components/dashboard/ObjectiveRings";
-import MonthlyStats from "@/components/dashboard/MonthlyStats";
+import MonthlyGoalsChart from "@/components/dashboard/MonthlyGoalsChart";
 import { toast } from "sonner";
 
 export default function Dashboard() {
@@ -17,13 +18,13 @@ export default function Dashboard() {
   const {
     appointments: allAppointments,
     monthlyRevenue,
-    monthlyCuts,
-    monthlyProducts,
-    loading,
+    loading: appointmentsLoading,
     deleteCita,
     saveCita,
     updateAppointmentStatus
   } = useAppointments(selectedDate);
+
+  const { chartData, loading: trendsLoading, setRange } = useTrends(selectedDate);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCita, setEditingCita] = useState<Appointment | null>(null);
@@ -103,48 +104,49 @@ export default function Dashboard() {
         setSelectedDate={setSelectedDate}
       />
 
-      <div className="mb-8">
-        <DashboardStats
-          appointments={appointments}
-          monthlyRevenue={monthlyRevenue}
-          onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
-        />
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-6 mb-10 items-stretch">
-        <div className="w-full lg:flex-1">
-          <ObjectiveRings
-            ingresos={stats.ingresos}
-            cortes={stats.cortes}
-            productos={stats.productos}
-          />
+      <div className="flex flex-col lg:flex-row gap-0 md:gap-6 mb-6 md:mb-10 items-stretch justify-start">
+        <div className="flex flex-row gap-0 w-full lg:flex-1 items-stretch min-h-[160px] md:min-h-0">
+          <div className="w-[75%] lg:w-full">
+            <ObjectiveRings
+              ingresos={stats.ingresos}
+              cortes={stats.cortes}
+              productos={stats.productos}
+            />
+          </div>
+          <div className="w-[25%] lg:hidden flex justify-end">
+            <DashboardStats
+              appointments={appointments}
+              monthlyRevenue={monthlyRevenue}
+              onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
+            />
+          </div>
         </div>
-        <div className="w-full lg:flex-1 flex flex-col gap-6 items-end">
-          <div className="hidden md:block w-full">
-            <MonthlyStats
-              revenue={monthlyRevenue}
-              cuts={monthlyCuts}
-              products={monthlyProducts}
+
+        <div className="w-full lg:flex-1 hidden md:flex flex-col gap-6 items-end">
+          <div className="w-full">
+            <MonthlyGoalsChart
+              data={chartData}
+              loading={trendsLoading}
             />
           </div>
         </div>
       </div>
 
-      <div className="space-y-10">
+      <div className="space-y-4 md:space-y-10">
         <AppointmentTable
           appointments={appointments}
           selectedDate={selectedDate}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onUpdateStatus={handleUpdateStatus}
-          loading={loading}
+          loading={appointmentsLoading}
         />
 
         <ProductSalesTable
           sales={productSales}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          loading={loading}
+          loading={appointmentsLoading}
         />
       </div>
 

@@ -37,12 +37,12 @@ const TrendItem: React.FC<TrendItemProps> = ({
                     </div>
                     <div>
                         <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{label}</p>
-                        <h4 className="text-xl font-mono font-bold text-white">
+                        <h4 className="text-xl font-bold text-white">
                             {actual.toLocaleString()}{unit}
                         </h4>
                     </div>
                 </div>
-                <div className={cn("flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800/50 font-mono font-bold text-xs", color)}>
+                <div className={cn("flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800/50 font-bold text-xs", color)}>
                     <ArrowUpRight size={14} />
                     {realPercentage}%
                 </div>
@@ -82,7 +82,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ revenue, cuts, pro
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <TrendItem
                     label="Ingresos Totales"
                     actual={revenue}

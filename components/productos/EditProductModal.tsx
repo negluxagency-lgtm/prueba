@@ -1,27 +1,34 @@
 "use client";
 
-import React, { useState } from 'react';
-import { X, Package, DollarSign, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Package, DollarSign, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Product } from '@/types';
 
-interface AddProductModalProps {
+interface EditProductModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (nombre: string, precio: number, stock: number) => void;
+    onConfirm: (id: number, nombre: string, precio: number, stock: number) => void;
+    product: Product | null;
 }
 
-export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onConfirm }) => {
+export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, onConfirm, product }) => {
     const [nombre, setNombre] = useState('');
     const [precio, setPrecio] = useState('');
     const [stock, setStock] = useState('0');
 
+    useEffect(() => {
+        if (product) {
+            setNombre(product.nombre);
+            setPrecio(product.precio.toString());
+            setStock(product.stock ? product.stock.toString() : '0');
+        }
+    }, [product]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (nombre && precio) {
-            onConfirm(nombre, Number(precio), Number(stock));
-            setNombre('');
-            setPrecio('');
-            setStock('0');
+        if (nombre && precio && product) {
+            onConfirm(product.id, nombre, Number(precio), Number(stock));
             onClose();
         }
     };
@@ -48,10 +55,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                     <div className="p-6 md:p-8">
                         <div className="flex justify-between items-center mb-8">
                             <div className="flex items-center gap-3">
-                                <div className="p-3 bg-amber-500/10 rounded-2xl">
-                                    <Package className="text-amber-500 w-6 h-6" />
+                                <div className="p-3 bg-blue-500/10 rounded-2xl">
+                                    <Package className="text-blue-500 w-6 h-6" />
                                 </div>
-                                <h2 className="text-2xl font-black uppercase italic tracking-tighter">Nuevo <span className="text-amber-500 text-stroke-sm">Producto</span></h2>
+                                <h2 className="text-2xl font-black uppercase italic tracking-tighter">Editar <span className="text-blue-500 text-stroke-sm">Producto</span></h2>
                             </div>
                             <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-500">
                                 <X size={24} />
@@ -62,14 +69,14 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 ml-1">Nombre del Producto</label>
                                 <div className="relative group">
-                                    <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 transition-colors group-focus-within:text-amber-500" />
+                                    <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 transition-colors group-focus-within:text-blue-500" />
                                     <input
                                         autoFocus
                                         type="text"
                                         value={nombre}
                                         onChange={(e) => setNombre(e.target.value)}
                                         placeholder="Ej: Cera Mate Extreme"
-                                        className="w-full bg-black/40 border-2 border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-amber-500 transition-all font-bold"
+                                        className="w-full bg-black/40 border-2 border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 transition-all font-bold"
                                         required
                                     />
                                 </div>
@@ -79,28 +86,28 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                                 <div className="space-y-2">
                                     <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 ml-1">Precio (€)</label>
                                     <div className="relative group">
-                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 transition-colors group-focus-within:text-amber-500" />
+                                        <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 transition-colors group-focus-within:text-blue-500" />
                                         <input
                                             type="number"
                                             step="0.01"
                                             value={precio}
                                             onChange={(e) => setPrecio(e.target.value)}
                                             placeholder="0.00"
-                                            className="w-full bg-black/40 border-2 border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-amber-500 transition-all font-bold text-xl"
+                                            className="w-full bg-black/40 border-2 border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 transition-all font-bold text-xl"
                                             required
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 ml-1">Stock Inicial</label>
+                                    <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 ml-1">Stock Actual</label>
                                     <div className="relative group">
-                                        <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 transition-colors group-focus-within:text-amber-500" />
+                                        <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 transition-colors group-focus-within:text-blue-500" />
                                         <input
                                             type="number"
                                             value={stock}
                                             onChange={(e) => setStock(e.target.value)}
                                             placeholder="0"
-                                            className="w-full bg-black/40 border-2 border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-amber-500 transition-all font-bold text-xl"
+                                            className="w-full bg-black/40 border-2 border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-blue-500 transition-all font-bold text-xl"
                                             required
                                         />
                                     </div>
@@ -109,10 +116,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
 
                             <button
                                 type="submit"
-                                className="w-full bg-amber-500 hover:bg-amber-600 text-black py-5 rounded-2xl font-black uppercase tracking-tighter transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 mt-8"
+                                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-tighter transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 mt-8"
                             >
-                                <Plus size={20} strokeWidth={3} />
-                                Añadir al Inventario
+                                <Save size={20} strokeWidth={3} />
+                                Guardar Cambios
                             </button>
                         </form>
                     </div>

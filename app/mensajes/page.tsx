@@ -78,10 +78,10 @@ function ChatInterface() {
                             className={`p-4 border-b border-zinc-900 cursor-pointer transition-colors hover:bg-zinc-900 group ${selectedTlf === convo.tlf ? 'bg-zinc-900 border-l-4 border-l-amber-500' : 'border-l-4 border-l-transparent'}`}
                         >
                             <div className="flex justify-between items-start mb-1">
-                                <span className={`font-bold font-mono ${selectedTlf === convo.tlf ? 'text-amber-500' : 'text-zinc-300'}`}>
+                                <span className={`font-bold ${selectedTlf === convo.tlf ? 'text-amber-500' : 'text-zinc-300'}`}>
                                     {convo.tlf}
                                 </span>
-                                <span className="text-[10px] text-zinc-600 font-mono">
+                                <span className="text-[10px] text-zinc-600 ">
                                     {formatTime(convo.lastTimestamp)}
                                 </span>
                             </div>
@@ -135,7 +135,7 @@ function ChatInterface() {
                                         : 'bg-zinc-800 text-zinc-200 rounded-tl-none'
                                         }`}>
                                         <p className="text-xs md:text-sm leading-relaxed">{msg.content}</p>
-                                        <p className={`text-[9px] md:text-[10px] mt-1.5 md:mt-2 font-mono text-right opacity-70 ${msg.isMine ? 'text-white/80' : 'text-zinc-500'}`}>
+                                        <p className={`text-[9px] md:text-[10px] mt-1.5 md:mt-2 text-right opacity-70 ${msg.isMine ? 'text-white/80' : 'text-zinc-500'}`}>
                                             {formatTime(msg.timestamp)}
                                         </p>
                                     </div>
@@ -170,7 +170,7 @@ function ChatInterface() {
                         <div className="w-24 h-24 rounded-full bg-zinc-900 flex items-center justify-center mb-4">
                             <Clock size={48} className="opacity-20" />
                         </div>
-                        <p className="font-mono text-sm">Selecciona una conversación para leer</p>
+                        <p className="text-sm">Selecciona una conversación para leer</p>
                     </div>
                 )}
             </div>

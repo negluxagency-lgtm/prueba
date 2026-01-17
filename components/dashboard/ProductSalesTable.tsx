@@ -59,13 +59,13 @@ export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onE
                                             <td className="px-3 py-1 md:px-8 md:py-6 font-bold text-zinc-100 text-[11px] md:text-lg">
                                                 {sale.Nombre}
                                             </td>
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-center text-zinc-400 font-mono text-[11px] md:text-lg">
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-center text-zinc-400 text-[11px] md:text-lg">
                                                 {sale.Telefono}
                                             </td>
-                                            <td className="px-3 py-1 md:px-8 md:py-6 font-mono text-xs md:text-xl font-black text-amber-500/90 italic">
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-xs md:text-xl font-black text-amber-500/90 italic">
                                                 {sale.Precio}€
                                             </td>
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-zinc-500 font-mono text-[10px] md:text-base">
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-zinc-500 text-[10px] md:text-base">
                                                 {sale.Hora ? sale.Hora.slice(0, 5) : "--:--"}
                                             </td>
                                             <td className="px-3 py-1 md:px-8 md:py-6 text-right">

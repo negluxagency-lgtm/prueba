@@ -1,15 +1,15 @@
 import "./globals.css";
-import { Space_Grotesk } from 'next/font/google';
+import { Manrope } from 'next/font/google';
 import { Toaster } from "@/components/ui/Toaster";
 import type { Metadata } from 'next';
 import { Sidebar } from "@/components/layout/Sidebar";
 import AuthGuard from "@/components/AuthGuard";
 import LogoutButton from "@/components/LogoutButton";
 
-const spaceGrotesk = Space_Grotesk({
+const manrope = Manrope({
   subsets: ['latin'],
-  variable: '--font-space',
-  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-manrope',
+  weight: ['300', '400', '500', '600', '700', '800'],
 });
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description: 'Premium Barber Management System',
   themeColor: '#f59e0b',
   icons: {
-    icon: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💈</text></svg>',
+    icon: 'data:image/svg+xml,%3csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3e%3ctext y=%22.9em%22 font-size=%2290%22%3e💈%3c/text%3e%3c/svg%3e',
   }
 };
 
@@ -28,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={`${spaceGrotesk.className} antialiased bg-black text-white selection:bg-amber-500/30`}>
+      <body className={`${manrope.className} antialiased bg-black text-white selection:bg-amber-500/30`}>
         <AuthGuard>
           <div className="flex h-screen overflow-hidden">
             <Sidebar />

@@ -49,12 +49,20 @@ export const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onCl
                         </div>
 
                         <div className="mb-6 relative z-10">
-                            <p className="text-zinc-400 text-xs uppercase font-bold mb-2">Producto</p>
+                            <div className="flex justify-between items-center mb-2">
+                                <p className="text-zinc-400 text-xs uppercase font-bold">Producto</p>
+                                <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-lg border ${(product.stock || 0) < 5
+                                    ? 'bg-red-500/10 text-red-500 border-red-500/20'
+                                    : 'bg-green-500/10 text-green-500 border-green-500/20'
+                                    }`}>
+                                    Stock: {product.stock || 0}
+                                </span>
+                            </div>
                             <div className="flex items-center gap-4 bg-zinc-800/50 p-3 rounded-xl border border-zinc-800">
                                 <img src={product.foto} className="w-12 h-12 rounded-lg object-cover" alt="" />
                                 <div>
                                     <p className="text-white font-bold text-sm uppercase">{product.nombre}</p>
-                                    <p className="text-amber-500 font-mono font-bold">{product.precio}€</p>
+                                    <p className="text-amber-500 font-bold">{product.precio}€</p>
                                 </div>
                             </div>
                         </div>
@@ -63,20 +71,16 @@ export const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onCl
                             <div>
                                 <label className="text-zinc-400 text-[10px] uppercase font-bold mb-2 block">Cantidad a vender</label>
                                 <div className="flex items-center gap-4">
-                                    <button
-                                        onClick={() => setCantidad(Math.max(1, cantidad - 1))}
-                                        className="w-12 h-12 bg-zinc-800 border border-zinc-700 rounded-xl text-white flex items-center justify-center font-bold text-xl hover:bg-zinc-700 transition-colors"
-                                    >-</button>
                                     <input
                                         type="number"
                                         value={cantidad}
-                                        onChange={(e) => setCantidad(Math.max(1, parseInt(e.target.value) || 1))}
-                                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-center font-bold text-lg focus:outline-none focus:border-amber-500"
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value) || 1;
+                                            setCantidad(Math.min(val, product.stock || 999));
+                                        }}
+                                        max={product.stock || 999}
+                                        className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-center font-bold text-lg focus:outline-none focus:border-amber-500"
                                     />
-                                    <button
-                                        onClick={() => setCantidad(cantidad + 1)}
-                                        className="w-12 h-12 bg-zinc-800 border border-zinc-700 rounded-xl text-white flex items-center justify-center font-bold text-xl hover:bg-zinc-700 transition-colors"
-                                    >+</button>
                                 </div>
                             </div>
 
@@ -87,8 +91,8 @@ export const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onCl
 
                             <button
                                 onClick={handleConfirm}
-                                disabled={loading}
-                                className="w-full bg-amber-500 hover:bg-amber-600 text-black font-black uppercase py-4 rounded-xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 mt-4"
+                                disabled={loading || cantidad > (product.stock || 0)}
+                                className="w-full bg-amber-500 hover:bg-amber-600 text-black font-black uppercase py-4 rounded-xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:grayscale"
                             >
                                 <ShoppingBag size={18} />
                                 {loading ? 'Procesando...' : 'Confirmar Venta'}

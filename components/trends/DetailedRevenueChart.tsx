@@ -29,7 +29,7 @@ const METRIC_KEYS: Record<MetricType, keyof ChartDataPoint> = {
 
 export function DetailedRevenueChart({ data, activeMetric, loading, range, setRange }: DetailedRevenueChartProps) {
     if (loading) {
-        return <div className="h-[450px] w-full bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl backdrop-blur-sm animate-pulse flex items-center justify-center text-zinc-700 font-mono">Cargando Datos...</div>;
+        return <div className="h-[400px] w-full bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl backdrop-blur-sm animate-pulse flex items-center justify-center text-zinc-700 ">Cargando Datos...</div>;
     }
 
     const currentKey = METRIC_KEYS[activeMetric];
@@ -49,7 +49,7 @@ export function DetailedRevenueChart({ data, activeMetric, loading, range, setRa
     const suffix = (activeMetric === 'revenue' || activeMetric === 'avgTicket') ? '€' : '';
 
     return (
-        <div className="h-[450px] w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl md:rounded-[2rem] p-5 md:p-8 shadow-2xl backdrop-blur-sm flex flex-col">
+        <div className="h-[400px] w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl md:rounded-[2rem] p-5 md:p-8 shadow-2xl backdrop-blur-sm flex flex-col">
             <div className="mb-6 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
                 <div>
                     <h3 className="text-zinc-400 text-[10px] md:text-sm font-bold uppercase tracking-widest mb-1">

@@ -52,7 +52,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     if (loading && !session) {
         return (
-            <div className="h-screen flex items-center justify-center bg-[#0a0a0a] font-mono">
+            <div className="h-screen flex items-center justify-center bg-[#0a0a0a] ">
                 <div className="text-amber-500 font-bold animate-pulse">CARGANDO SISTEMA...</div>
             </div>
         );
@@ -60,7 +60,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     if (!session) {
         return (
-            <div className="h-screen flex items-center justify-center bg-[#0a0a0a] font-mono p-4">
+            <div className="h-screen flex items-center justify-center bg-[#0a0a0a] p-4">
                 <div className="w-full max-w-[380px] p-8 md:p-12 bg-zinc-900/50 border border-zinc-800 rounded-[24px] shadow-2xl text-white">
                     <div className="text-center mb-10">
                         <h2 className="text-2xl font-black italic uppercase tracking-tighter">

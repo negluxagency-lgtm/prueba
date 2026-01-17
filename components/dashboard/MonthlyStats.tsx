@@ -58,7 +58,7 @@ const MonthlyStats: React.FC<MonthlyStatsProps> = ({ revenue, cuts, products }) 
             return (
                 <div className="bg-zinc-900 border border-zinc-800 p-3 rounded-xl shadow-2xl">
                     <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-1">{item.name}</p>
-                    <p className="text-lg font-mono font-bold" style={{ color: item.color }}>
+                    <p className="text-lg font-bold" style={{ color: item.color }}>
                         {item.actual}{item.suffix}
                         <span className="text-zinc-600 text-sm font-normal mx-1">/</span>
                         <span className="text-zinc-400 text-sm">{item.objetivo}{item.suffix}</span>
