@@ -86,7 +86,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ revenue, cuts, pro
                 <TrendItem
                     label="Ingresos Totales"
                     actual={revenue}
-                    objetivo={5000}
+                    objetivo={25000}
                     unit="€"
                     icon={<DollarSign />}
                     color="text-[#34C759]"
@@ -96,7 +96,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ revenue, cuts, pro
                 <TrendItem
                     label="Cortes Realizados"
                     actual={cuts}
-                    objetivo={300}
+                    objetivo={1000}
                     icon={<Scissors />}
                     color="text-[#007AFF]"
                     bgColor="bg-[#007AFF]/10"
@@ -105,7 +105,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ revenue, cuts, pro
                 <TrendItem
                     label="Productos Vendidos"
                     actual={products}
-                    objetivo={15}
+                    objetivo={40}
                     icon={<ShoppingBag />}
                     color="text-[#FF3B30]"
                     bgColor="bg-[#FF3B30]/10"

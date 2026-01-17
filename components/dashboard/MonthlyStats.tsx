@@ -25,21 +25,21 @@ const MonthlyStats: React.FC<MonthlyStatsProps> = ({ revenue, cuts, products }) 
         {
             name: 'Cortes',
             actual: cuts,
-            objetivo: 300,
+            objetivo: 1000,
             color: '#007AFF', // Azul
             suffix: ''
         },
         {
             name: 'Ingresos',
             actual: revenue,
-            objetivo: 5000,
+            objetivo: 25000,
             color: '#34C759', // Verde
             suffix: '€'
         },
         {
             name: 'Productos',
             actual: products,
-            objetivo: 15,
+            objetivo: 40,
             color: '#FF3B30', // Rojo
             suffix: ''
         }

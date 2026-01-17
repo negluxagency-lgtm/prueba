@@ -131,7 +131,7 @@ function ChatInterface() {
                             {selectedConversation.messages.map((msg, idx) => (
                                 <div key={`${msg.id}-${idx}`} className={`flex ${msg.isMine ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-[85%] md:max-w-[70%] rounded-xl md:rounded-2xl p-3 md:p-4 shadow-lg ${msg.isMine
-                                        ? 'bg-amber-500 text-white rounded-tr-none'
+                                        ? 'bg-amber-600 text-white rounded-tr-none'
                                         : 'bg-zinc-800 text-zinc-200 rounded-tl-none'
                                         }`}>
                                         <p className="text-xs md:text-sm leading-relaxed">{msg.content}</p>

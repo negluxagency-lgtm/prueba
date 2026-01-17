@@ -171,7 +171,7 @@ export default function Dashboard() {
           Telefono: String(editingCita.Telefono),
           Precio: String(editingCita.Precio),
           confirmada: !!editingCita.confirmada,
-          productos: !!editingCita.productos
+          producto: !!editingCita.producto
         } : {
           Nombre: '',
           Servicio: 'Corte Normal',
@@ -179,7 +179,7 @@ export default function Dashboard() {
           Hora: '',
           Telefono: '',
           Precio: '',
-          productos: false,
+          producto: false,
           confirmada: false
         }}
         isEditing={!!editingCita}
