@@ -12,11 +12,32 @@ import { ProductSalesTable } from '@/components/dashboard/ProductSalesTable';
 import ObjectiveRings from "@/components/dashboard/ObjectiveRings";
 import MonthlyGoalsChart from "@/components/dashboard/MonthlyGoalsChart";
 import { toast } from "sonner";
+import { WelcomeModal } from "@/components/dashboard/WelcomeModal";
+
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Dashboard() {
+  const router = useRouter(); // Asegúrate de tener esto si no lo tienes
+  const searchParams = useSearchParams();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  // Efecto para mostrar el modal de bienvenida post-registro
+  React.useEffect(() => {
+    if (searchParams.get('registered') === 'true') {
+      setShowWelcome(true);
+    }
+  }, [searchParams]);
+
+  const handleCloseWelcome = () => {
+    setShowWelcome(false);
+    // Limpiar la URL solo cuando el usuario cierre el modal
+    router.replace('/');
+  };
+
   const {
     appointments: allAppointments,
+    // ... rest of the code
     monthlyRevenue,
     loading: appointmentsLoading,
     deleteCita,
@@ -183,6 +204,11 @@ export default function Dashboard() {
           confirmada: false
         }}
         isEditing={!!editingCita}
+      />
+
+      <WelcomeModal
+        isOpen={showWelcome}
+        onClose={handleCloseWelcome}
       />
     </main>
   );

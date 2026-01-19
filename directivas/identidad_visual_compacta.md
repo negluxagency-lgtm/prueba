@@ -2,7 +2,7 @@
 
 **Estado:** 🟢 Operativo  
 **Última Actualización:** 2026-01-15  
-**Objetivo:** Mantener una interfaz de alta densidad informativa y optimizada para dispositivos móviles en todo el ecosistema Wolf Barbershop.
+**Objetivo:** Mantener una interfaz de alta densidad informativa y optimizada para dispositivos móviles en todo el ecosistema Nelux Barbershop.
 
 ---
 

@@ -63,9 +63,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             <div className="h-screen flex items-center justify-center bg-[#0a0a0a] p-4">
                 <div className="w-full max-w-[380px] p-8 md:p-12 bg-zinc-900/50 border border-zinc-800 rounded-[24px] shadow-2xl text-white">
                     <div className="text-center mb-10">
-                        <h2 className="text-2xl font-black italic uppercase tracking-tighter">
-                            Wolf <span className="text-amber-500">Barbershop</span>
-                        </h2>
+                        Nelux <span className="text-amber-500">Barbershop</span>
                         <p className="mt-1 text-zinc-500 text-[10px] font-bold uppercase tracking-[2px]">Acceso restringido</p>
                     </div>
 
@@ -101,6 +99,15 @@ export default function AuthGuard({ children }: AuthGuardProps) {
                         >
                             {loading ? 'AUTENTICANDO...' : 'INICIAR SESIÓN'}
                         </button>
+
+                        <div className="mt-4 text-center">
+                            <p className="text-zinc-500 text-xs">
+                                ¿No tienes cuenta?{' '}
+                                <a href="/register" className="text-amber-500 font-bold hover:text-amber-400 transition-colors">
+                                    Registrar nueva barbería
+                                </a>
+                            </p>
+                        </div>
                     </form>
                 </div>
             </div>
