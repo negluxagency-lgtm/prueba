@@ -29,7 +29,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ daysRemaining }) => {
                 <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-indigo-200 animate-pulse shrink-0" />
                     <span className="font-medium leading-tight">
-                        Te quedan <span className="font-black bg-white/20 px-1.5 py-0.5 rounded text-white">{daysRemaining} días</span> de prueba. No incluye IA.
+                        Te quedan <span className="font-black bg-white/20 px-1.5 py-0.5 rounded text-white">{daysRemaining} días</span> de prueba. No incluye IA/mensajes.
                     </span>
                 </div>
 
