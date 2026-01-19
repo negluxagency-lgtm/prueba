@@ -81,74 +81,82 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                             ))
                         ) : (
                             <AnimatePresence mode='popLayout'>
-                                {appointments.map((cita, index) => (
-                                    <motion.tr
-                                        key={cita.id}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 20 }}
-                                        transition={{ duration: 0.2, delay: index * 0.05 }}
-                                        className="hover:bg-amber-500/[0.03] transition-all group"
-                                    >
-                                        <td className="px-3 py-1 md:px-8 md:py-6 font-bold text-zinc-100 text-[11px] md:text-lg group-hover:text-amber-500 transition-colors">
-                                            {cita.Nombre}
-                                        </td>
-                                        <td className="px-3 py-1 md:px-8 md:py-6 text-center">
-                                            {cita.Telefono ? (
-                                                <Link
-                                                    href={`/mensajes?tlf=${String(cita.Telefono).replace(/\+/g, '')}`}
-                                                    className="inline-flex items-center gap-1 md:gap-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-green-500 px-1.5 py-0.5 md:px-4 md:py-2 rounded-sm md:rounded-xl text-[7px] md:text-xs transition-all border border-zinc-700/50"
-                                                >
-                                                    <MessageCircle className="w-2 h-2 md:w-4 md:h-4" />
-                                                    {cita.Telefono}
-                                                </Link>
-                                            ) : (
-                                                <span className="text-zinc-600 text-[7px] md:text-xs italic">Sin Telefono</span>
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-1 md:px-8 md:py-6 text-center">
-                                            <div className="relative inline-block">
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => handleOpenMenu(e, cita.id)}
-                                                    className={`inline-flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[7px] md:text-xs font-black transition-all border ${cita.cancelada
-                                                        ? 'bg-red-500/20 text-red-500 border-red-500/50 hover:bg-red-500/30'
-                                                        : cita.confirmada
-                                                            ? 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
-                                                            : 'bg-amber-500/20 text-amber-500 border-amber-500/50 hover:bg-amber-500/30'
-                                                        }`}
-                                                >
-                                                    <Check className={`w-2 h-2 md:w-4 md:h-4 opacity-100`} strokeWidth={4} />
-                                                    {cita.cancelada ? 'CANCELADA' : cita.confirmada ? 'CONFIRMADA' : 'PENDIENTE'}
-                                                </button>
-                                            </div>
-                                        </td>
+                                {appointments.length > 0 ? (
+                                    appointments.map((cita, index) => (
+                                        <motion.tr
+                                            key={cita.id}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 20 }}
+                                            transition={{ duration: 0.2, delay: index * 0.05 }}
+                                            className="hover:bg-amber-500/[0.03] transition-all group"
+                                        >
+                                            <td className="px-3 py-1 md:px-8 md:py-6 font-bold text-zinc-100 text-[11px] md:text-lg group-hover:text-amber-500 transition-colors">
+                                                {cita.Nombre}
+                                            </td>
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-center">
+                                                {cita.Telefono ? (
+                                                    <Link
+                                                        href={`/mensajes?tlf=${String(cita.Telefono).replace(/\+/g, '')}`}
+                                                        className="inline-flex items-center gap-1 md:gap-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-green-500 px-1.5 py-0.5 md:px-4 md:py-2 rounded-sm md:rounded-xl text-[7px] md:text-xs transition-all border border-zinc-700/50"
+                                                    >
+                                                        <MessageCircle className="w-2 h-2 md:w-4 md:h-4" />
+                                                        {cita.Telefono}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="text-zinc-600 text-[7px] md:text-xs italic">Sin Telefono</span>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-center">
+                                                <div className="relative inline-block">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handleOpenMenu(e, cita.id)}
+                                                        className={`inline-flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[7px] md:text-xs font-black transition-all border ${cita.cancelada
+                                                            ? 'bg-red-500/20 text-red-500 border-red-500/50 hover:bg-red-500/30'
+                                                            : cita.confirmada
+                                                                ? 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
+                                                                : 'bg-amber-500/20 text-amber-500 border-amber-500/50 hover:bg-amber-500/30'
+                                                            }`}
+                                                    >
+                                                        <Check className={`w-2 h-2 md:w-4 md:h-4 opacity-100`} strokeWidth={4} />
+                                                        {cita.cancelada ? 'CANCELADA' : cita.confirmada ? 'CONFIRMADA' : 'PENDIENTE'}
+                                                    </button>
+                                                </div>
+                                            </td>
 
-                                        <td className="px-3 py-1 md:px-8 md:py-6 text-amber-500 text-[11px] md:text-lg font-bold">
-                                            {cita.Hora ? cita.Hora.slice(0, 5) : "--:--"}
-                                        </td>
-                                        <td className="px-3 py-1 md:px-8 md:py-6 text-xs md:text-xl font-black text-amber-500/90">{cita.Precio || 0}€</td>
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-amber-500 text-[11px] md:text-lg font-bold">
+                                                {cita.Hora ? cita.Hora.slice(0, 5) : "--:--"}
+                                            </td>
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-xs md:text-xl font-black text-amber-500/90">{cita.Precio || 0}€</td>
 
-                                        <td className="px-3 py-1 md:px-8 md:py-6 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button
-                                                    onClick={() => onEdit(cita)}
-                                                    className="p-1 md:p-3 bg-zinc-800 hover:bg-blue-500/20 hover:text-blue-500 text-zinc-400 rounded-sm md:rounded-xl transition-all border border-transparent hover:border-blue-500/50"
-                                                    title="Editar"
-                                                >
-                                                    <Pencil className="w-2.5 h-2.5 md:w-5 md:h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => onDelete(cita.id)}
-                                                    className="p-1 md:p-3 bg-zinc-800 hover:bg-red-500/20 hover:text-red-500 text-zinc-400 rounded-sm md:rounded-xl transition-all border border-transparent hover:border-red-500/50"
-                                                    title="Eliminar"
-                                                >
-                                                    <Trash2 className="w-2.5 h-2.5 md:w-5 md:h-5" />
-                                                </button>
-                                            </div>
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => onEdit(cita)}
+                                                        className="p-1 md:p-3 bg-zinc-800 hover:bg-blue-500/20 hover:text-blue-500 text-zinc-400 rounded-sm md:rounded-xl transition-all border border-transparent hover:border-blue-500/50"
+                                                        title="Editar"
+                                                    >
+                                                        <Pencil className="w-2.5 h-2.5 md:w-5 md:h-5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => onDelete(cita.id)}
+                                                        className="p-1 md:p-3 bg-zinc-800 hover:bg-red-500/20 hover:text-red-500 text-zinc-400 rounded-sm md:rounded-xl transition-all border border-transparent hover:border-red-500/50"
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 className="w-2.5 h-2.5 md:w-5 md:h-5" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </motion.tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={6} className="px-8 py-10 text-center text-zinc-600 italic uppercase tracking-widest text-[9px] md:text-xs">
+                                            Sin citas hoy
                                         </td>
-                                    </motion.tr>
-                                ))}
+                                    </tr>
+                                )}
                             </AnimatePresence>
                         )}
                     </tbody>
