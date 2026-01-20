@@ -41,12 +41,12 @@ export default function DashboardLayout({
 
                         {/* Banner solo si está en prueba (Fijo arriba) */}
                         {status === 'prueba' && (
-                            <div className="z-50 shrink-0">
+                            <div className="fixed top-0 left-0 md:left-20 right-0 z-[60]">
                                 <TrialBanner daysRemaining={daysRemaining} />
                             </div>
                         )}
 
-                        <div className="flex-1 overflow-y-auto relative flex flex-col">
+                        <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' ? 'pt-[52px] md:pt-0' : ''}`}>
                             <div className="relative flex-1 pt-10 md:pt-0 pb-20 md:pb-0">
                                 <LogoutButton />
                                 {children}
