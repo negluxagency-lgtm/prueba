@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 export function useChat() {
     const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState<any>(null);
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [selectedTlf, setSelectedTlf] = useState<string | null>(null);
     const searchParams = useSearchParams();
@@ -15,6 +16,28 @@ export function useChat() {
         if (tlfParam) {
             setSelectedTlf(tlfParam);
         }
+
+        // Fetch User and Profile info
+        const getUserData = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const currentUser = session.user;
+                setUser(currentUser);
+
+                // Also fetch the profile to get the definitive barberia name
+                const { data: profile } = await supabase
+                    .from('perfiles')
+                    .select('nombre_barberia')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (profile) {
+                    // Store the real barberia name in user state or a separate state
+                    setUser((prev: any) => ({ ...prev, profile_barberia: profile.nombre_barberia }));
+                }
+            }
+        };
+        getUserData();
     }, [searchParams]);
 
     const fetchMessages = async () => {
@@ -160,11 +183,18 @@ export function useChat() {
                     Tlf: selectedTlf,
                     mensaje_enviado: text,
                     mensaje_recibido: null,
-                    mensaje_manual: true,
-                    fecha: new Date().toISOString()
+                    manual: true,
+                    fecha: new Date().toISOString(),
+                    barberia: user?.profile_barberia || user?.user_metadata?.barberia_nombre || 'Mi Barbería'
                 });
 
-            if (error) throw error;
+            if (error) {
+                console.error("Error original de Supabase (Mensajes):", JSON.stringify(error, null, 2));
+                console.error("Detalles del error (Mensajes):", error.details);
+                console.error("Código de error (Mensajes):", error.code);
+                console.error("Pista (Mensajes):", error.hint);
+                throw error;
+            }
 
             // Fetch immediately to replace optimistic message with real one
             await fetchMessages();

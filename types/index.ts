@@ -32,6 +32,8 @@ export interface MessageRow {
     mensaje_enviado: string | null;
     mensaje_recibido: string | null;
     mensaje_manual?: boolean;
+    manual?: boolean;
+    barberia?: string;
 }
 
 export interface ChatMessage {
