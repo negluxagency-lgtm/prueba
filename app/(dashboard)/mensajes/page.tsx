@@ -60,7 +60,7 @@ function ChatInterface() {
     };
 
     return (
-        <div className="flex h-full bg-[#0a0a0a] text-zinc-100 overflow-hidden relative">
+        <div className="flex bg-[#0a0a0a] text-zinc-100 overflow-hidden absolute inset-x-0 top-10 bottom-20 md:inset-0">
             {/* LEFT SIDEBAR: CONTACTS */}
             <div className={`w-full md:w-[350px] border-r border-zinc-800 flex flex-col bg-zinc-950/50 ${selectedTlf ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-4 md:p-6 border-b border-zinc-800">

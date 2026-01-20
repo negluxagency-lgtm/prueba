@@ -56,7 +56,15 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
     const isLock = variant === 'lock';
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden z-[100]">
+        <div className="h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-center p-4 md:p-8 overflow-y-auto relative">
+            {/* Logout Button for Paywall */}
+            <button
+                onClick={() => supabase.auth.signOut()}
+                className="absolute top-4 right-4 z-[110] text-zinc-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest bg-black/20 hover:bg-black/40 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+            >
+                Cerrar Sesión
+            </button>
+
             {/* Background Ambience */}
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.05),transparent_70%)] pointer-events-none" />
 

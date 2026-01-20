@@ -22,7 +22,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ daysRemaining }) => {
         <motion.div
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="sticky top-0 z-50 w-full bg-indigo-600 text-white shadow-lg shadow-indigo-900/20 backdrop-blur-sm bg-opacity-95"
+            className="w-full bg-indigo-600 text-white shadow-lg shadow-indigo-900/20 backdrop-blur-sm bg-opacity-95"
         >
             <div className="max-w-7xl mx-auto px-3 py-2 md:px-4 md:py-3 flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-6 text-xs md:text-sm lg:text-base text-center md:text-left">
 

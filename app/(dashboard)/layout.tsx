@@ -27,7 +27,9 @@ export default function DashboardLayout({
                 </div>
             ) : status === 'impago' ? (
                 // 1. CASO BLOQUEO (IMPAGO) - Renderiza SOLO el Paywall
-                <Paywall />
+                <div className="fixed inset-0 z-[100]">
+                    <Paywall />
+                </div>
             ) : (
                 // 2. CASO ACCESO PERMITIDO (PAGADO o PRUEBA)
                 <div className="flex h-screen overflow-hidden flex-col md:flex-row">
@@ -35,16 +37,20 @@ export default function DashboardLayout({
                     <Sidebar />
 
                     {/* CONTENIDO PRINCIPAL */}
-                    <div className="flex-1 overflow-y-auto bg-[#0a0a0a] relative flex flex-col">
+                    <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">
 
-                        {/* Banner solo si está en prueba */}
+                        {/* Banner solo si está en prueba (Fijo arriba) */}
                         {status === 'prueba' && (
-                            <TrialBanner daysRemaining={daysRemaining} />
+                            <div className="z-50 shrink-0">
+                                <TrialBanner daysRemaining={daysRemaining} />
+                            </div>
                         )}
 
-                        <div className="relative flex-1 pt-10 md:pt-0 pb-20 md:pb-0">
-                            <LogoutButton />
-                            {children}
+                        <div className="flex-1 overflow-y-auto relative flex flex-col">
+                            <div className="relative flex-1 pt-10 md:pt-0 pb-20 md:pb-0">
+                                <LogoutButton />
+                                {children}
+                            </div>
                         </div>
                     </div>
                 </div>
