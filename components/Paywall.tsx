@@ -60,7 +60,7 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
             {/* Logout Button for Paywall */}
             <button
                 onClick={() => supabase.auth.signOut()}
-                className="absolute top-4 right-4 z-[110] text-zinc-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest bg-black/20 hover:bg-black/40 px-3 py-1.5 rounded-lg backdrop-blur-sm"
+                className="fixed top-4 right-4 z-[110] text-zinc-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest bg-black/20 hover:bg-black/40 px-3 py-1.5 rounded-lg backdrop-blur-sm"
             >
                 Cerrar Sesión
             </button>

@@ -22,4 +22,4 @@ Mejorar la experiencia de usuario en dispositivos móviles y estados de bloqueo 
 | Fecha | Error Detectado | Solución Implementada |
 | :--- | :--- | :--- |
 | 2026-01-20 | Banner Móvil Scrollable | Se movió el `TrialBanner` fuera del contenedor scrollable del layout. |
-| 2026-01-20 | Banner se mueve con scroll móvil | Cambiado a `fixed top-0` con z-index superior (60) y ajustado padding del contenido. |
+| 2026-01-20 | Botón Logout Paywall posición aleatoria | Cambiado de `absolute` a `fixed` para garantizar posición consistente en top-right. |
