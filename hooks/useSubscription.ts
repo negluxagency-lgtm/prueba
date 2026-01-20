@@ -7,6 +7,7 @@ interface SubscriptionState {
     status: SubscriptionStatus | null;
     loading: boolean;
     daysRemaining: number;
+    isProfileComplete: boolean;
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -16,7 +17,8 @@ export function useSubscription() {
     const [state, setState] = useState<SubscriptionState>({
         status: null,
         loading: true,
-        daysRemaining: 0
+        daysRemaining: 0,
+        isProfileComplete: true // Por defecto true para no bloquear preventivamente
     });
 
     useEffect(() => {
@@ -33,18 +35,21 @@ export function useSubscription() {
             try {
                 const { data: profile, error } = await supabase
                     .from('perfiles')
-                    .select('estado, created_at')
+                    .select('estado, created_at, nombre_barberia, telefono')
                     .eq('id', user.id)
                     .single();
 
                 if (error) throw error;
+
+                const isProfileComplete = !!profile?.telefono;
 
                 // 1. Caso PAGADO
                 if (profile?.estado === 'pagado') {
                     setState({
                         status: 'pagado',
                         loading: false,
-                        daysRemaining: 0
+                        daysRemaining: 0,
+                        isProfileComplete
                     });
                     return;
                 }
@@ -61,7 +66,8 @@ export function useSubscription() {
                 setState({
                     status: isTrial ? 'prueba' : 'impago',
                     loading: false,
-                    daysRemaining
+                    daysRemaining,
+                    isProfileComplete
                 });
 
             } catch (error) {
@@ -70,7 +76,8 @@ export function useSubscription() {
                 setState({
                     status: 'impago',
                     loading: false,
-                    daysRemaining: 0
+                    daysRemaining: 0,
+                    isProfileComplete: true
                 });
             }
         }

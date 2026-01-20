@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import AuthGuard from "@/components/AuthGuard";
 import LogoutButton from "@/components/LogoutButton";
@@ -12,7 +14,14 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { status, loading, daysRemaining } = useSubscription();
+    const { status, loading, daysRemaining, isProfileComplete } = useSubscription();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && !isProfileComplete) {
+            router.replace('/configuracion');
+        }
+    }, [loading, isProfileComplete, router]);
 
     return (
         <AuthGuard>

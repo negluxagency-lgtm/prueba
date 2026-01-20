@@ -42,8 +42,8 @@ export default function RegisterPage() {
             if (error) throw error;
 
             toast.success('Cuenta creada exitosamente');
-            // Como la confirmación de email está desactivada, redirigimos directamente
-            router.push('/?registered=true');
+            // Redirigimos a la pantalla de configuración
+            router.push('/configuracion');
             router.refresh();
 
         } catch (error: any) {
