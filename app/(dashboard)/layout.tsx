@@ -56,7 +56,7 @@ export default function DashboardLayout({
                         )}
 
                         <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' ? 'pt-[52px] md:pt-0' : ''}`}>
-                            <div className="relative flex-1 pt-3 md:pt-0 pb-20 md:pb-0">
+                            <div className="relative flex-1 pt-0 md:pt-0 pb-20 md:pb-0">
                                 <LogoutButton />
                                 {children}
                             </div>

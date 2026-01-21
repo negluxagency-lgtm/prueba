@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Check, Star, Shield, X } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface PaywallProps {
     variant?: 'lock' | 'pricing';
@@ -8,6 +9,7 @@ interface PaywallProps {
 
 export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
     const [user, setUser] = useState<any>(null);
+    const { status, plan: paidPlan, loading: subLoading } = useSubscription();
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -20,7 +22,7 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
         return `${baseUrl}?client_reference_id=${user.id}&prefilled_email=${user.email}`;
     };
 
-    const PLANS = [
+    const ALL_PLANS = [
         {
             name: "Básico",
             price: "50€",
@@ -32,7 +34,7 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
             icon: Shield
         },
         {
-            name: "Premium",
+            name: "Profesional",
             price: "75€",
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
@@ -42,7 +44,7 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
             icon: Star
         },
         {
-            name: "Profesional",
+            name: "Premium",
             price: "99€",
             period: "/mes",
             description: "Para barberías profesionales.",
@@ -54,6 +56,13 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
     ];
 
     const isLock = variant === 'lock';
+
+    // Filtrar planes si ya está pagado
+    const displayPlans = (status === 'pagado' && paidPlan)
+        ? ALL_PLANS.filter(p => p.name.toLowerCase() === paidPlan.toLowerCase())
+        : ALL_PLANS;
+
+    if (subLoading) return null;
 
     return (
         <div className="h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-center p-4 md:p-8 pt-14 md:pt-8 overflow-y-auto relative">
@@ -71,40 +80,44 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
             <div className="max-w-5xl w-full relative z-10">
                 <div className="text-center mb-8 md:mb-16 mt-8 md:mt-0">
                     <h1 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-white mb-3 md:mb-4 leading-tight">
-                        {isLock ? (
+                        {status === 'pagado' ? (
+                            <>Tu <span className="text-amber-500">Plan Actual</span></>
+                        ) : isLock ? (
                             <>Activa <span className="text-amber-500">Nelux Barbershop</span></>
                         ) : (
                             <>Mejora tu <span className="text-amber-500">Plan</span></>
                         )}
                     </h1>
                     <p className="text-zinc-400 text-sm md:text-xl max-w-2xl mx-auto px-4">
-                        {isLock
-                            ? "Tu periodo de prueba ha finalizado. Elige un plan para seguir gestionando tu imperio sin interrupciones."
-                            : "Elige el plan que mejor se adapte a las necesidades de tu barbería."
+                        {status === 'pagado'
+                            ? "Aquí tienes las características incluidas en tu suscripción actual."
+                            : isLock
+                                ? "Tu periodo de prueba ha finalizado. Elige un plan para seguir gestionando tu imperio sin interrupciones."
+                                : "Elige el plan que mejor se adapte a las necesidades de tu barbería."
                         }
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start pb-12 md:pb-0">
-                    {PLANS.map((plan, index) => (
+                <div className={`grid grid-cols-1 gap-6 md:gap-8 items-start pb-12 md:pb-0 ${displayPlans.length > 1 ? 'md:grid-cols-3' : 'md:max-w-md mx-auto'}`}>
+                    {displayPlans.map((plan, index) => (
                         <div
                             key={index}
                             className={`
                                 relative p-6 md:p-8 rounded-[2rem] border transition-all duration-300 group flex flex-col
-                                ${plan.highlight
-                                    ? 'bg-zinc-900/80 border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.1)] md:scale-105 z-20 order-first md:order-none'
+                                ${plan.highlight || displayPlans.length === 1
+                                    ? 'bg-zinc-900/80 border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.1)] md:scale-105 z-20'
                                     : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/60'
                                 }
                             `}
                         >
-                            {plan.highlight && (
+                            {(plan.highlight && displayPlans.length > 1) && (
                                 <div className="absolute -top-3 md:-top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-black font-bold px-3 py-1 rounded-full text-xs md:text-sm uppercase tracking-wider shadow-lg whitespace-nowrap">
                                     Más Popular
                                 </div>
                             )}
 
                             <div className="flex items-center gap-3 mb-4">
-                                <div className={`p-2.5 md:p-3 rounded-xl ${plan.highlight ? 'bg-amber-500/10 text-amber-500' : 'bg-zinc-800 text-zinc-400'}`}>
+                                <div className={`p-2.5 md:p-3 rounded-xl ${plan.highlight || displayPlans.length === 1 ? 'bg-amber-500/10 text-amber-500' : 'bg-zinc-800 text-zinc-400'}`}>
                                     <plan.icon className="w-5 h-5 md:w-6 md:h-6" />
                                 </div>
                                 <h3 className="text-lg md:text-xl font-bold text-white uppercase">{plan.name}</h3>
@@ -121,7 +134,6 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
 
                             <ul className="space-y-3 md:space-y-4 mb-6 md:mb-8 flex-1">
                                 {plan.features.map((feature, i) => {
-                                    // 🟢 LÓGICA DE ICONOS AÑADIDA AQUÍ
                                     const isNegative = feature === "Sin tecnologías IA";
 
                                     return (
@@ -129,7 +141,7 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
                                             {isNegative ? (
                                                 <X className="w-4 h-4 md:w-5 md:h-5 shrink-0 text-zinc-600 mt-0.5" />
                                             ) : (
-                                                <Check className={`w-4 h-4 md:w-5 md:h-5 shrink-0 ${plan.highlight ? 'text-amber-500' : 'text-zinc-500'} mt-0.5`} />
+                                                <Check className={`w-4 h-4 md:w-5 md:h-5 shrink-0 ${plan.highlight || displayPlans.length === 1 ? 'text-amber-500' : 'text-zinc-500'} mt-0.5`} />
                                             )}
                                             <span className={`leading-tight ${isNegative ? "text-zinc-500" : "text-zinc-300"}`}>
                                                 {feature}
@@ -139,20 +151,34 @@ export const Paywall = ({ variant = 'lock' }: PaywallProps) => {
                                 })}
                             </ul>
 
-                            <a
-                                href={getLink(plan.link)}
-                                className={`
-                                    block w-full py-3 md:py-4 rounded-xl font-black text-center text-xs md:text-sm uppercase tracking-wide transition-all
-                                    ${plan.highlight
-                                        ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20'
-                                        : 'bg-zinc-800 text-white hover:bg-zinc-700'
-                                    }
-                                `}
-                            >
-                                Seleccionar Plan
-                            </a>
+                            {status !== 'pagado' && (
+                                <a
+                                    href={getLink(plan.link)}
+                                    className={`
+                                        block w-full py-3 md:py-4 rounded-xl font-black text-center text-xs md:text-sm uppercase tracking-wide transition-all
+                                        ${plan.highlight
+                                            ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20'
+                                            : 'bg-zinc-800 text-white hover:bg-zinc-700'
+                                        }
+                                    `}
+                                >
+                                    Seleccionar Plan
+                                </a>
+                            )}
                         </div>
                     ))}
+                </div>
+
+                <div className="mt-12 flex justify-center">
+                    <a
+                        href="https://billing.stripe.com/p/login/7sY4gy54TaRS9eL6vT28800"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-900/50 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 hover:bg-zinc-800 transition-all text-xs font-bold uppercase tracking-widest group"
+                    >
+                        <Shield className="w-4 h-4 group-hover:text-amber-500 transition-colors" />
+                        Gestionar Suscripción
+                    </a>
                 </div>
 
                 <p className="text-center text-zinc-600 text-[10px] md:text-xs mt-8 md:mt-12 pb-8 md:pb-0">

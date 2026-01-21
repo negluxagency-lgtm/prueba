@@ -5,6 +5,7 @@ export type SubscriptionStatus = 'pagado' | 'prueba' | 'impago';
 
 interface SubscriptionState {
     status: SubscriptionStatus | null;
+    plan: string | null;
     loading: boolean;
     daysRemaining: number;
     isProfileComplete: boolean;
@@ -16,6 +17,7 @@ const TRIAL_DAYS = 7;
 export function useSubscription() {
     const [state, setState] = useState<SubscriptionState>({
         status: null,
+        plan: null,
         loading: true,
         daysRemaining: 0,
         isProfileComplete: true // Por defecto true para no bloquear preventivamente
@@ -35,7 +37,7 @@ export function useSubscription() {
             try {
                 const { data: profile, error } = await supabase
                     .from('perfiles')
-                    .select('estado, created_at, nombre_barberia, telefono')
+                    .select('estado, plan, created_at, nombre_barberia, telefono')
                     .eq('id', user.id)
                     .single();
 
@@ -47,6 +49,7 @@ export function useSubscription() {
                 if (profile?.estado === 'pagado') {
                     setState({
                         status: 'pagado',
+                        plan: profile?.plan || null,
                         loading: false,
                         daysRemaining: 0,
                         isProfileComplete
@@ -65,6 +68,7 @@ export function useSubscription() {
 
                 setState({
                     status: isTrial ? 'prueba' : 'impago',
+                    plan: null,
                     loading: false,
                     daysRemaining,
                     isProfileComplete
@@ -75,6 +79,7 @@ export function useSubscription() {
                 // Fallback seguro: Asumir impago si falla la comprobación crítica
                 setState({
                     status: 'impago',
+                    plan: null,
                     loading: false,
                     daysRemaining: 0,
                     isProfileComplete: true
