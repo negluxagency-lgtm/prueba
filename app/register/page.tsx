@@ -132,7 +132,7 @@ export default function RegisterPage() {
                     <div className="mt-6 text-center border-t border-zinc-800 pt-6">
                         <p className="text-zinc-500 text-xs">
                             ¿Ya tienes cuenta?{' '}
-                            <Link href="/" className="text-amber-500 font-bold hover:text-amber-400 transition-colors">
+                            <Link href="/pricing" className="text-amber-500 font-bold hover:text-amber-400 transition-colors">
                                 Iniciar Sesión
                             </Link>
                         </p>

@@ -327,10 +327,10 @@ export default function InicioPage() {
 
                     <Link
                         href="/register"
-                        className="group inline-flex items-center justify-center gap-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold px-10 py-5 rounded-2xl text-xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40"
+                        className="group inline-flex items-center justify-center gap-2 md:gap-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold px-6 py-3 md:px-10 md:py-5 rounded-xl md:rounded-2xl text-base md:text-xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40"
                     >
                         Empieza tu Prueba Gratis
-                        <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
                     </Link>
 
                     <p className="text-zinc-600 text-sm mt-6">
