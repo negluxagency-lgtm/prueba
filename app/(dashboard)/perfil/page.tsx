@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { manageSubscription } from '@/app/actions/manage-subscription'
-import { Store, CreditCard, Calendar, Mail, User, LogOut } from 'lucide-react'
+import { Store, CreditCard, Calendar, Mail, User, LogOut, Headset } from 'lucide-react'
 import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
 
@@ -236,20 +236,50 @@ export default function PerfilPage() {
                         </div>
 
                         {/* Botón de gestión */}
-                        <button
-                            onClick={handleManageSubscription}
+                        <a
+                            href="https://billing.stripe.com/p/login/7sY4gy54TaRS9eL6vT28800"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 
                                      text-white font-medium rounded-lg transition-all duration-200
-                                     border border-zinc-700 hover:border-zinc-600"
+                                     border border-zinc-700 hover:border-zinc-600 text-center block"
                         >
                             Gestionar Suscripción / Cancelar
-                        </button>
+                        </a>
                     </div>
                 </div>
 
                 {/* Tarjeta 3: Planes y Precios */}
                 <div className="bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 overflow-hidden">
                     <Paywall variant="pricing" isSection={true} />
+                </div>
+
+                {/* Tarjeta 4: Contactar con Soporte */}
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-amber-500/10 rounded-lg">
+                            <Headset className="w-6 h-6 text-amber-500" />
+                        </div>
+                        <h2 className="text-xl font-semibold text-white">
+                            Contactar con Soporte
+                        </h2>
+                    </div>
+
+                    <div className="space-y-4">
+                        <p className="text-sm text-zinc-400">
+                            ¿Tienes alguna duda o problema técnico? Nuestro equipo está listo para ayudarte por WhatsApp.
+                        </p>
+                        <a
+                            href="https://wa.me/34623064127"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 
+                                     text-white font-medium rounded-lg transition-all duration-200
+                                     border border-zinc-700 hover:border-zinc-600 text-center block"
+                        >
+                            Hablar con Soporte
+                        </a>
+                    </div>
                 </div>
 
                 {/* Zona de Peligro */}
