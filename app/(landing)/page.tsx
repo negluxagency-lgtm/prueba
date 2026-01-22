@@ -344,7 +344,6 @@ export default function InicioPage() {
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-zinc-500 text-sm">
                     <p>© 2026 Nelux. Todos los derechos reservados.</p>
                     <div className="flex items-center gap-6">
-                        <Link href="/pricing" className="hover:text-white transition-colors">Precios</Link>
                         <Link href="/register" className="hover:text-white transition-colors">Registro</Link>
                     </div>
                 </div>

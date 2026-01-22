@@ -29,17 +29,39 @@ export default function RegisterPage() {
         }
 
         try {
-            const { data, error } = await supabase.auth.signUp({
+            // 1. Verificar si el nombre de la barbería o el email ya existen
+            const { data: existingData, error: searchError } = await supabase
+                .from('perfiles')
+                .select('nombre_barberia, email')
+                .or(`nombre_barberia.eq.${barberiaNombre.trim()},email.eq.${email.trim()}`)
+                .maybeSingle();
+
+            if (searchError) {
+                console.error('Error al verificar duplicados:', searchError);
+            }
+
+            if (existingData) {
+                if (existingData.nombre_barberia?.toLowerCase() === barberiaNombre.trim().toLowerCase()) {
+                    setErrorMsg("Ese nombre ya está en uso, prueba con otro.");
+                } else {
+                    setErrorMsg("Este correo electrónico ya está registrado.");
+                }
+                setLoading(false);
+                return;
+            }
+
+            // 2. Proceder con el registro
+            const { error: signUpError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
                     data: {
-                        barberia_nombre: barberiaNombre
+                        barberia_nombre: barberiaNombre.trim()
                     }
                 }
             });
 
-            if (error) throw error;
+            if (signUpError) throw signUpError;
 
             toast.success('Cuenta creada exitosamente');
             // Redirigimos a la pantalla de configuración
@@ -132,7 +154,7 @@ export default function RegisterPage() {
                     <div className="mt-6 text-center border-t border-zinc-800 pt-6">
                         <p className="text-zinc-500 text-xs">
                             ¿Ya tienes cuenta?{' '}
-                            <Link href="/pricing" className="text-amber-500 font-bold hover:text-amber-400 transition-colors">
+                            <Link href="/inicio" className="text-amber-500 font-bold hover:text-amber-400 transition-colors">
                                 Iniciar Sesión
                             </Link>
                         </p>

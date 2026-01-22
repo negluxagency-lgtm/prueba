@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, TrendingUp, MessageSquare, Scissors, Package, CreditCard } from "lucide-react";
+import { Calendar, TrendingUp, MessageSquare, Scissors, Package, CreditCard, User } from "lucide-react";
 
 export function Sidebar() {
     const pathname = usePathname();
@@ -33,8 +33,9 @@ export function Sidebar() {
                     <MessageSquare className={`${isActive("/mensajes")} hover:text-amber-500 transition-colors cursor-pointer`} size={26} />
                 </Link>
 
-                <Link href="/pricing" className="p-4">
-                    <CreditCard className={`${isActive("/pricing")} hover:text-amber-500 transition-colors cursor-pointer`} size={26} />
+
+                <Link href="/perfil" className="p-4">
+                    <User className={`${isActive("/perfil")} hover:text-amber-500 transition-colors cursor-pointer`} size={26} />
                 </Link>
             </nav>
         </aside>
