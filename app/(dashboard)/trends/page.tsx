@@ -1,8 +1,9 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DetailedRevenueChart } from '@/components/trends/DetailedRevenueChart';
 import { TrendingUp, Users, DollarSign, Calendar } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { useTrends } from '@/hooks/useTrends';
 import { MetricType } from '@/components/trends/DetailedRevenueChart';
 import { MonthlyTrends } from '@/components/dashboard/MonthlyTrends';
@@ -10,6 +11,35 @@ import { MonthlyTrends } from '@/components/dashboard/MonthlyTrends';
 export default function TrendsPage() {
   const { loading, chartData, metrics, previousMetrics, range, setRange } = useTrends();
   const [activeMetric, setActiveMetric] = React.useState<MetricType>('revenue');
+  const [objectives, setObjectives] = useState({
+    ingresos: 0,
+    cortes: 0,
+    productos: 0
+  });
+  const [loadingObjectives, setLoadingObjectives] = useState(true);
+
+  React.useEffect(() => {
+    const fetchObjectives = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('perfiles')
+        .select('objetivo_ingresos, objetivo_cortes, objetivo_productos')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setObjectives({
+          ingresos: Number(profile.objetivo_ingresos) || 0,
+          cortes: Number(profile.objetivo_cortes) || 0,
+          productos: Number(profile.objetivo_productos) || 0
+        });
+      }
+      setLoadingObjectives(false);
+    };
+    fetchObjectives();
+  }, []);
 
   return (
     <main className="flex-1 p-2 md:p-10 max-w-4xl md:max-w-6xl mx-auto w-full pb-24 md:pb-10">
@@ -72,6 +102,10 @@ export default function TrendsPage() {
           revenue={metrics.totalRevenue}
           cuts={metrics.totalCuts}
           products={metrics.totalProducts}
+          objRevenue={objectives.ingresos}
+          objCuts={objectives.cortes}
+          objProducts={objectives.productos}
+          loading={loadingObjectives}
         />
       </div>
     </main>

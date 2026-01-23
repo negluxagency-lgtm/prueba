@@ -7,6 +7,7 @@ import { manageSubscription } from '@/app/actions/manage-subscription'
 import { Store, CreditCard, Calendar, Mail, User, LogOut, Headset } from 'lucide-react'
 import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
+import { ResetPasswordButton } from '@/components/ResetPasswordButton'
 
 // Función para formatear fecha
 function formatearFecha(fecha: string) {
@@ -235,17 +236,19 @@ export default function PerfilPage() {
                             </div>
                         </div>
 
-                        {/* Botón de gestión */}
-                        <a
-                            href="https://billing.stripe.com/p/login/7sY4gy54TaRS9eL6vT28800"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 
-                                     text-white font-medium rounded-lg transition-all duration-200
-                                     border border-zinc-700 hover:border-zinc-600 text-center block"
-                        >
-                            Gestionar Suscripción / Cancelar
-                        </a>
+                        {/* Botón de gestión - Solo visible si no es periodo de prueba */}
+                        {perfil.estado !== 'prueba' && perfil.estado !== 'periodo_prueba' && (
+                            <a
+                                href="https://billing.stripe.com/p/login/7sY4gy54TaRS9eL6vT28800"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 
+                                         text-white font-medium rounded-lg transition-all duration-200
+                                         border border-zinc-700 hover:border-zinc-600 text-center block"
+                            >
+                                Gestionar Suscripción / Cancelar
+                            </a>
+                        )}
                     </div>
                 </div>
 
@@ -298,6 +301,7 @@ export default function PerfilPage() {
                             <LogOut className="w-4 h-4" />
                             <span className="font-medium">Cerrar Sesión</span>
                         </button>
+                        <ResetPasswordButton />
                     </div>
                 </div>
             </div>

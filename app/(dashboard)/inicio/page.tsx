@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useTrends } from "@/hooks/useTrends";
 import { Appointment, AppointmentFormData } from "@/types";
@@ -18,6 +19,12 @@ export default function Dashboard() {
   const router = useRouter(); // Asegúrate de tener esto si no lo tienes
   const searchParams = useSearchParams();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [objectives, setObjectives] = useState({
+    ingresos: 0,
+    cortes: 0,
+    productos: 0
+  });
+  const [loadingObjectives, setLoadingObjectives] = useState(true);
 
   const {
     appointments: allAppointments,
@@ -31,6 +38,30 @@ export default function Dashboard() {
 
   const { chartData, loading: trendsLoading, setRange } = useTrends(selectedDate);
 
+  // Fetch Objetivos de Perfil
+  React.useEffect(() => {
+    const fetchObjectives = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('perfiles')
+        .select('ingresos_dia, cortes_dia, productos_dia')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setObjectives({
+          ingresos: Number(profile.ingresos_dia) || 0,
+          cortes: Number(profile.cortes_dia) || 0,
+          productos: Number(profile.productos_dia) || 0
+        });
+      }
+      setLoadingObjectives(false);
+    };
+    fetchObjectives();
+  }, []);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCita, setEditingCita] = useState<Appointment | null>(null);
 
@@ -42,17 +73,17 @@ export default function Dashboard() {
   const stats = {
     ingresos: {
       actual: allAppointments.filter(a => a.confirmada).reduce((sum, a) => sum + (Number(a.Precio) || 0), 0),
-      objetivo: 1000, // Objetivo diario personalizable
+      objetivo: objectives.ingresos,
       label: 'Ingresos del Día'
     },
     cortes: {
       actual: appointments.filter(a => a.confirmada).length,
-      objetivo: 50,
+      objetivo: objectives.cortes,
       label: 'Cortes Realizados'
     },
     productos: {
       actual: productSales.length,
-      objetivo: 3,
+      objetivo: objectives.productos,
       label: 'Ventas Productos'
     }
   };
@@ -116,6 +147,7 @@ export default function Dashboard() {
               ingresos={stats.ingresos}
               cortes={stats.cortes}
               productos={stats.productos}
+              loading={loadingObjectives}
             />
           </div>
           <div className="w-[25%] lg:hidden flex justify-end">

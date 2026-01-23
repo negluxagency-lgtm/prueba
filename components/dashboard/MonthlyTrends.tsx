@@ -23,8 +23,8 @@ interface TrendItemProps {
 const TrendItem: React.FC<TrendItemProps> = ({
     label, actual, objetivo, icon, color, bgColor, barColor, unit = ''
 }) => {
-    const percentage = Math.min(Math.round((actual / objetivo) * 100), 100);
-    const realPercentage = Math.round((actual / objetivo) * 100);
+    const percentage = objetivo > 0 ? Math.min(Math.round((actual / objetivo) * 100), 100) : 0;
+    const realPercentage = objetivo > 0 ? Math.round((actual / objetivo) * 100) : 0;
 
     return (
         <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4 transition-all active:scale-[0.98]">
@@ -68,11 +68,26 @@ interface MonthlyTrendsProps {
     revenue: number;
     cuts: number;
     products: number;
+    objRevenue?: number;
+    objCuts?: number;
+    objProducts?: number;
+    loading?: boolean;
 }
 
-export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ revenue, cuts, products }) => {
+export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({
+    revenue,
+    cuts,
+    products,
+    objRevenue = 25000,
+    objCuts = 1000,
+    objProducts = 40,
+    loading
+}) => {
     return (
-        <div className="space-y-4 mb-8">
+        <div className={cn(
+            "space-y-4 mb-8 transition-opacity duration-300",
+            loading ? "opacity-40 animate-pulse pointer-events-none" : "opacity-100"
+        )}>
             <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-amber-500/10 rounded-lg">
@@ -86,7 +101,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ revenue, cuts, pro
                 <TrendItem
                     label="Ingresos Totales"
                     actual={revenue}
-                    objetivo={25000}
+                    objetivo={objRevenue}
                     unit="€"
                     icon={<DollarSign />}
                     color="text-[#34C759]"
@@ -96,7 +111,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ revenue, cuts, pro
                 <TrendItem
                     label="Cortes Realizados"
                     actual={cuts}
-                    objetivo={1000}
+                    objetivo={objCuts}
                     icon={<Scissors />}
                     color="text-[#007AFF]"
                     bgColor="bg-[#007AFF]/10"
@@ -105,7 +120,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({ revenue, cuts, pro
                 <TrendItem
                     label="Productos Vendidos"
                     actual={products}
-                    objetivo={40}
+                    objetivo={objProducts}
                     icon={<ShoppingBag />}
                     color="text-[#FF3B30]"
                     bgColor="bg-[#FF3B30]/10"

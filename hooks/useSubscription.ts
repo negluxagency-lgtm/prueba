@@ -20,7 +20,7 @@ export function useSubscription() {
         plan: null,
         loading: true,
         daysRemaining: 0,
-        isProfileComplete: true // Por defecto true para no bloquear preventivamente
+        isProfileComplete: false // Por defecto false para validar configuración
     });
 
     useEffect(() => {
@@ -29,7 +29,10 @@ export function useSubscription() {
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
 
+            console.log("useSubscription: User session check", { userId: user?.id });
+
             if (!user) {
+                console.log("useSubscription: No user found, stopping.");
                 setState(prev => ({ ...prev, loading: false }));
                 return;
             }
@@ -41,7 +44,31 @@ export function useSubscription() {
                     .eq('id', user.id)
                     .single();
 
-                if (error) throw error;
+                console.log("useSubscription: Profile fetch result", { profile, error });
+
+                if (error && error.code !== 'PGRST116') {
+                    throw error;
+                }
+
+                if (!profile) {
+                    console.log("useSubscription: No profile found (new user). Calculating trial from auth metadata.");
+
+                    const userCreatedAt = new Date(user.created_at).getTime();
+                    const now = Date.now();
+                    const diffMs = now - userCreatedAt;
+                    const daysPassed = Math.floor(diffMs / ONE_DAY_MS);
+                    const isTrial = daysPassed < TRIAL_DAYS;
+                    const daysRemaining = Math.max(0, TRIAL_DAYS - daysPassed);
+
+                    setState({
+                        status: isTrial ? 'prueba' : 'impago',
+                        plan: null,
+                        loading: false,
+                        daysRemaining,
+                        isProfileComplete: false
+                    });
+                    return;
+                }
 
                 const isProfileComplete = !!profile?.telefono;
 
@@ -66,6 +93,8 @@ export function useSubscription() {
                 const isTrial = daysPassed < TRIAL_DAYS;
                 const daysRemaining = Math.max(0, TRIAL_DAYS - daysPassed);
 
+                console.log("useSubscription: Setting test/unpaid status for existing profile", { isTrial, daysRemaining, isProfileComplete });
+
                 setState({
                     status: isTrial ? 'prueba' : 'impago',
                     plan: null,
@@ -74,16 +103,9 @@ export function useSubscription() {
                     isProfileComplete
                 });
 
-            } catch (error) {
-                console.error('Error checking subscription:', error);
-                // Fallback seguro: Asumir impago si falla la comprobación crítica
-                setState({
-                    status: 'impago',
-                    plan: null,
-                    loading: false,
-                    daysRemaining: 0,
-                    isProfileComplete: true
-                });
+            } catch (error: any) {
+                console.error('CRITICAL: Error checking subscription:', error.message || error);
+                setState(prev => ({ ...prev, loading: false, status: 'impago' }));
             }
         }
 

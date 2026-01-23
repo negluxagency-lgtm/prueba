@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { Save, Clock, MapPin, Phone, CreditCard, ShoppingBag, Info, Scissors, Loader2 } from 'lucide-react';
+import { Save, Clock, MapPin, Phone, CreditCard, ShoppingBag, Info, Scissors, Loader2, User, DollarSign, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function ConfigurationPage() {
@@ -21,27 +21,86 @@ export default function ConfigurationPage() {
         telefono: '',
         pagos: '',
         productos: '',
-        info: ''
+        info: '',
+        nombre_encargado: '',
+        objetivo_ingresos: '',
+        objetivo_cortes: '',
+        objetivo_productos: ''
     });
 
     useEffect(() => {
         const checkUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
+            console.log("Config Page: [CYCLE] checkUser triggered");
+            // 1. Intentar obtener sesión actual
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError) console.error("Config Page: Session error", sessionError);
+
+            let currentUser = session?.user;
+            console.log("Config Page: Initial session check", { hasUser: !!currentUser, email: currentUser?.email });
+
+            if (!currentUser) {
+                console.log("Config Page: No initial session, retrying for 2 seconds...");
+                // Reintentos agresivos durante 2 segundos
+                for (let i = 0; i < 4; i++) {
+                    await new Promise(r => setTimeout(r, 500));
+                    const { data: { session: retrySession } } = await supabase.auth.getSession();
+                    if (retrySession?.user) {
+                        currentUser = retrySession.user;
+                        console.log("Config Page: Session found after retry", { i, email: currentUser.email });
+                        break;
+                    }
+                    console.log(`Config Page: Retry ${i + 1} failed...`);
+                }
+            }
+
+            if (!currentUser) {
+                console.warn("Config Page: Still no session after all retries. Redirecting to root (/). Current Path:", window.location.pathname);
                 router.push('/');
                 return;
             }
-            setUser(user);
+
+            setUser(currentUser);
+            console.log("Config Page: User state set successfully:", currentUser.id);
+
+            // Fetch existing profile data
+            console.log("Config Page: Fetching profile for", currentUser.id);
+            const { data: profile, error: profileError } = await supabase
+                .from('perfiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (profileError && profileError.code !== 'PGRST116') {
+                console.error("Config Page: Profile fetch error", profileError);
+            }
+
+            console.log("Config Page: Profile result", { hasProfile: !!profile });
+
+            if (profile) {
+                setFormData({
+                    servicios: profile.servicios || '',
+                    horario: profile.horario || '',
+                    Direccion: profile.Direccion || '',
+                    telefono: profile.telefono || '',
+                    pagos: profile.pagos || '',
+                    productos: profile.productos || '',
+                    info: profile.info || '',
+                    nombre_encargado: profile.nombre_encargado || '',
+                    objetivo_ingresos: String(profile.objetivo_ingresos || ''),
+                    objetivo_cortes: String(profile.objetivo_cortes || ''),
+                    objetivo_productos: String(profile.objetivo_productos || '')
+                });
+            }
         };
         checkUser();
 
-        // Bloqueo de navegación hacia atrás
+        // Bloqueo de navegación desactivado temporalmente para depuración
+        /*
         const handlePopState = (e: PopStateEvent) => {
             window.history.pushState(null, '', window.location.pathname);
             toast.error('Debes completar la configuración para continuar');
         };
 
-        // Bloqueo de cierre/recarga de pestaña
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
             e.preventDefault();
             e.returnValue = '';
@@ -55,6 +114,7 @@ export default function ConfigurationPage() {
             window.removeEventListener('popstate', handlePopState);
             window.removeEventListener('beforeunload', handleBeforeUnload);
         };
+        */
     }, [router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -77,7 +137,11 @@ export default function ConfigurationPage() {
                     telefono: formData.telefono,
                     pagos: formData.pagos,
                     productos: formData.productos,
-                    info: formData.info
+                    info: formData.info,
+                    nombre_encargado: formData.nombre_encargado,
+                    objetivo_ingresos: parseFloat(formData.objetivo_ingresos) || 0,
+                    objetivo_cortes: parseInt(formData.objetivo_cortes) || 0,
+                    objetivo_productos: parseInt(formData.objetivo_productos) || 0
                 }, {
                     onConflict: 'id'
                 })
@@ -95,7 +159,7 @@ export default function ConfigurationPage() {
             }
 
             toast.success('Configuración guardada correctamente');
-            router.push('/');
+            router.push('/inicio');
             router.refresh();
         } catch (error: any) {
             console.error('Error al actualizar perfil (Objeto completo):', JSON.stringify(error, null, 2));
@@ -158,6 +222,92 @@ export default function ConfigurationPage() {
                                 required
                                 className="w-full p-3.5 md:p-4 rounded-xl md:rounded-2xl bg-zinc-800/30 border border-zinc-700/50 text-sm text-white outline-none focus:border-amber-500 transition-all placeholder:text-zinc-600 shadow-inner"
                             />
+                        </div>
+
+                        {/* Nombre del Encargado */}
+                        <div className="space-y-1.5 md:space-y-2">
+                            <label className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-zinc-500 uppercase ml-1">
+                                <User className="w-3 h-3 text-amber-500" />
+                                Nombre del encargado
+                            </label>
+                            <input
+                                type="text"
+                                name="nombre_encargado"
+                                placeholder="Ej: Juan Pérez"
+                                value={formData.nombre_encargado}
+                                onChange={handleChange}
+                                required
+                                className="w-full p-3.5 md:p-4 rounded-xl md:rounded-2xl bg-zinc-800/30 border border-zinc-700/50 text-sm text-white outline-none focus:border-amber-500 transition-all placeholder:text-zinc-600 shadow-inner"
+                            />
+                        </div>
+
+                        {/* Separador/Título Objetivos */}
+                        <div className="md:col-span-2 pt-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Target className="w-4 h-4 text-amber-500" />
+                                <h3 className="text-xs font-black uppercase text-white tracking-wider">Objetivos Mensuales</h3>
+                                <div className="h-[1px] flex-1 bg-zinc-800 ml-2"></div>
+                            </div>
+                        </div>
+
+                        {/* Objetivo Ingresos Mensual */}
+                        <div className="space-y-1.5 md:space-y-2">
+                            <label className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-zinc-500 uppercase ml-1">
+                                <DollarSign className="w-3 h-3 text-amber-500" />
+                                Ingresos Mensuales (€)
+                            </label>
+                            <input
+                                type="number"
+                                name="objetivo_ingresos"
+                                min="0"
+                                step="any"
+                                onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
+                                placeholder="Ej: 3000"
+                                value={formData.objetivo_ingresos}
+                                onChange={handleChange}
+                                required
+                                className="w-full p-3.5 md:p-4 rounded-xl md:rounded-2xl bg-zinc-800/30 border border-zinc-700/50 text-sm text-white outline-none focus:border-amber-500 transition-all placeholder:text-zinc-600 shadow-inner"
+                            />
+                        </div>
+
+                        {/* Contenedor para Cortes y Productos Mensuales */}
+                        <div className="grid grid-cols-2 gap-4 md:gap-6 md:col-span-1">
+                            <div className="space-y-1.5 md:space-y-2">
+                                <label className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-zinc-500 uppercase ml-1">
+                                    <Scissors className="w-3 h-3 text-amber-500" />
+                                    Cortes
+                                </label>
+                                <input
+                                    type="number"
+                                    name="objetivo_cortes"
+                                    min="0"
+                                    step="1"
+                                    onKeyDown={(e) => ['e', 'E', '+', '-', '.', ','].includes(e.key) && e.preventDefault()}
+                                    placeholder="Ej: 150"
+                                    value={formData.objetivo_cortes}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full p-3.5 md:p-4 rounded-xl md:rounded-2xl bg-zinc-800/30 border border-zinc-700/50 text-sm text-white outline-none focus:border-amber-500 transition-all placeholder:text-zinc-600 shadow-inner"
+                                />
+                            </div>
+                            <div className="space-y-1.5 md:space-y-2">
+                                <label className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-zinc-500 uppercase ml-1">
+                                    <ShoppingBag className="w-3 h-3 text-amber-500" />
+                                    Productos
+                                </label>
+                                <input
+                                    type="number"
+                                    name="objetivo_productos"
+                                    min="0"
+                                    step="1"
+                                    onKeyDown={(e) => ['e', 'E', '+', '-', '.', ','].includes(e.key) && e.preventDefault()}
+                                    placeholder="Ej: 40"
+                                    value={formData.objetivo_productos}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full p-3.5 md:p-4 rounded-xl md:rounded-2xl bg-zinc-800/30 border border-zinc-700/50 text-sm text-white outline-none focus:border-amber-500 transition-all placeholder:text-zinc-600 shadow-inner"
+                                />
+                            </div>
                         </div>
 
                         {/* Horario */}
@@ -281,6 +431,6 @@ export default function ConfigurationPage() {
                     </button>
                 </form>
             </motion.div>
-        </div>
+        </div >
     );
 }

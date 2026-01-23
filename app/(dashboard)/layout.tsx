@@ -8,6 +8,7 @@ import LogoutButton from "@/components/LogoutButton";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Paywall } from "@/components/Paywall";
 import { TrialBanner } from "@/components/TrialBanner";
+import { TrialNoticeModal } from "@/components/TrialNoticeModal";
 
 export default function DashboardLayout({
     children,
@@ -18,10 +19,12 @@ export default function DashboardLayout({
     const router = useRouter();
 
     useEffect(() => {
-        if (!loading && !isProfileComplete) {
+        console.log("DashboardLayout: Redirect check", { loading, isProfileComplete, status });
+        if (!loading && !isProfileComplete && status) {
+            console.log("DashboardLayout: Conditions met. Redirecting to /configuracion...");
             router.replace('/configuracion');
         }
-    }, [loading, isProfileComplete, router]);
+    }, [loading, isProfileComplete, status, router]);
 
     return (
         <AuthGuard>
@@ -64,6 +67,7 @@ export default function DashboardLayout({
                     </div>
                 </div>
             )}
+            <TrialNoticeModal userStatus={status} />
         </AuthGuard>
     );
 }

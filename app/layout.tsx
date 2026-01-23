@@ -25,8 +25,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
-      <body className={`${manrope.className} antialiased bg-black text-white selection:bg-amber-500/30`}>
+    <html lang="es" suppressHydrationWarning>
+      <body
+        className={`${manrope.className} antialiased bg-black text-white selection:bg-amber-500/30`}
+        suppressHydrationWarning
+      >
         {children}
         <Toaster
           position="top-right"

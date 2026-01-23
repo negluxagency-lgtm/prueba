@@ -1,0 +1,31 @@
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export function createClient() {
+    const cookieStore = cookies()
+
+    return createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                async getAll() {
+                    return (await cookieStore).getAll()
+                },
+                async setAll(cookiesToSet) {
+                    try {
+                        const resolvedCookieStore = await cookieStore
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            resolvedCookieStore.set(name, value, options)
+                        )
+                    } catch {
+                        // El método setAll se llama a veces desde Server Components.
+                        // Esto puede lanzar errores si intentamos setear cookies
+                        // desde un componente que no es una Server Action o Route Handler.
+                        // Este catch evita que la app explote, lo cual es el comportamiento deseado.
+                    }
+                },
+            },
+        }
+    )
+}

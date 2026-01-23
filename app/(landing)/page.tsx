@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Bot, TrendingUp, Zap, ArrowRight, CheckCircle2, MessageCircle, Package } from 'lucide-react';
+import { Bot, TrendingUp, Zap, ArrowRight, CheckCircle2, MessageCircle, Package, Power, Smartphone, BrainCircuit, QrCode } from 'lucide-react';
 import DemoAppointmentTable from '@/components/landing/DemoAppointmentTable';
 import DemoRingChart from '@/components/landing/DemoRingChart';
 import DemoGrowthChart from '@/components/landing/DemoGrowthChart';
@@ -14,10 +14,33 @@ export const metadata = {
 export default function InicioPage() {
     return (
         <main className="min-h-screen bg-zinc-950 overflow-hidden">
+            {/* Navigation */}
+            <nav className="fixed top-0 left-0 right-0 z-[100] border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl">
+                <div className="max-w-7xl mx-auto px-6 h-16 md:h-20 flex items-center justify-between">
+                    <div className="text-xl md:text-2xl font-black italic uppercase tracking-tighter text-white">
+                        Nelux<span className="text-amber-500">Barber</span>
+                    </div>
+                    <div className="flex items-center gap-2 md:gap-6">
+                        <Link
+                            href="/inicio"
+                            className="text-zinc-400 hover:text-white text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors px-2 md:px-4 py-2"
+                        >
+                            Log In
+                        </Link>
+                        <Link
+                            href="/register"
+                            className="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 md:px-6 py-2 md:py-3 rounded-xl transition-all"
+                        >
+                            Registro
+                        </Link>
+                    </div>
+                </div>
+            </nav>
+
             {/* ═══════════════════════════════════════════════════════════════════════
                 HERO SECTION
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative min-h-[80vh] md:min-h-[90vh] flex flex-col items-center justify-center px-4 md:px-6 py-12 md:py-20">
+            <section className="relative min-h-[80vh] md:min-h-[90vh] flex flex-col items-center justify-center px-4 md:px-6 pt-24 md:pt-32 pb-12 md:py-20">
                 {/* Radial gradient glow at top */}
                 <div
                     className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none"
@@ -305,6 +328,134 @@ export default function InicioPage() {
             </section>
 
             {/* ═══════════════════════════════════════════════════════════════════════
+                CÓMO FUNCIONA SECTION
+            ═══════════════════════════════════════════════════════════════════════ */}
+            <section className="relative py-20 md:py-32 px-6 bg-zinc-950">
+                <div className="max-w-7xl mx-auto">
+                    {/* Header */}
+                    <div className="text-center mb-12 md:mb-20">
+                        <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
+                            Cómo <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">Funciona</span>
+                        </h2>
+                        <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto">
+                            De 0 a piloto automático en 4 pasos. Sin complicaciones técnicas.
+                        </p>
+                    </div>
+
+                    {/* Grid 2x2 en Desktop, Timeline Vertical en Móvil */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                        {/* Step 1 */}
+                        <div className="relative group">
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 transition-all duration-300 hover:border-amber-500/30 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.1)]">
+                                {/* Step Number Background */}
+                                <div className="absolute top-4 right-4 text-7xl md:text-8xl font-black text-zinc-800 opacity-50 select-none">
+                                    01
+                                </div>
+
+                                {/* Icon */}
+                                <div className="relative z-10 mb-6">
+                                    <div className="inline-flex p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
+                                        <Power className="w-8 h-8 text-amber-500" />
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="relative z-10">
+                                    <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
+                                        ACTIVA EL NÚCLEO
+                                    </h3>
+                                    <p className="text-zinc-400 leading-relaxed">
+                                        Elige tu plan desde 50€/mes + 1% de la facturación agendada por IA. Esto cubre gastos de línea móvil exclusiva y asegura un uso responsable de nuestra tecnología.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Step 2 */}
+                        <div className="relative group">
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 transition-all duration-300 hover:border-amber-500/30 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.1)]">
+                                {/* Step Number Background */}
+                                <div className="absolute top-4 right-4 text-7xl md:text-8xl font-black text-zinc-800 opacity-50 select-none">
+                                    02
+                                </div>
+
+                                {/* Icon */}
+                                <div className="relative z-10 mb-6">
+                                    <div className="inline-flex p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
+                                        <Smartphone className="w-8 h-8 text-amber-500" />
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="relative z-10">
+                                    <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
+                                        LA LÍNEA ROJA
+                                    </h3>
+                                    <p className="text-zinc-400 leading-relaxed">
+                                        Te asignamos un número virtual exclusivo para WhatsApp. Se acabó dar tu número personal. Tu móvil vuelve a ser tuyo.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Step 3 */}
+                        <div className="relative group">
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 transition-all duration-300 hover:border-amber-500/30 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.1)]">
+                                {/* Step Number Background */}
+                                <div className="absolute top-4 right-4 text-7xl md:text-8xl font-black text-zinc-800 opacity-50 select-none">
+                                    03
+                                </div>
+
+                                {/* Icon */}
+                                <div className="relative z-10 mb-6">
+                                    <div className="inline-flex p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
+                                        <BrainCircuit className="w-8 h-8 text-amber-500" />
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="relative z-10">
+                                    <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
+                                        EL CEREBRO (GPT-5)
+                                    </h3>
+                                    <p className="text-zinc-400 leading-relaxed">
+                                        Volcamos toda tu información en nuestro modelo de IA. No es un bot simple; responde, agenda citas sabiendo tus horarios y huecos libres, agendando siempre en las horas que más te convengan para optimizar tu agenda.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Step 4 */}
+                        <div className="relative group">
+                            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 transition-all duration-300 hover:border-amber-500/30 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.1)]">
+                                {/* Step Number Background */}
+                                <div className="absolute top-4 right-4 text-7xl md:text-8xl font-black text-zinc-800 opacity-50 select-none">
+                                    04
+                                </div>
+
+                                {/* Icon */}
+                                <div className="relative z-10 mb-6">
+                                    <div className="inline-flex p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
+                                        <QrCode className="w-8 h-8 text-amber-500" />
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <div className="relative z-10">
+                                    <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
+                                        DESPLIEGUE VISUAL
+                                    </h3>
+                                    <p className="text-zinc-400 leading-relaxed">
+                                        Recibirás tarjetas personalizadas con un QR que redirige a vuestro chat de WhatsApp. Recomendamos colocar el número en tu Bio de Instagram y en Google Maps.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══════════════════════════════════════════════════════════════════════
                 CTA FOOTER SECTION
             ═══════════════════════════════════════════════════════════════════════ */}
             <section className="relative py-24 md:py-32 px-6">
@@ -322,7 +473,7 @@ export default function InicioPage() {
                     </h2>
 
                     <p className="text-zinc-400 text-lg md:text-xl leading-relaxed mb-10">
-                        Únete a las barberías que ya operan en piloto automático. Prueba gratuita de 7 días, sin compromiso (no incluye funciones IA WhatsApp).
+                        Únete a las barberías que ya operan en piloto automático. Prueba gratuita de 7 días, sin compromiso (no incluye funciones IA WhatsApp). El plan de pago mensual incluye una comisión del 1% sobre la facturación agendada por IA.
                     </p>
 
                     <Link

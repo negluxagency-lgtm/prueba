@@ -31,9 +31,10 @@ interface ObjectiveRingsProps {
     ingresos: Metric;
     cortes: Metric;
     productos: Metric;
+    loading?: boolean;
 }
 
-const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, productos }) => {
+const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, productos, loading }) => {
     const [isMobile, setIsMobile] = React.useState(false);
 
     React.useEffect(() => {
@@ -47,17 +48,17 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
     const data = [
         {
             name: 'Productos',
-            value: Math.min((productos.actual / productos.objetivo) * 100, 100),
+            value: productos.objetivo > 0 ? Math.min((productos.actual / productos.objetivo) * 100, 100) : 0,
             fill: '#FF3B30', // Rojo (Inner)
         },
         {
             name: 'Cortes',
-            value: Math.min((cortes.actual / cortes.objetivo) * 100, 100),
+            value: cortes.objetivo > 0 ? Math.min((cortes.actual / cortes.objetivo) * 100, 100) : 0,
             fill: '#007AFF', // Azul Neón (Middle)
         },
         {
             name: 'Ingresos',
-            value: Math.min((ingresos.actual / ingresos.objetivo) * 100, 100),
+            value: ingresos.objetivo > 0 ? Math.min((ingresos.actual / ingresos.objetivo) * 100, 100) : 0,
             fill: '#34C759', // Verde Lima (Outer)
         },
     ];
@@ -68,26 +69,29 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
             color: 'text-[#34C759]',
             bgColor: 'bg-[#34C759]/10',
             icon: <DollarSign className="w-4 h-4" />,
-            percentage: Math.round((ingresos.actual / ingresos.objetivo) * 100)
+            percentage: ingresos.objetivo > 0 ? Math.round((ingresos.actual / ingresos.objetivo) * 100) : 0
         },
         {
             ...cortes,
             color: 'text-[#007AFF]',
             bgColor: 'bg-[#007AFF]/10',
             icon: <Scissors className="w-4 h-4" />,
-            percentage: Math.round((cortes.actual / cortes.objetivo) * 100)
+            percentage: cortes.objetivo > 0 ? Math.round((cortes.actual / cortes.objetivo) * 100) : 0
         },
         {
             ...productos,
             color: 'text-[#FF3B30]',
             bgColor: 'bg-[#FF3B30]/10',
             icon: <ShoppingBag className="w-4 h-4" />,
-            percentage: Math.round((productos.actual / productos.objetivo) * 100)
+            percentage: productos.objetivo > 0 ? Math.round((productos.actual / productos.objetivo) * 100) : 0
         },
     ];
 
     return (
-        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] shadow-2xl pl-1 pr-2 py-6 md:p-6 border border-zinc-800 overflow-visible mr-[20px] md:mr-0">
+        <div className={cn(
+            "bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] shadow-2xl pl-1 pr-2 py-6 md:p-6 border border-zinc-800 overflow-visible mr-[20px] md:mr-0 transition-opacity duration-300",
+            loading ? "opacity-40 animate-pulse pointer-events-none" : "opacity-100"
+        )}>
             {/* Título pegado a la parte superior */}
             <h3 className="text-zinc-500 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-2 md:mb-4 pl-2 text-left">
                 Objetivos del Día
