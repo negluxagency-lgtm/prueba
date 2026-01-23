@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { MailCheck } from 'lucide-react';
+import { signUp } from '@/app/actions/auth';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -48,20 +49,10 @@ export default function RegisterPage() {
                 return;
             }
 
-            // 2. Proceder con el registro
-            const origin = window.location.origin;
-            const { error: signUpError } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                    emailRedirectTo: `${origin}/auth/callback?next=/auth/verified`,
-                    data: {
-                        barberia_nombre: barberiaNombre.trim()
-                    }
-                }
-            });
+            // 2. Proceder con el registro usando la Server Action para PKCE
+            const result = await signUp(email, password, barberiaNombre.trim());
 
-            if (signUpError) throw signUpError;
+            if (result.error) throw new Error(result.error);
 
             setSuccess(true);
             toast.success('Cuenta creada exitosamente');

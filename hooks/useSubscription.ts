@@ -25,6 +25,8 @@ export function useSubscription() {
 
     useEffect(() => {
         async function checkSubscription() {
+            setState(prev => ({ ...prev, loading: true }));
+
             // Obtener usuario manualmente
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
@@ -33,7 +35,13 @@ export function useSubscription() {
 
             if (!user) {
                 console.log("useSubscription: No user found, stopping.");
-                setState(prev => ({ ...prev, loading: false }));
+                setState({
+                    status: null,
+                    plan: null,
+                    loading: false,
+                    daysRemaining: 0,
+                    isProfileComplete: false
+                });
                 return;
             }
 
@@ -110,6 +118,26 @@ export function useSubscription() {
         }
 
         checkSubscription();
+
+        // Escuchar cambios de autenticación
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log("useSubscription: Auth state change detected", event);
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                checkSubscription();
+            } else if (event === 'SIGNED_OUT') {
+                setState({
+                    status: null,
+                    plan: null,
+                    loading: false,
+                    daysRemaining: 0,
+                    isProfileComplete: false
+                });
+            }
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     return state;
