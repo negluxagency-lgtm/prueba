@@ -13,15 +13,16 @@ interface SellProductModalProps {
 }
 
 export const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onClose, onConfirm, product }) => {
-    const [cantidad, setCantidad] = useState(1);
+    const [cantidad, setCantidad] = useState<number | "">("");
     const [loading, setLoading] = useState(false);
 
     const handleConfirm = async () => {
+        if (!cantidad || cantidad <= 0) return;
         setLoading(true);
-        await onConfirm(cantidad);
+        await onConfirm(Number(cantidad));
         setLoading(false);
         onClose();
-        setCantidad(1);
+        setCantidad("");
     };
 
     if (!product) return null;
@@ -75,10 +76,18 @@ export const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onCl
                                         type="number"
                                         value={cantidad}
                                         onChange={(e) => {
-                                            const val = parseInt(e.target.value) || 1;
-                                            setCantidad(Math.min(val, product.stock || 999));
+                                            const val = e.target.value;
+                                            if (val === "") {
+                                                setCantidad("");
+                                                return;
+                                            }
+                                            const num = parseInt(val);
+                                            if (!isNaN(num)) {
+                                                setCantidad(Math.min(Math.max(0, num), product.stock || 999));
+                                            }
                                         }}
                                         max={product.stock || 999}
+                                        placeholder="0"
                                         className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-center font-bold text-lg focus:outline-none focus:border-amber-500"
                                     />
                                 </div>
@@ -86,12 +95,12 @@ export const SellProductModal: React.FC<SellProductModalProps> = ({ isOpen, onCl
 
                             <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex justify-between items-center mt-6">
                                 <span className="text-amber-500 text-xs font-black uppercase tracking-widest">Total</span>
-                                <span className="text-amber-500 text-2xl font-black italic">{(Number(product.precio) * cantidad).toFixed(2)}€</span>
+                                <span className="text-amber-500 text-2xl font-black italic">{(Number(product.precio) * (Number(cantidad) || 0)).toFixed(2)}€</span>
                             </div>
 
                             <button
                                 onClick={handleConfirm}
-                                disabled={loading || cantidad > (product.stock || 0)}
+                                disabled={loading || !cantidad || Number(cantidad) > (product.stock || 0)}
                                 className="w-full bg-amber-500 hover:bg-amber-600 text-black font-black uppercase py-4 rounded-xl transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:grayscale"
                             >
                                 <ShoppingBag size={18} />

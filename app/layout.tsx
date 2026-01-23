@@ -10,10 +10,13 @@ const manrope = Manrope({
   weight: ['300', '400', '500', '600', '700', '800'],
 });
 
+export const viewport = {
+  themeColor: '#f59e0b',
+}
+
 export const metadata: Metadata = {
   title: 'Nelux Barbershop - Operations',
   description: 'Premium Barber Management System',
-  themeColor: '#f59e0b',
   icons: {
     icon: 'data:image/svg+xml,%3csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3e%3ctext y=%22.9em%22 font-size=%2290%22%3e💈%3c/text%3e%3c/svg%3e',
   }

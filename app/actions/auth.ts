@@ -31,11 +31,16 @@ export async function signUp(data: SignUpData | string, arg2?: string, arg3?: st
 
     // 2. Definir URL base dinámica
     const headerList = await headers();
-    const host = headerList.get('host');
-    const protocol = host?.includes('localhost') ? 'http' : 'https';
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
+    const host = headerList.get('host') || 'app.nelux.es';
+    const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
 
-    console.log("signUp: Using siteUrl", siteUrl);
+    // Prioridad: Variable de entorno (si no es localhost) > Host dinámico
+    let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (!siteUrl || siteUrl.includes('localhost')) {
+        siteUrl = `${protocol}://${host}`;
+    }
+
+    console.log("signUp: Detected Host:", host, "Final siteUrl:", siteUrl);
 
     // 3. Crear cliente Supabase
     const supabase = await createClient()
