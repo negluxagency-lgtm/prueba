@@ -23,7 +23,7 @@ export default function InicioPage() {
                     <div className="flex items-center gap-2 md:gap-6">
                         <Link
                             href="/pricing"
-                            className="text-zinc-500 hover:text-white text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors px-2 md:px-4 py-2"
+                            className="hidden md:block text-zinc-500 hover:text-white text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors px-2 md:px-4 py-2"
                         >
                             Precios
                         </Link>
@@ -46,7 +46,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 HERO SECTION
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative min-h-[80vh] md:min-h-[90vh] flex flex-col items-center justify-center px-4 md:px-6 pt-24 md:pt-32 pb-12 md:py-20">
+            <section className="relative min-h-[80vh] md:min-h-[90vh] flex flex-col items-center justify-center px-4 md:px-6 pt-24 md:pt-32 pb-4 md:pb-4">
                 {/* Radial gradient glow at top */}
                 <div
                     className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none"
@@ -111,7 +111,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 SECTION A: THE BRAIN (AI & Automation)
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section id="features" className="relative py-12 md:py-32 px-6">
+            <section id="features" className="relative py-12 md:pt-4 md:pb-32 px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
                         {/* Text Left */}

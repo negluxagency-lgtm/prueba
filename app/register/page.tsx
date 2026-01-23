@@ -49,10 +49,12 @@ export default function RegisterPage() {
             }
 
             // 2. Proceder con el registro
+            const origin = window.location.origin;
             const { error: signUpError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
+                    emailRedirectTo: `${origin}/auth/callback?next=/auth/verified`,
                     data: {
                         barberia_nombre: barberiaNombre.trim()
                     }

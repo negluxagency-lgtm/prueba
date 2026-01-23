@@ -51,7 +51,7 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
             price: "99€",
             period: "/mes",
             description: "Para barberías profesionales.",
-            features: ["Filtro Reviews Positivas", "Múltiples Barberos", "Soporte 24/7", "Recordatorio de citas", "Consultoría Mensual"],
+            features: ["Toda la tecnología IA", "Filtro Reviews Positivas", "Múltiples Barberos", "Soporte 24/7", "Recordatorio de citas"],
             link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
             highlight: false,
             icon: Shield
@@ -105,7 +105,23 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
                     </p>
                 </div>
 
-                <div className={`grid grid-cols-1 gap-6 md:gap-8 items-start pb-12 md:pb-0 ${displayPlans.length > 1 ? 'md:grid-cols-3' : 'md:max-w-md mx-auto'}`}>
+                {status !== 'pagado' && (
+                    <div className="mb-8 md:mb-12 max-w-3xl mx-auto">
+                        <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 md:p-6 flex items-start gap-4">
+                            <div className="p-2 bg-amber-500/20 rounded-lg shrink-0">
+                                <Zap className="w-5 h-5 text-amber-500" />
+                            </div>
+                            <div>
+                                <h4 className="text-amber-500 font-bold text-sm uppercase tracking-wider mb-1">Información sobre Planes IA</h4>
+                                <p className="text-zinc-400 text-xs md:text-sm leading-relaxed">
+                                    Los planes que incluyen <span className="text-white font-bold">Citas automáticas (IA)</span> conllevan un cargo adicional del <span className="text-white font-bold">1% de lo facturado</span> a través de estas citas. Este importe se factura a final de mes para cubrir el coste de la línea de teléfono exclusiva y asegurar un uso óptimo de la IA.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                <div className={`grid grid-cols-1 gap-6 md:gap-8 items-start pb-6 md:pb-0 ${displayPlans.length > 1 ? 'md:grid-cols-3' : 'md:max-w-md mx-auto'}`}>
                     {displayPlans.map((plan, index) => (
                         <div
                             key={index}
@@ -178,7 +194,7 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
 
                 {/* Persuasive Sections for Pricing Variant */}
                 {!isLock && (
-                    <div className="mt-12 md:mt-16 border-t border-zinc-800/50 pt-12">
+                    <div className="mt-6 md:mt-16 border-t border-zinc-800/50 pt-8">
                         <div className="text-center mb-16">
                             <h2 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter text-white mb-4">
                                 ¿Por qué elegir <span className="text-amber-500">Nelux</span>?
