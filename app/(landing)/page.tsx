@@ -22,6 +22,12 @@ export default function InicioPage() {
                     </div>
                     <div className="flex items-center gap-2 md:gap-6">
                         <Link
+                            href="/pricing"
+                            className="text-zinc-500 hover:text-white text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors px-2 md:px-4 py-2"
+                        >
+                            Precios
+                        </Link>
+                        <Link
                             href="/inicio"
                             className="text-zinc-400 hover:text-white text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors px-2 md:px-4 py-2"
                         >
@@ -476,13 +482,22 @@ export default function InicioPage() {
                         Únete a las barberías que ya operan en piloto automático. Prueba gratuita de 7 días, sin compromiso (no incluye funciones IA WhatsApp). El plan de pago mensual incluye una comisión del 1% sobre la facturación agendada por IA.
                     </p>
 
-                    <Link
-                        href="/register"
-                        className="group inline-flex items-center justify-center gap-2 md:gap-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold px-6 py-3 md:px-10 md:py-5 rounded-xl md:rounded-2xl text-base md:text-xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40"
-                    >
-                        Empieza tu Prueba Gratis
-                        <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <Link
+                            href="/register"
+                            className="group inline-flex items-center justify-center gap-2 md:gap-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold px-6 py-3 md:px-10 md:py-5 rounded-xl md:rounded-2xl text-base md:text-xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 w-full sm:w-auto"
+                        >
+                            Empieza tu Prueba Gratis
+                            <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+
+                        <Link
+                            href="/pricing"
+                            className="flex items-center justify-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white font-bold px-6 py-3 md:px-10 md:py-5 rounded-xl md:rounded-2xl text-base md:text-xl transition-all border border-zinc-800 w-full sm:w-auto"
+                        >
+                            Consultar Planes
+                        </Link>
+                    </div>
 
                     <p className="text-zinc-600 text-sm mt-6">
                         Sin tarjeta de crédito · Configura en minutos

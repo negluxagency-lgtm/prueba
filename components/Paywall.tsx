@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Check, Star, Shield, X } from 'lucide-react';
+import { Check, Star, Shield, X, Rocket, Zap, Heart, TrendingUp } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 
 interface PaywallProps {
@@ -26,10 +28,10 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
     const ALL_PLANS = [
         {
             name: "Básico",
-            price: "50€",
+            price: "49€",
             period: "/mes",
             description: "Para barberos independientes que están empezando.",
-            features: ["Agenda ilimitada", "Gestión de clientes", "Reportes básicos", "Sin tecnologías IA"],
+            features: ["Agenda ilimitada", "Gestión de clientes", "Reportes básicos", "Gestión de productos", "Sin tecnologías IA"],
             link: "https://buy.stripe.com/7sY4gy54TaRS9eL6vT28800",
             highlight: false,
             icon: Shield
@@ -39,8 +41,8 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
             price: "75€",
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
-            features: ["Todo lo del Básico", "Citas automáticas (IA)", "Métricas avanzadas (IA)", "Soporte horas laborales"],
-            link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
+            features: ["Todo lo del Básico", "Citas automáticas (IA)", "Métricas avanzadas (IA)", "Soporte preferente", "Recordatorio de citas"],
+            link: "https://buy.stripe.com/bJe3cu8h50dedv18E128801",
             highlight: true,
             icon: Star
         },
@@ -49,8 +51,8 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
             price: "99€",
             period: "/mes",
             description: "Para barberías profesionales.",
-            features: ["Filtro Reviews Positivas", "Múltiples Barberos", "Soporte 24/7", "Consultoría Mensual"],
-            link: "https://buy.stripe.com/bJe3cu8h50dedv18E128801",
+            features: ["Filtro Reviews Positivas", "Múltiples Barberos", "Soporte 24/7", "Recordatorio de citas", "Consultoría Mensual"],
+            link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
             highlight: false,
             icon: Shield
         }
@@ -174,17 +176,89 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
                     ))}
                 </div>
 
-                <div className="mt-12 flex justify-center">
-                    <a
-                        href="https://billing.stripe.com/p/login/7sY4gy54TaRS9eL6vT28800"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-900/50 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 hover:bg-zinc-800 transition-all text-xs font-bold uppercase tracking-widest group"
-                    >
-                        <Shield className="w-4 h-4 group-hover:text-amber-500 transition-colors" />
-                        Gestionar Suscripción
-                    </a>
-                </div>
+                {/* Persuasive Sections for Pricing Variant */}
+                {!isLock && (
+                    <div className="mt-12 md:mt-16 border-t border-zinc-800/50 pt-12">
+                        <div className="text-center mb-16">
+                            <h2 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter text-white mb-4">
+                                ¿Por qué elegir <span className="text-amber-500">Nelux</span>?
+                            </h2>
+                            <p className="text-zinc-500 max-w-xl mx-auto">
+                                Diseñado por y para barberos que quieren escalar su negocio sin perder el control.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                            <div className="text-center group">
+                                <div className="inline-flex p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 mb-6 group-hover:scale-110 transition-transform">
+                                    <Rocket className="w-8 h-8 text-amber-500" />
+                                </div>
+                                <h4 className="text-white font-bold uppercase tracking-wide mb-3">Escalabilidad Real</h4>
+                                <p className="text-zinc-400 text-sm leading-relaxed">
+                                    Pasa de un sillón a una cadena de barberías con herramientas que crecen contigo.
+                                </p>
+                            </div>
+
+                            <div className="text-center group">
+                                <div className="inline-flex p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 mb-6 group-hover:scale-110 transition-transform">
+                                    <Zap className="w-8 h-8 text-amber-500" />
+                                </div>
+                                <h4 className="text-white font-bold uppercase tracking-wide mb-3">Automatización IA</h4>
+                                <p className="text-zinc-400 text-sm leading-relaxed">
+                                    Libera 10+ horas semanales delegando la gestión de citas a nuestra inteligencia artificial.
+                                </p>
+                            </div>
+
+                            <div className="text-center group">
+                                <div className="inline-flex p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 mb-6 group-hover:scale-110 transition-transform">
+                                    <TrendingUp className="w-8 h-8 text-amber-500" />
+                                </div>
+                                <h4 className="text-white font-bold uppercase tracking-wide mb-3">Maximiza Ingresos</h4>
+                                <p className="text-zinc-400 text-sm leading-relaxed">
+                                    Reduce no-shows y optimiza huecos libres para facturar hasta un 30% más cada mes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-20 bg-gradient-to-br from-zinc-900/50 to-zinc-900/10 border border-zinc-800 p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-8 opacity-10">
+                                <Heart className="w-32 h-32 text-amber-500" />
+                            </div>
+                            <div className="relative z-10 max-w-2xl">
+                                <h3 className="text-xl md:text-2xl font-black text-white italic uppercase mb-4">
+                                    Únete a la <span className="text-amber-500">Revolución</span> del Sector
+                                </h3>
+                                <p className="text-zinc-400 text-sm md:text-base leading-relaxed mb-8">
+                                    No somos solo un software de gestión. Somos tu socio estratégico. Entendemos el arte de la barbería y la importancia de un servicio impecable.
+                                </p>
+                                <div className="flex flex-wrap gap-4">
+                                    <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-zinc-800">
+                                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                                        <span className="text-zinc-300 text-xs font-bold uppercase tracking-widest">Soporte 24/7</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-zinc-800">
+                                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                                        <span className="text-zinc-300 text-xs font-bold uppercase tracking-widest">Actualizaciones Semanales</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {variant !== 'pricing' && (
+                    <div className="mt-12 flex justify-center">
+                        <a
+                            href="https://billing.stripe.com/p/login/7sY4gy54TaRS9eL6vT28800"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-900/50 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 hover:bg-zinc-800 transition-all text-xs font-bold uppercase tracking-widest group"
+                        >
+                            <Shield className="w-4 h-4 group-hover:text-amber-500 transition-colors" />
+                            Gestionar Suscripción
+                        </a>
+                    </div>
+                )}
 
                 <p className="text-center text-zinc-600 text-[10px] md:text-xs mt-8 md:mt-12 pb-8 md:pb-0">
                     🔒 Pagos procesados de forma segura por Stripe. Puedes cancelar en cualquier momento.
