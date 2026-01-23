@@ -5,13 +5,13 @@ import { sendResetEmail } from "@/app/actions/send-reset";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-export function ResetPasswordButton() {
+export function ResetPasswordButton({ email }: { email: string }) {
     const [isPending, setIsPending] = useState(false);
 
     const handleReset = async () => {
         setIsPending(true);
         try {
-            const result = await sendResetEmail();
+            const result = await sendResetEmail(email);
             if (result.success) {
                 toast.success("✅ Correo enviado. Revisa tu bandeja de entrada.");
             } else {

@@ -41,13 +41,13 @@ export function useAppointments(selectedDate: string) {
                 // Conteo de cortes (no ventas) y productos (solo ventas)
                 const { data: monthCountData } = await supabase
                     .from('citas')
-                    .select('Servicio, Telefono')
+                    .select('Servicio, Telefono, producto')
                     .gte('Dia', startOfMonth);
 
                 if (monthCountData) {
-                    const cuts = monthCountData.filter(c => c.Servicio !== 'Venta de Producto').length;
+                    const cuts = monthCountData.filter(c => !c.producto).length;
                     const prods = monthCountData
-                        .filter(c => c.Servicio === 'Venta de Producto')
+                        .filter(c => c.producto)
                         .reduce((sum, item) => sum + (Number(item.Telefono) || 0), 0);
                     setMonthlyCuts(cuts);
                     setMonthlyProducts(prods);

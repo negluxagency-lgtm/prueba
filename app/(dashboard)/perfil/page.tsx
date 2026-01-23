@@ -315,7 +315,7 @@ export default function PerfilPage() {
                             <LogOut className="w-4 h-4" />
                             <span className="font-medium">Cerrar Sesión</span>
                         </button>
-                        <ResetPasswordButton />
+                        <ResetPasswordButton email={email} />
                     </div>
                 </div>
             </div>

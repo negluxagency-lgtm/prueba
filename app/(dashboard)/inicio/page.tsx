@@ -66,8 +66,8 @@ export default function Dashboard() {
   const [editingCita, setEditingCita] = useState<Appointment | null>(null);
 
   // Separar citas de ventas usando el Servicio como identificador
-  const appointments = allAppointments.filter(a => a.Servicio !== 'Venta de Producto');
-  const productSales = allAppointments.filter(a => a.Servicio === 'Venta de Producto');
+  const appointments = allAppointments.filter(a => !a.producto);
+  const productSales = allAppointments.filter(a => a.producto);
 
   // Cálculos para ObjectiveRings
   const stats = {
