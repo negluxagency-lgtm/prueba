@@ -70,7 +70,7 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
     return (
         <div className={`${isSection ? '' : 'h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-center p-4 md:p-8 pt-14 md:pt-8 overflow-y-auto relative'}`}>
             {/* Logout Button for Paywall */}
-            {!isSection && (
+            {!isSection && variant !== 'pricing' && (
                 <button
                     onClick={() => supabase.auth.signOut()}
                     className="absolute top-4 md:top-4 right-4 z-50 text-zinc-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest bg-black/20 hover:bg-black/40 px-3 py-1.5 rounded-lg backdrop-blur-sm"
