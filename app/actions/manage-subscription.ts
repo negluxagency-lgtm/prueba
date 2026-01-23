@@ -3,16 +3,26 @@
 import { redirect } from 'next/navigation'
 import Stripe from 'stripe'
 import { headers } from 'next/headers'
+import { createClient } from '@/utils/supabase/server'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-12-15.clover',
 })
 
-export async function manageSubscription(email: string) {
+export async function manageSubscription(requestedEmail: string) {
     try {
+        // 🛡️ SEGURIDAD: Verificar que el email solicitado sea el del usuario logueado
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user || user.email !== requestedEmail) {
+            console.error('Intento de acceso a Stripe no autorizado de:', user?.email, 'hacia:', requestedEmail)
+            throw new Error("No estás autorizado para gestionar esta suscripción.")
+        }
+
         // Buscar cliente en Stripe por email
         const customers = await stripe.customers.list({
-            email: email,
+            email: requestedEmail,
             limit: 1
         })
 

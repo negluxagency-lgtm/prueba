@@ -19,9 +19,17 @@ export async function sendResetEmail(providedEmail?: string) {
     // Usar la misma lógica de siteUrl robusta
     const { headers } = await import('next/headers');
     const headerList = await headers();
-    const host = headerList.get('host') || 'app.nelux.es';
-    const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
+    const host = headerList.get('host');
+    const protocol = (host?.includes('localhost') || host?.includes('127.0.0.1')) ? 'http' : 'https';
+
+    let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (!siteUrl || siteUrl.includes('localhost')) {
+        if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+            siteUrl = `${protocol}://${host}`;
+        } else {
+            siteUrl = 'https://app.nelux.es';
+        }
+    }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${siteUrl}/update-password`,

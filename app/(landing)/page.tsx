@@ -28,7 +28,7 @@ export default function InicioPage() {
                             Precios
                         </Link>
                         <Link
-                            href="/inicio"
+                            href="/login"
                             className="text-zinc-400 hover:text-white text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors px-2 md:px-4 py-2"
                         >
                             Log In

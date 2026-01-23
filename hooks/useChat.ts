@@ -32,23 +32,44 @@ export function useChat() {
                     .single();
 
                 if (profile) {
-                    // Store the real barberia name in user state or a separate state
-                    setUser((prev: any) => ({ ...prev, profile_barberia: profile.nombre_barberia }));
+                    const fullUser = { ...currentUser, profile_barberia: profile.nombre_barberia };
+                    setUser(fullUser);
+                    // Fetch messages immediately once we have the barberia name
+                    fetchMessages(fullUser);
+                } else {
+                    fetchMessages(currentUser);
                 }
             }
         };
         getUserData();
     }, [searchParams]);
 
-    const fetchMessages = async () => {
+    const fetchMessages = async (forceUser?: any) => {
         try {
+            const currentUser = forceUser || user;
+            if (!currentUser) return;
+
             // Only show loader on initial fetch if empty
             if (conversations.length === 0) setLoading(true);
 
-            // Parallel fetch: Messages + Client Names
+            // 🚀 OPTIMIZACIÓN: Filtrar por barbería y limitar carga
+            // Intentamos obtener el nombre de la barbería del perfil
+            const barberiaName = currentUser.profile_barberia || currentUser.user_metadata?.barberia_nombre;
+
+            if (!barberiaName) {
+                console.warn("useChat: No se pudo determinar el nombre de la barbería para filtrar.");
+            }
+
+            // Paralell fetch: Messages (Filtrados por barbería si es posible) + Client Names
+            let messagesQuery = supabase.from('Mensajes').select('*').order('numero', { ascending: true });
+
+            if (barberiaName) {
+                messagesQuery = messagesQuery.eq('barberia', barberiaName);
+            }
+
             const [messagesResult, namesResult] = await Promise.all([
-                supabase.from('Mensajes').select('*').order('numero', { ascending: true }),
-                supabase.from('citas').select('Nombre, Telefono')
+                messagesQuery,
+                supabase.from('citas').select('Nombre, Telefono') // RLS se encarga del filtrado por barbería aquí
             ]);
 
             const { data: messagesData, error: messagesError } = messagesResult;
@@ -215,7 +236,9 @@ export function useChat() {
     };
 
     useEffect(() => {
-        fetchMessages();
+        if (user) {
+            fetchMessages();
+        }
 
         // Realtime Subscription
         const channel = supabase

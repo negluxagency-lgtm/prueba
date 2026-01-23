@@ -1,73 +1,39 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/utils/supabase/server";
+import DashboardLayoutClient from "./DashboardLayoutClient";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/layout/Sidebar";
-import AuthGuard from "@/components/AuthGuard";
-import LogoutButton from "@/components/LogoutButton";
-import { useSubscription } from "@/hooks/useSubscription";
-import { Paywall } from "@/components/Paywall";
-import { TrialBanner } from "@/components/TrialBanner";
-import { TrialNoticeModal } from "@/components/TrialNoticeModal";
-
-export default function DashboardLayout({
+export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const { status, loading, daysRemaining, isProfileComplete } = useSubscription();
-    const router = useRouter();
+    const supabase = await createClient();
 
-    useEffect(() => {
-        console.log("DashboardLayout: Redirect check", { loading, isProfileComplete, status });
-        if (!loading && !isProfileComplete && status) {
-            console.log("DashboardLayout: Conditions met. Redirecting to /configuracion...");
-            router.replace('/configuracion');
-        }
-    }, [loading, isProfileComplete, status, router]);
+    // 🛡️ VERIFICACIÓN DE SERVIDOR (Evita el Layout Flash)
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        console.log("DashboardLayout (Server): No hay sesión. Redirigiendo a /login");
+        redirect('/login');
+    }
+
+    // Opcional: Fetch inicial del perfil para pasar al cliente
+    const { data: profile } = await supabase
+        .from('perfiles')
+        .select('nombre_barberia, estado, telefono')
+        .eq('id', user.id)
+        .single();
+
+    // Si no tiene teléfono configurado, mandarlo a configuración (excepto si ya está ahí)
+    // Pero como configuración está fuera de (dashboard), no hay bucle aquí.
+    if (!profile || !profile.telefono) {
+        console.log("DashboardLayout (Server): Perfil incompleto. Redirigiendo a /configuracion");
+        redirect('/configuracion');
+    }
 
     return (
-        <AuthGuard>
-            {/* 0. Estado de Carga Global */}
-            {loading ? (
-                <div className="h-screen w-full flex items-center justify-center bg-[#0a0a0a]">
-                    {/* Spinner Elegante */}
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="w-12 h-12 border-4 border-zinc-800 border-t-amber-500 rounded-full animate-spin"></div>
-                        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest animate-pulse">Cargando Imperio...</p>
-                    </div>
-                </div>
-            ) : status === 'impago' ? (
-                // 1. CASO BLOQUEO (IMPAGO) - Renderiza SOLO el Paywall
-                <div className="fixed inset-0 z-[100]">
-                    <Paywall />
-                </div>
-            ) : (
-                // 2. CASO ACCESO PERMITIDO (PAGADO o PRUEBA)
-                <div className="flex h-screen overflow-hidden flex-col md:flex-row">
-
-                    <Sidebar />
-
-                    {/* CONTENIDO PRINCIPAL */}
-                    <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">
-
-                        {/* Banner solo si está en prueba (Fijo arriba en móvil, sticky en desktop) */}
-                        {status === 'prueba' && (
-                            <div className="fixed top-0 left-0 right-0 md:relative md:top-auto z-[60] shrink-0">
-                                <TrialBanner daysRemaining={daysRemaining} />
-                            </div>
-                        )}
-
-                        <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' ? 'pt-[52px] md:pt-0' : ''}`}>
-                            <div className="relative flex-1 pt-0 md:pt-0 pb-20 md:pb-0">
-                                <LogoutButton />
-                                {children}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-            <TrialNoticeModal userStatus={status} />
-        </AuthGuard>
+        <DashboardLayoutClient initialProfile={profile}>
+            {children}
+        </DashboardLayoutClient>
     );
 }

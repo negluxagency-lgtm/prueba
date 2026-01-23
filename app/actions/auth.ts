@@ -34,10 +34,16 @@ export async function signUp(data: SignUpData | string, arg2?: string, arg3?: st
     const host = headerList.get('host') || 'app.nelux.es';
     const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
 
-    // Prioridad: Variable de entorno (si no es localhost) > Host dinámico
+    // Prioridad: Variable de entorno (si no es localhost) > Host dinámico > Hardcoded fallback
     let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
     if (!siteUrl || siteUrl.includes('localhost')) {
-        siteUrl = `${protocol}://${host}`;
+        // Si no hay env var o es localhost, intentamos extraer del host
+        if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+            siteUrl = `${protocol}://${host}`;
+        } else {
+            // Fallback final para producción si todo falla o estamos en local queriendo probar producción
+            siteUrl = 'https://app.nelux.es';
+        }
     }
 
     console.log("signUp: Detected Host:", host, "Final siteUrl:", siteUrl);
