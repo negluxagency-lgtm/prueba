@@ -87,7 +87,9 @@ export function useTrends(referenceDate?: string) {
         const totalRev = data.reduce((sum, item) => sum + (item.confirmada ? (Number(item.Precio) || 0) : 0), 0);
         const totalCli = data.filter(a => a.confirmada).length;
         const totalCuts = data.filter(a => a.Servicio !== 'Venta de Producto' && a.confirmada).length;
-        const totalProducts = data.filter(a => a.Servicio === 'Venta de Producto' && a.confirmada).length;
+        const totalProducts = data
+            .filter(a => a.Servicio === 'Venta de Producto' && a.confirmada)
+            .reduce((sum, item) => sum + (Number(item.Telefono) || 0), 0);
         const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
         const totalNoShows = data.filter(cita => cita.cancelada).length;
 
@@ -204,7 +206,7 @@ export function useTrends(referenceDate?: string) {
                 dataMap[groupKey].rev += (Number(app.Precio) || 0);
                 dataMap[groupKey].cli += 1;
                 if (app.Servicio !== 'Venta de Producto') dataMap[groupKey].cuts += 1;
-                else dataMap[groupKey].prods += 1;
+                else dataMap[groupKey].prods += (Number(app.Telefono) || 0);
             }
             if (app.cancelada) dataMap[groupKey].no += 1;
         });

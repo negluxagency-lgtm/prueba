@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { headers } from 'next/headers'
 
 // Definimos un tipo para aceptar ambos formatos y argumentos individuales
 type SignUpData = FormData | { email: string; password: string; barberiaNombre?: string }
@@ -28,11 +29,16 @@ export async function signUp(data: SignUpData | string, arg2?: string, arg3?: st
         return { error: "Formato de datos inválido para el registro." };
     }
 
-    // 2. Definir URL base
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    // 2. Definir URL base dinámica
+    const headerList = await headers();
+    const host = headerList.get('host');
+    const protocol = host?.includes('localhost') ? 'http' : 'https';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`;
+
+    console.log("signUp: Using siteUrl", siteUrl);
 
     // 3. Crear cliente Supabase
-    const supabase = createClient()
+    const supabase = await createClient()
 
     try {
         const { error } = await supabase.auth.signUp({

@@ -82,7 +82,7 @@ export default function Dashboard() {
       label: 'Cortes Realizados'
     },
     productos: {
-      actual: productSales.length,
+      actual: productSales.reduce((sum, a) => sum + (Number(a.Telefono) || 0), 0),
       objetivo: objectives.productos,
       label: 'Ventas Productos'
     }

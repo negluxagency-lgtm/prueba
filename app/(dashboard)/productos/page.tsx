@@ -22,9 +22,28 @@ export default function ProductosPage() {
     const fetchProductos = async () => {
         try {
             setLoading(true);
+
+            // 1. Obtener perfil para saber qué barbería filtrar
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data: profile } = await supabase
+                .from('perfiles')
+                .select('nombre_barberia')
+                .eq('id', user.id)
+                .single();
+
+            if (!profile?.nombre_barberia) {
+                console.warn('No se encontró nombre de barbería en el perfil');
+                setProductos([]);
+                return;
+            }
+
+            // 2. Traer solo los productos de esta barbería
             const { data, error } = await supabase
                 .from('productos')
                 .select('*')
+                .eq('barberia', profile.nombre_barberia)
                 .order('nombre', { ascending: true });
 
             if (error) throw error;
@@ -38,22 +57,47 @@ export default function ProductosPage() {
 
     const handleAddProduct = async (nombre: string, precio: number, stock: number) => {
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                toast.error('Sesión no encontrada. Por favor, inicia sesión.');
+                return;
+            }
+
+            // Obtener el nombre de la barbería del perfil
+            const { data: profile, error: profileError } = await supabase
+                .from('perfiles')
+                .select('nombre_barberia')
+                .eq('id', user.id)
+                .single();
+
+            if (profileError || !profile?.nombre_barberia) {
+                toast.error('No se pudo identificar tu barbería. Revisa tu perfil.');
+                return;
+            }
+
+            console.log('Intentando añadir producto a la barbería:', profile.nombre_barberia);
+
             const { error } = await supabase
                 .from('productos')
                 .insert([{
                     nombre,
                     precio,
                     venta: 0,
-                    stock
+                    stock,
+                    barberia: profile.nombre_barberia // Usamos 'barberia' como matching
                 }]);
 
-            if (error) throw error;
+            if (error) {
+                console.error('Error de Supabase al añadir producto:', error.message, error.details, error.hint, error.code);
+                throw error;
+            }
 
             toast.success(`Producto añadido: ${nombre}`);
             fetchProductos();
         } catch (error: any) {
-            console.error('Error añadiendo producto:', error);
-            toast.error('Error al añadir el producto');
+            console.error('Error completo añadiendo producto:', error);
+            const msg = error.message || 'Error desconocido';
+            toast.error(`Error al añadir el producto: ${msg}`);
         }
     };
 

@@ -1,27 +1,41 @@
-import { createClient } from '@/utils/supabase/server' // <--- Importante: Usar tu helper, no la librería cruda
+import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
-
-    // Si en la URL viene un "?next=/loquesea", lo usamos.
-    // Si no viene nada, por defecto mandamos a '/dashboard' o '/inicio'
     const next = searchParams.get('next') ?? '/dashboard'
 
     if (code) {
-        // 1. Usamos el cliente de servidor que maneja cookies automáticamente
-        const supabase = createClient()
+        const supabase = await createClient()
 
-        // 2. Intercambiamos el código por una sesión
+        // 1. Verificamos si ya hay una sesión activa (por si se llamó dos veces)
+        const { data: { session: existingSession } } = await supabase.auth.getSession()
+        if (existingSession) {
+            return NextResponse.redirect(`${origin}${next}`)
+        }
+
+        // 2. Intentamos cambiar el código por una sesión
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
-            // 3. Redirigimos al usuario YA LOGUEADO a donde toca
+            // ✅ Todo perfecto
             return NextResponse.redirect(`${origin}${next}`)
+        } else {
+            // ⚠️ Error al intercambiar el código
+            console.error('Error en exchangeCodeForSession:', error.message)
+
+            // Si el error es que el código ya se usó, comprobamos de nuevo la sesión
+            const { data: { session: retrySession } } = await supabase.auth.getSession()
+            if (retrySession) {
+                return NextResponse.redirect(`${origin}${next}`)
+            }
+
+            // Si falla y no hay sesión, mandamos al login (inicio) con un aviso
+            return NextResponse.redirect(`${origin}/inicio?message=Link_caducado_intenta_entrar`)
         }
     }
 
-    // Si hay error o el código es inválido, vuelta al principio
+    // Si no hay código, algo raro pasa
     return NextResponse.redirect(`${origin}/auth/auth-code-error`)
 }

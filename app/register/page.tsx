@@ -52,7 +52,11 @@ export default function RegisterPage() {
             // 2. Proceder con el registro usando la Server Action para PKCE
             const result = await signUp(email, password, barberiaNombre.trim());
 
-            if (result.error) throw new Error(result.error);
+            if (result.error) {
+                setErrorMsg(result.error);
+                setLoading(false);
+                return;
+            }
 
             setSuccess(true);
             toast.success('Cuenta creada exitosamente');
