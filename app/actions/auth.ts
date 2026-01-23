@@ -1,25 +1,59 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { headers } from 'next/headers'
 
-export async function signUp(email: string, password: string, barberiaNombre: string) {
-    const origin = (await headers()).get('origin')
+// Definimos un tipo para aceptar ambos formatos y argumentos individuales
+type SignUpData = FormData | { email: string; password: string; barberiaNombre?: string }
+
+export async function signUp(data: SignUpData | string, arg2?: string, arg3?: string) {
+    let email: string;
+    let password: string;
+    let barberiaNombre: string | undefined;
+
+    // 1. EXTRAER DATOS (Lógica universal)
+    if (data instanceof FormData) {
+        email = data.get('email') as string;
+        password = data.get('password') as string;
+        barberiaNombre = (data.get('barberiaNombre') as string) || (data.get('barberia_nombre') as string);
+    } else if (typeof data === 'object' && data !== null) {
+        email = (data as any).email;
+        password = (data as any).password;
+        barberiaNombre = (data as any).barberiaNombre || (data as any).barberia_nombre;
+    } else if (typeof data === 'string' && typeof arg2 === 'string') {
+        // Soporte para llamada directa: signUp(email, password, barberiaNombre)
+        email = data;
+        password = arg2;
+        barberiaNombre = arg3;
+    } else {
+        return { error: "Formato de datos inválido para el registro." };
+    }
+
+    // 2. Definir URL base
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+
+    // 3. Crear cliente Supabase
     const supabase = createClient()
 
-    const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-            emailRedirectTo: `${origin}/auth/callback?next=/auth/verified`,
-            data: {
-                barberia_nombre: barberiaNombre
-            }
-        },
-    })
+    try {
+        const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: `${siteUrl}/auth/callback?next=/auth/verified`,
+                data: {
+                    barberia_nombre: barberiaNombre?.trim()
+                }
+            },
+        })
 
-    if (error) {
-        return { error: error.message }
+        if (error) {
+            console.error("Error de Supabase:", error)
+            return { error: error.message }
+        }
+
+    } catch (e) {
+        console.error("Error inesperado:", e)
+        return { error: "Error interno del servidor." }
     }
 
     return { success: true }

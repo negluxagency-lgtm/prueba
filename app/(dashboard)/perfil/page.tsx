@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { manageSubscription } from '@/app/actions/manage-subscription'
-import { Store, CreditCard, Calendar, Mail, User, LogOut, Headset } from 'lucide-react'
+import { Store, CreditCard, Calendar, Mail, User, LogOut, Headset, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
 import { ResetPasswordButton } from '@/components/ResetPasswordButton'
@@ -207,6 +208,19 @@ export default function PerfilPage() {
                                     {formatearFecha(perfil.created_at)}
                                 </span>
                             </span>
+                        </div>
+
+                        {/* Botón Cambiar Datos */}
+                        <div className="pt-4 border-t border-zinc-800/50">
+                            <Link
+                                href="/configuracion"
+                                className="inline-flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-zinc-800 hover:bg-zinc-700 
+                                         text-white text-[10px] md:text-sm font-bold uppercase tracking-widest rounded-xl 
+                                         border border-zinc-700 hover:border-zinc-600 transition-all active:scale-95"
+                            >
+                                <Settings className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
+                                <span className="leading-none">Cambiar Datos de Configuración</span>
+                            </Link>
                         </div>
                     </div>
                 </div>
