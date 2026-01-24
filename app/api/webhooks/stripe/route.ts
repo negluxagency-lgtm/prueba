@@ -27,7 +27,8 @@ export async function POST(req: Request) {
     console.log('--- [SISTEMA] Webhook de Stripe recibido ---');
 
     const body = await req.text();
-    const signature = req.headers.get('stripe-signature') as string;
+    const headers = await req.headers;
+    const signature = headers.get('stripe-signature') as string;
 
     let event: Stripe.Event;
 
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
                     expand: ['line_items']
                 });
 
-                const userId = session.client_reference_id;
+                const userId = session.client_reference_id; // UUID de Supabase Auth
                 const customerEmail = session.customer_details?.email;
                 const stripeCustomerId = session.customer as string;
                 const customerName = session.customer_details?.name || 'Barbero';
@@ -81,12 +82,22 @@ export async function POST(req: Request) {
 
                 const planName = (priceId && PLAN_MAPPING[priceId]) ? PLAN_MAPPING[priceId] : 'Profesional';
 
-                console.log(`💰 Procesando pago: ${customerEmail} | Plan: ${planName}`);
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.log('💰 [STRIPE] checkout.session.completed');
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.log('📧 Email:', customerEmail);
+                console.log('🆔 User ID (UUID):', userId);
+                console.log('🏷️  Plan:', planName);
+                console.log('💳 Stripe Customer ID:', stripeCustomerId);
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
                 let dbUpdated = false;
+                let profileData = null;
 
-                // 1. Intento por ID de Usuario
+                // 1. PRIORIDAD: Búsqueda por UUID (método más confiable)
                 if (userId) {
+                    console.log(`🔍 [1] Buscando perfil por UUID: ${userId}`);
+
                     const { data, error } = await supabaseAdmin
                         .from('perfiles')
                         .update({
@@ -98,11 +109,22 @@ export async function POST(req: Request) {
                         .eq('id', userId)
                         .select();
 
-                    if (!error && data && data.length > 0) dbUpdated = true;
+                    if (error) {
+                        console.error('❌ Error al buscar por UUID:', error.message);
+                        console.error('   Código:', error.code);
+                    } else if (data && data.length > 0) {
+                        console.log('✅ Perfil encontrado y actualizado por UUID');
+                        dbUpdated = true;
+                        profileData = data[0];
+                    } else {
+                        console.warn('⚠️ No se encontró perfil con ese UUID');
+                    }
                 }
 
-                // 2. Fallback por Correo (Arquitectura Nelux: columna 'correo')
+                // 2. FALLBACK: Búsqueda por Email
                 if (!dbUpdated && customerEmail) {
+                    console.log(`🔍 [2] Fallback: Buscando por correo: ${customerEmail}`);
+
                     const { data, error } = await supabaseAdmin
                         .from('perfiles')
                         .update({
@@ -114,11 +136,26 @@ export async function POST(req: Request) {
                         .eq('correo', customerEmail)
                         .select();
 
-                    if (!error && data && data.length > 0) dbUpdated = true;
+                    if (error) {
+                        console.error('❌ Error al buscar por correo:', error.message);
+                        console.error('   Código:', error.code);
+                        console.error('   Detalles:', error.details);
+                    } else if (data && data.length > 0) {
+                        console.log('✅ Perfil encontrado y actualizado por correo');
+                        dbUpdated = true;
+                        profileData = data[0];
+                    } else {
+                        console.warn('⚠️ No se encontró perfil con ese correo');
+                    }
                 }
 
-                if (dbUpdated) {
-                    console.log('✅ Base de datos actualizada con éxito.');
+                if (dbUpdated && profileData) {
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                    console.log('✅ ÉXITO: Base de datos actualizada');
+                    console.log('   Barbería:', profileData.nombre_barberia);
+                    console.log('   Estado:', profileData.estado);
+                    console.log('   Plan:', profileData.plan);
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
                     // Email de Bienvenida
                     if (customerEmail) {
@@ -128,12 +165,18 @@ export async function POST(req: Request) {
                                 subject: `¡Bienvenido a Nelux! Tu plan ${planName} ya está activo`,
                                 html: `<h1>¡Bienvenido a Nelux, ${customerName}!</h1><p>Tu imperio comienza ahora. Tu suscripción al <strong>Plan ${planName}</strong> ya está activa.</p>`
                             });
+                            console.log('📧 Email de bienvenida enviado');
                         } catch (e) {
-                            console.error('⚠️ No se pudo enviar el email de bienvenida.');
+                            console.error('⚠️ Error al enviar email de bienvenida:', e);
                         }
                     }
                 } else {
-                    console.error('❌ Fallo crítico: No se encontró perfil para actualizar.', { userId, customerEmail });
+                    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                    console.error('❌ FALLO CRÍTICO: No se pudo actualizar el perfil');
+                    console.error('   UUID buscado:', userId);
+                    console.error('   Email buscado:', customerEmail);
+                    console.error('   Acción: Verifica que el usuario exista en la tabla "perfiles"');
+                    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
                 }
                 break;
             }
@@ -141,15 +184,22 @@ export async function POST(req: Request) {
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object as Stripe.Invoice;
                 if (invoice.billing_reason === 'subscription_cycle') {
-                    await supabaseAdmin
+                    const { data, error } = await supabaseAdmin
                         .from('perfiles')
                         .update({
                             ultimo_pago: new Date().toISOString(),
                             estado: 'pagado'
                         })
-                        .eq('stripe_customer_id', invoice.customer as string);
+                        .eq('stripe_customer_id', invoice.customer as string)
+                        .select();
 
-                    console.log(`✅ Renovación registrada para: ${invoice.customer}`);
+                    if (error) {
+                        console.error('❌ Error al registrar renovación:', error);
+                    } else if (data && data.length > 0) {
+                        console.log(`✅ Renovación registrada para: ${invoice.customer}`);
+                    } else {
+                        console.warn('⚠️ No se encontró perfil para renovar:', invoice.customer);
+                    }
                 }
                 break;
             }
@@ -157,12 +207,19 @@ export async function POST(req: Request) {
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object as Stripe.Subscription;
                 // Al cancelar, pasamos a 'impago' (según useSubscription.ts)
-                await supabaseAdmin
+                const { data, error } = await supabaseAdmin
                     .from('perfiles')
                     .update({ estado: 'impago' })
-                    .eq('stripe_customer_id', subscription.customer as string);
+                    .eq('stripe_customer_id', subscription.customer as string)
+                    .select();
 
-                console.log(`🛑 Suscripción cancelada: ${subscription.customer}`);
+                if (error) {
+                    console.error('❌ Error al marcar impago:', error);
+                } else if (data && data.length > 0) {
+                    console.log(`🛑 Suscripción cancelada: ${subscription.customer}`);
+                } else {
+                    console.warn('⚠️ No se encontró perfil para marcar impago:', subscription.customer);
+                }
                 break;
             }
 

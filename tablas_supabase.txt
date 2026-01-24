@@ -6,6 +6,8 @@ Es la tabla maestra. Contiene la identidad, la configuración técnica para la I
 
 Identidad y Acceso:
 
+id: (UUID): identificador único de cada usuario.
+
 nombre_barberia: (PK) El identificador principal.
 
 correo / telefono: Contacto del dueño.
@@ -20,11 +22,13 @@ Datos que la IA usa para trabajar: Direccion, horario, servicios, pagos, product
 
 Suscripción (Stripe):
 
-plan: Nivel de suscripción (gratis, profesional, etc.).
+plan: Nivel de suscripción (Básico, Profesional, Premium).
 
-estado: Estado de la cuenta (activa, impagada).
+estado: Estado de la cuenta (prueba, pagado, impago).
 
 ultimo_pago: Timestamp de la última vez que pagaron la cuota.
+
+stripe_customer_id: ID del cliente en Stripe (cus_xxxxx).
 
 KPIs y Objetivos (Cálculo Automático):
 
@@ -124,3 +128,14 @@ venta: Contador histórico de unidades vendidas.
 stock: Cantidad actual disponible.
 
 barberia: Vincula con perfiles.nombre_barberia.
+
+TABLA AÑADIDA!!
+
+nombre: stripe_procesados
+
+Columnas: 
+
+id: Autonumérico.
+
+created_at: Fecha de procesamiento automática.
+

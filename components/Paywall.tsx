@@ -22,6 +22,7 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
 
     const getLink = (baseUrl: string) => {
         if (!user) return baseUrl;
+        // client_reference_id usa el UUID de Supabase Auth que coincide con perfiles.id
         return `${baseUrl}?client_reference_id=${user.id}&prefilled_email=${user.email}`;
     };
 
