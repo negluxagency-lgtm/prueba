@@ -6,14 +6,13 @@ import { createClient } from '@supabase/supabase-js';
 // 1. CONFIGURACIÓN
 // ------------------------------------------------------
 
+// ⚠️ CAMBIO CLAVE: Quitamos 'apiVersion' para que detecte la automática y no falle.
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-12-15.clover',
     typescript: true,
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-// CLIENTE SUPABASE ADMIN
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -25,11 +24,11 @@ const supabaseAdmin = createClient(
     }
 );
 
-// Mapeo de planes (con seguridad por si faltan variables)
+// Mapeo seguro
 const PLAN_MAPPING: Record<string, string> = {
-    [process.env.STRIPE_PRICE_BASICO || 'price_dummy_1']: 'Básico',
-    [process.env.STRIPE_PRICE_PROFESIONAL || 'price_dummy_2']: 'Profesional',
-    [process.env.STRIPE_PRICE_PREMIUM || 'price_dummy_3']: 'Premium',
+    [process.env.STRIPE_PRICE_BASICO || 'dummy_basic']: 'Básico',
+    [process.env.STRIPE_PRICE_PROFESIONAL || 'dummy_pro']: 'Profesional',
+    [process.env.STRIPE_PRICE_PREMIUM || 'dummy_premium']: 'Premium',
 };
 
 // ------------------------------------------------------
@@ -37,7 +36,7 @@ const PLAN_MAPPING: Record<string, string> = {
 // ------------------------------------------------------
 
 export async function POST(req: Request) {
-    console.log('--- [SISTEMA] Webhook recibido ---');
+    console.log('--- [SISTEMA] Iniciando Webhook (Modo Auto) ---');
 
     const body = await req.text();
     const signature = req.headers.get('stripe-signature') as string;
@@ -47,6 +46,7 @@ export async function POST(req: Request) {
     // A. VALIDAR FIRMA
     try {
         if (!signature || !webhookSecret) {
+            console.error('❌ Falta firma o secreto');
             return NextResponse.json({ error: 'Falta firma/secreto' }, { status: 400 });
         }
         event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
     }
 
-    // B. EVITAR DUPLICADOS (Idempotencia)
+    // B. EVITAR DUPLICADOS
     try {
         const { error } = await supabaseAdmin
             .from('stripe_procesados')
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ received: true }, { status: 200 });
         }
     } catch (e) {
-        // Ignoramos error si la tabla no existe para que no pare el cobro
+        // Ignoramos la falta de tabla para no bloquear el cobro
     }
 
     // C. LÓGICA DE NEGOCIO
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
             case 'checkout.session.completed': {
                 const sessionEvent = event.data.object as Stripe.Checkout.Session;
 
-                // Expandimos para ver productos
+                // Expandir items
                 const session = await stripe.checkout.sessions.retrieve(sessionEvent.id, {
                     expand: ['line_items']
                 });
@@ -87,11 +87,11 @@ export async function POST(req: Request) {
 
                 const planName = (priceId && PLAN_MAPPING[priceId]) ? PLAN_MAPPING[priceId] : 'Profesional';
 
-                console.log(`💰 Pago de: ${customerEmail} - Plan: ${planName}`);
+                console.log(`💰 Pago procesado para: ${customerEmail}`);
 
                 let dbUpdated = false;
 
-                // 1. Intento por ID
+                // Intento 1: ID
                 if (userId) {
                     const { data, error } = await supabaseAdmin
                         .from('perfiles')
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
                     if (!error && data && data.length > 0) dbUpdated = true;
                 }
 
-                // 2. Fallback por Correo (columna 'correo')
+                // Intento 2: Correo (Buscando en columna 'correo')
                 if (!dbUpdated && customerEmail) {
                     const { data, error } = await supabaseAdmin
                         .from('perfiles')
@@ -117,14 +117,14 @@ export async function POST(req: Request) {
                             stripe_customer_id: stripeCustomerId,
                             ultimo_pago: new Date().toISOString()
                         })
-                        .eq('correo', customerEmail) // <--- Confirma que tu columna es 'correo'
+                        .eq('correo', customerEmail)
                         .select();
 
                     if (!error && data && data.length > 0) dbUpdated = true;
                 }
 
-                if (dbUpdated) console.log('✅ Base de datos actualizada.');
-                else console.error('❌ No se encontró usuario para actualizar.');
+                if (dbUpdated) console.log('✅ Base de datos actualizada con éxito.');
+                else console.error('❌ ERROR: No se encontró el usuario en Supabase.');
 
                 break;
             }
