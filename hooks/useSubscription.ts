@@ -31,7 +31,9 @@ export function useSubscription() {
             const { data: { session } } = await supabase.auth.getSession();
             const user = session?.user;
 
-            console.log("useSubscription: User session check", { userId: user?.id });
+            // Logger condicional (Auditoría Punto 6)
+            const isDev = process.env.NODE_ENV === 'development';
+            if (isDev) console.log("useSubscription: User session check", { userId: user?.id });
 
             if (!user) {
                 console.log("useSubscription: No user found, stopping.");
@@ -52,7 +54,7 @@ export function useSubscription() {
                     .eq('id', user.id)
                     .single();
 
-                console.log("useSubscription: Profile fetch result", { profile, error });
+                if (isDev) console.log("useSubscription: Profile fetch result", { hasProfile: !!profile, error });
 
                 if (error && error.code !== 'PGRST116') {
                     throw error;

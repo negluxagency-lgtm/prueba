@@ -1,7 +1,7 @@
 Arquitectura de Datos: Nelux (Estructura Real)
 El sistema se basa en 4 tablas principales. La clave de unión entre todas ellas no es el UUID de Supabase, sino el campo nombre_barberia, que actúa como identificador único para relacionar datos.
 
-1. Tabla perfiles (Configuración y Dashboard)
+1. Tabla "perfiles" (Configuración y Dashboard)
 Es la tabla maestra. Contiene la identidad, la configuración técnica para la IA y los KPIs (indicadores de rendimiento) que se muestran en el dashboard de la app.
 
 Identidad y Acceso:
@@ -19,6 +19,8 @@ docs: Campo legado (irrelevante actualmente).
 Configuración (Formulario de Onboarding):
 
 Datos que la IA usa para trabajar: Direccion, horario, servicios, pagos, productos (configuración general), info (instrucciones extra).
+
+onboarding_completado: Boolean que indica si el usuario completó la configuración inicial por primera vez.
 
 Suscripción (Stripe):
 
@@ -38,7 +40,7 @@ Métricas Diarias: ingresos_dia, cortes_dia, productos_dia.
 
 Nota: Estos campos se recalculan automáticamente en base a los objetivos y la actividad real para mostrar el progreso diario en la App.
 
-2. Tabla citas (Agenda y Libro de Ventas)
+2. Tabla "citas" (Agenda y Libro de Ventas)
 Esta tabla es híbrida. Funciona como agenda de reservas y también como registro de ventas de productos físicos (champús, gominas, etc.).
 
 Identificadores:
@@ -81,7 +83,7 @@ cancelada: true si es un "No-Show" o cancelación.
 
 Lógica: Si cancelada pasa a true, automáticamente confirmada debe pasar a false.
 
-3. Tabla mensajes (Auditoría de Chat)
+3. Tabla "Mensajes" (Auditoría de Chat)
 Registro cronológico de la comunicación. Separa lo enviado de lo recibido en columnas distintas para facilitar la lectura humana.
 
 Contenido:
@@ -108,7 +110,7 @@ FALSE (Default): El mensaje lo envió la IA o el cliente.
 
 TRUE: El mensaje fue escrito manualmente por el barbero desde la App de Nelux.
 
-4. Tabla productos (Inventario de Barbería)
+4. Tabla "productos" (Inventario de Barbería)
 No confundir con los productos de Stripe. Este es el inventario físico que tiene la barbería en su estantería para vender a clientes.
 
 Detalles:
@@ -131,7 +133,7 @@ barberia: Vincula con perfiles.nombre_barberia.
 
 TABLA AÑADIDA!!
 
-nombre: stripe_procesados
+nombre: "stripe_procesados"
 
 Columnas: 
 

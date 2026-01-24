@@ -1,26 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
 import BillingClient from './BillingClient';
 import { AlertCircle } from 'lucide-react';
-
-// 🛡️ REGLA DE ORO: Supabase Admin SOLO en el Servidor
-// Utilizamos el cliente directo de supabase-js para usar la Service Key y saltar el RLS.
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    }
-);
+import { getAdminProfiles, getAdminBillingStats } from '@/app/actions/admin-billing';
 
 interface PageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function AdminBillingPage({ searchParams }: PageProps) {
-    // 1. Restricción de Seguridad: Solo Local
+    // 1. Restricción de Seguridad: Solo Local (Capa Visual)
     if (process.env.NODE_ENV !== 'development') {
         return (
             <div className="h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
@@ -28,7 +15,7 @@ export default async function AdminBillingPage({ searchParams }: PageProps) {
                     <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
                     <h1 className="text-white font-bold text-xl mb-2 italic uppercase">Acceso Denegado</h1>
                     <p className="text-zinc-400 text-sm">
-                        Esta herramienta administrativa solo funciona en localhost. La Service Key nunca se expone al navegador.
+                        Esta herramienta administrativa solo funciona en localhost. Los Server Actions están bloqueados en producción.
                     </p>
                 </div>
             </div>
@@ -39,55 +26,20 @@ export default async function AdminBillingPage({ searchParams }: PageProps) {
     const resolvedParams = await searchParams;
     const barberiaName = resolvedParams.barberia as string || '';
 
-    // 3. Obtener Lista de Barberías (By-passing RLS con SERVICE_ROLE_KEY)
-    const { data: profiles, error: pError } = await supabaseAdmin
-        .from('perfiles')
-        .select('nombre_barberia, correo')
-        .order('nombre_barberia', { ascending: true });
+    // 3. Obtener Datos via Server Actions (Seguro)
+    const profiles = await getAdminProfiles().catch(err => {
+        console.error('Error loading profiles:', err);
+        return [];
+    });
 
-    if (pError) {
-        console.error('Error fetching profiles with Service Key:', pError.message);
-    }
-
-    // 4. Obtener Estadísticas si hay una barbería seleccionada
-    let stats = null;
-    if (barberiaName) {
-        const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-
-        const { data: appointments, error: cError } = await supabaseAdmin
-            .from('citas')
-            .select('*')
-            .eq('barberia', barberiaName)
-            .gte('Dia', startOfMonth);
-
-        if (!cError && appointments) {
-            // Filtrar solo citas (no ventas de productos)
-            const allCitas = appointments.filter(a => !a.producto);
-            const totalApp = allCitas.length;
-            const noShows = allCitas.filter(a => a.cancelada).length;
-
-            // Citas que cuentan para ingresos (Confirmadas y NO canceladas)
-            const confirmed = allCitas.filter(a => a.confirmada && !a.cancelada);
-
-            // Separamos las que tienen precio de las que no
-            const revenueWithPrice = confirmed.reduce((sum, app) => sum + (Number(app.Precio) || 0), 0);
-            const countWithoutPrice = confirmed.filter(a => !Number(a.Precio)).length;
-
-            stats = {
-                totalAppointments: totalApp,
-                totalRevenue: revenueWithPrice,
-                appointmentsWithoutPrice: countWithoutPrice,
-                noShows: noShows
-            };
-        } else if (cError) {
-            console.error('Error fetching appointments with Service Key:', cError.message);
-        }
-    }
+    const stats = await getAdminBillingStats(barberiaName).catch(err => {
+        console.error('Error loading stats:', err);
+        return null;
+    });
 
     return (
         <BillingClient
-            profiles={profiles || []}
+            profiles={profiles}
             selectedBarberia={barberiaName}
             stats={stats}
         />

@@ -1,10 +1,29 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/utils/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+    // -----------------------------------------------------------------
+    // 🔒 CAPA DE SEGURIDAD EXTRA (Auditoría Punto 3)
+    // -----------------------------------------------------------------
+    // Si intentan entrar a /admin y estamos en Producción -> Fuera.
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+        if (process.env.NODE_ENV === 'production') {
+            const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
+            console.warn(`🛑 Acceso bloqueado a /admin desde ${ip}`);
+            // Redirigimos a la home para que no sepan ni que existe
+            return NextResponse.redirect(new URL('/', request.url));
+        }
+    }
+
+    // -----------------------------------------------------------------
+    // 🍪 GESTIÓN DE SESIÓN SUPABASE (Tu código original)
+    // -----------------------------------------------------------------
     // Debug: Log para ver si el middleware se ejecuta y si hay cookies de Supabase
-    const hasAuthCookie = request.cookies.getAll().some(c => c.name.includes('sb-'));
-    console.log(`[Middleware] Path: ${request.nextUrl.pathname} | SB Cookies: ${hasAuthCookie}`);
+    // (Puedes comentar esto en producción para limpiar logs, punto 6 de la auditoría)
+    if (process.env.NODE_ENV === 'development') {
+        const hasAuthCookie = request.cookies.getAll().some(c => c.name.includes('sb-'));
+        console.log(`[Middleware] Path: ${request.nextUrl.pathname} | SB Cookies: ${hasAuthCookie}`);
+    }
 
     return await updateSession(request)
 }

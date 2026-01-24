@@ -157,18 +157,17 @@ export async function POST(req: Request) {
                     console.log('   Plan:', profileData.plan);
                     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-                    // Email de Bienvenida
+                    // Email de Bienvenida (Fire-and-forget para no bloquear a Stripe)
                     if (customerEmail) {
-                        try {
-                            await sendEmail({
-                                to: customerEmail,
-                                subject: `¡Bienvenido a Nelux! Tu plan ${planName} ya está activo`,
-                                html: `<h1>¡Bienvenido a Nelux, ${customerName}!</h1><p>Tu imperio comienza ahora. Tu suscripción al <strong>Plan ${planName}</strong> ya está activa.</p>`
-                            });
-                            console.log('📧 Email de bienvenida enviado');
-                        } catch (e) {
-                            console.error('⚠️ Error al enviar email de bienvenida:', e);
-                        }
+                        sendEmail({
+                            to: customerEmail,
+                            subject: `¡Bienvenido a Nelux! Tu plan ${planName} ya está activo`,
+                            html: `<h1>¡Bienvenido a Nelux, ${customerName}!</h1><p>Tu imperio comienza ahora. Tu suscripción al <strong>Plan ${planName}</strong> ya está activa.</p>`
+                        }).then(() => {
+                            console.log('📧 Email de bienvenida enviado (Async)');
+                        }).catch((e) => {
+                            console.error('⚠️ Error envíando email bienvenida (Async):', e);
+                        });
                     }
                 } else {
                     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

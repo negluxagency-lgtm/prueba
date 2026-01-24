@@ -36,14 +36,14 @@ export default async function DashboardLayout({
     // Opcional: Fetch inicial del perfil para pasar al cliente
     const { data: profile } = await supabase
         .from('perfiles')
-        .select('nombre_barberia, estado, telefono')
+        .select('nombre_barberia, estado, telefono, onboarding_completado')
         .eq('id', user.id)
         .single();
 
-    // Si no tiene teléfono configurado, mandarlo a configuración (excepto si ya está ahí)
-    // Pero como configuración está fuera de (dashboard), no hay bucle aquí.
-    if (!profile || !profile.telefono) {
-        console.log("DashboardLayout (Server): Perfil incompleto. Redirigiendo a /configuracion");
+    // Redirigir a configuración SOLO si nunca completó el onboarding inicial
+    // (no si simplemente falta un campo después de haberlo completado)
+    if (!profile || profile.onboarding_completado === false) {
+        console.log("DashboardLayout (Server): Onboarding no completado. Redirigiendo a /configuracion");
         redirect('/configuracion');
     }
 

@@ -131,17 +131,20 @@ export default function ConfigurationPage() {
                 .upsert({
                     id: user.id,
                     nombre_barberia: user.user_metadata?.barberia_nombre || 'Mi Barbería',
-                    servicios: formData.servicios,
-                    horario: formData.horario,
-                    Direccion: formData.Direccion,
-                    telefono: formData.telefono,
-                    pagos: formData.pagos,
-                    productos: formData.productos,
-                    info: formData.info,
-                    nombre_encargado: formData.nombre_encargado,
+                    // Sanitización Básica (Auditoría Punto 7)
+                    // Elimina tags HTML básicos para prevenir XSS almacenado simple en campos de texto libre
+                    servicios: formData.servicios.replace(/<[^>]*>?/gm, ''),
+                    horario: formData.horario.replace(/<[^>]*>?/gm, ''),
+                    Direccion: formData.Direccion.replace(/<[^>]*>?/gm, ''),
+                    telefono: formData.telefono, // Teléfono suele ser validado por input type="tel" pero no hace daño limpiar
+                    pagos: formData.pagos.replace(/<[^>]*>?/gm, ''),
+                    productos: formData.productos.replace(/<[^>]*>?/gm, ''),
+                    info: formData.info.replace(/<[^>]*>?/gm, ''),
+                    nombre_encargado: formData.nombre_encargado.replace(/<[^>]*>?/gm, ''),
                     objetivo_ingresos: parseFloat(formData.objetivo_ingresos) || 0,
                     objetivo_cortes: parseInt(formData.objetivo_cortes) || 0,
-                    objetivo_productos: parseInt(formData.objetivo_productos) || 0
+                    objetivo_productos: parseInt(formData.objetivo_productos) || 0,
+                    onboarding_completado: true  // ✅ Marcar como completado
                 }, {
                     onConflict: 'id'
                 })
