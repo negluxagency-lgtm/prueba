@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { sendEmail } from '@/lib/resend'; // Si tienes esto, déjalo. Si da error, coméntalo.
 
 // ------------------------------------------------------
-// 1. CONFIGURACIÓN (Iniciamos aquí para evitar fallos de importación)
+// 1. CONFIGURACIÓN
 // ------------------------------------------------------
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2023-10-16', // Ponemos versión estable estándar
+    apiVersion: '2023-10-16',
+    typescript: true,
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-// CLIENTE SUPABASE ADMIN (Para saltar seguridad RLS)
+// CLIENTE SUPABASE ADMIN
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -25,11 +25,11 @@ const supabaseAdmin = createClient(
     }
 );
 
-// Mapeo seguro (si no hay variables, usa strings por defecto para no crashear)
+// Mapeo de planes (con seguridad por si faltan variables)
 const PLAN_MAPPING: Record<string, string> = {
-    [process.env.STRIPE_PRICE_BASICO || 'price_basico_dummy']: 'Básico',
-    [process.env.STRIPE_PRICE_PROFESIONAL || 'price_pro_dummy']: 'Profesional',
-    [process.env.STRIPE_PRICE_PREMIUM || 'price_premium_dummy']: 'Premium',
+    [process.env.STRIPE_PRICE_BASICO || 'price_dummy_1']: 'Básico',
+    [process.env.STRIPE_PRICE_PROFESIONAL || 'price_dummy_2']: 'Profesional',
+    [process.env.STRIPE_PRICE_PREMIUM || 'price_dummy_3']: 'Premium',
 };
 
 // ------------------------------------------------------
@@ -37,20 +37,17 @@ const PLAN_MAPPING: Record<string, string> = {
 // ------------------------------------------------------
 
 export async function POST(req: Request) {
-    console.log('--- [SISTEMA] Petición POST recibida en /api/webhooks/stripe ---');
+    console.log('--- [SISTEMA] Webhook recibido ---');
 
     const body = await req.text();
     const signature = req.headers.get('stripe-signature') as string;
 
-    console.log(`--- [SISTEMA] Firma presente: ${!!signature} ---`);
-
     let event: Stripe.Event;
 
-    // 1. VERIFICACIÓN DE FIRMA
+    // A. VALIDAR FIRMA
     try {
         if (!signature || !webhookSecret) {
-            console.error('❌ Falta firma o secreto de webhook');
-            return NextResponse.json({ error: 'Configuración incompleta' }, { status: 400 });
+            return NextResponse.json({ error: 'Falta firma/secreto' }, { status: 400 });
         }
         event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err: any) {
@@ -58,30 +55,27 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
     }
 
-    const eventId = event.id;
-
-    // 2. CONTROL DE IDEMPOTENCIA
+    // B. EVITAR DUPLICADOS (Idempotencia)
     try {
-        const { error: idempotencyError } = await supabaseAdmin
+        const { error } = await supabaseAdmin
             .from('stripe_procesados')
-            .insert([{ id: eventId }]);
+            .insert([{ id: event.id }]);
 
-        if (idempotencyError && idempotencyError.code === '23505') {
-            console.warn(`⚠️ Evento ya procesado: ${eventId}. Omitiendo.`);
-            return NextResponse.json({ received: true, duplicate: true }, { status: 200 });
+        if (error && error.code === '23505') {
+            console.log('⚠️ Evento duplicado. Saltando...');
+            return NextResponse.json({ received: true }, { status: 200 });
         }
-    } catch (err: any) {
-        console.warn('⚠️ No se pudo verificar duplicados (tabla no existe?), seguimos...');
+    } catch (e) {
+        // Ignoramos error si la tabla no existe para que no pare el cobro
     }
 
-    // 3. LÓGICA DE NEGOCIO
+    // C. LÓGICA DE NEGOCIO
     try {
         switch (event.type) {
             case 'checkout.session.completed': {
-                console.log('--- 🟢 INICIO PROCESAMIENTO CHECKOUT ---');
                 const sessionEvent = event.data.object as Stripe.Checkout.Session;
 
-                // Recuperar sesión completa
+                // Expandimos para ver productos
                 const session = await stripe.checkout.sessions.retrieve(sessionEvent.id, {
                     expand: ['line_items']
                 });
@@ -91,14 +85,13 @@ export async function POST(req: Request) {
                 const stripeCustomerId = session.customer as string;
                 const priceId = session.line_items?.data[0]?.price?.id;
 
-                // Mapeo o fallback
                 const planName = (priceId && PLAN_MAPPING[priceId]) ? PLAN_MAPPING[priceId] : 'Profesional';
 
-                console.log(`💰 Procesando pago para: ${customerEmail} - Plan: ${planName}`);
+                console.log(`💰 Pago de: ${customerEmail} - Plan: ${planName}`);
 
                 let dbUpdated = false;
 
-                // 4A. Intento por ID (userId)
+                // 1. Intento por ID
                 if (userId) {
                     const { data, error } = await supabaseAdmin
                         .from('perfiles')
@@ -106,7 +99,7 @@ export async function POST(req: Request) {
                             estado: 'pagado',
                             plan: planName,
                             stripe_customer_id: stripeCustomerId,
-                            ultimo_pago: new Date().toISOString() // <--- ✅ AÑADIDO
+                            ultimo_pago: new Date().toISOString()
                         })
                         .eq('id', userId)
                         .select();
@@ -114,55 +107,35 @@ export async function POST(req: Request) {
                     if (!error && data && data.length > 0) dbUpdated = true;
                 }
 
-                // 4B. Fallback por EMAIL (Usando columna 'correo')
+                // 2. Fallback por Correo (columna 'correo')
                 if (!dbUpdated && customerEmail) {
-                    console.log(`🔄 Intentando fallback por CORREO: ${customerEmail}`);
-
-                    // OJO AQUÍ: Cambiado 'email' por 'correo'
                     const { data, error } = await supabaseAdmin
                         .from('perfiles')
                         .update({
                             estado: 'pagado',
                             plan: planName,
                             stripe_customer_id: stripeCustomerId,
-                            ultimo_pago: new Date().toISOString() // <--- ✅ AÑADIDO
+                            ultimo_pago: new Date().toISOString()
                         })
-                        .eq('correo', customerEmail) // <--- ✅ CORREGIDO NOMBRE COLUMNA
+                        .eq('correo', customerEmail) // <--- Confirma que tu columna es 'correo'
                         .select();
 
                     if (!error && data && data.length > 0) dbUpdated = true;
-                    else if (error) console.error('Error DB:', error);
                 }
 
-                if (dbUpdated) {
-                    console.log(`✅ [ÉXITO] Perfil actualizado para ${customerEmail}`);
+                if (dbUpdated) console.log('✅ Base de datos actualizada.');
+                else console.error('❌ No se encontró usuario para actualizar.');
 
-                    // Email Bienvenida (Protegido con try/catch)
-                    if (customerEmail) {
-                        try {
-                            await sendEmail({
-                                to: customerEmail,
-                                subject: `Bienvenido a Nelux - Plan ${planName}`,
-                                html: `<p>Tu cuenta ya está activa. ¡Gracias!</p>`
-                            });
-                        } catch (e) { console.warn('No se envió email (no crítico)'); }
-                    }
-                } else {
-                    console.error('❌ NO se actualizó ningún perfil. Verifica si el correo coincide exactamente.');
-                }
                 break;
             }
 
-            // CASO RENOVACIÓN MENSUAL (Importante para actualizar la fecha mes a mes)
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object as Stripe.Invoice;
                 if (invoice.billing_reason === 'subscription_cycle') {
-                    const stripeCustomerId = invoice.customer as string;
                     await supabaseAdmin
                         .from('perfiles')
                         .update({ ultimo_pago: new Date().toISOString() })
-                        .eq('stripe_customer_id', stripeCustomerId);
-                    console.log(`✅ Renovación registrada para cliente Stripe: ${stripeCustomerId}`);
+                        .eq('stripe_customer_id', invoice.customer as string);
                 }
                 break;
             }
@@ -177,10 +150,10 @@ export async function POST(req: Request) {
             }
         }
 
-        return NextResponse.json({ received: true }, { status: 200 });
+        return NextResponse.json({ received: true });
 
     } catch (err: any) {
-        console.error(`❌ [ERROR CRÍTICO] ${err.message}`);
-        return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
+        console.error(`❌ Error Interno: ${err.message}`);
+        return NextResponse.json({ error: 'Server Error' }, { status: 500 });
     }
 }
