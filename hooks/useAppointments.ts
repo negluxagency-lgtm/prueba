@@ -50,20 +50,27 @@ export function useAppointments(selectedDate: string) {
             // Optimizada: Una sola query para métricas
             const { data: monthData, error: monthError } = await supabase
                 .from('citas')
-                .select('Precio, Servicio, Telefono, producto')
+                .select('Precio, Servicio, Telefono, producto, confirmada') // ✅ Añadido confirmada
                 .gte('Dia', startOfMonth)
                 .eq('barberia', barberiaId); // 🔒 FILTRO DE SEGURIDAD
 
             if (!monthError && monthData) {
-                const total = monthData.reduce((acc, curr) => acc + (Number(curr.Precio) || 0), 0);
-                setMonthlyRevenue(total);
+                // 1. Caja Real: Suma TODO lo confirmado (Servicios + Productos)
+                const totalRevenue = monthData
+                    .filter(item => item.confirmada)
+                    .reduce((acc, curr) => acc + (Number(curr.Precio) || 0), 0);
 
-                const cuts = monthData.filter(c => !c.producto).length;
+                setMonthlyRevenue(totalRevenue);
+
+                // 2. Citas: Solo SERVICIOS (producto=false) y CONFIRMADAS (confirmada=true)
+                const cutsConfirmed = monthData.filter(c => !c.producto && c.confirmada).length;
+                setMonthlyCuts(cutsConfirmed);
+
+                // 3. Productos: Suma cantidad vendida (campo Telefono)
                 const prods = monthData
                     .filter(c => c.producto)
                     .reduce((sum, item) => sum + (Number(item.Telefono) || 0), 0);
 
-                setMonthlyCuts(cuts);
                 setMonthlyProducts(prods);
             }
 

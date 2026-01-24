@@ -153,7 +153,7 @@ export default function Dashboard() {
           <div className="w-[25%] lg:hidden flex justify-end">
             <DashboardStats
               appointments={appointments}
-              monthlyRevenue={monthlyRevenue}
+              monthlyRevenue={stats.ingresos.actual}
               onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
             />
           </div>
@@ -173,7 +173,7 @@ export default function Dashboard() {
       <div className="hidden md:flex mb-6 md:mb-10 lg:px-4">
         <DashboardStats
           appointments={appointments}
-          monthlyRevenue={monthlyRevenue}
+          monthlyRevenue={stats.ingresos.actual}
           onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
         />
       </div>

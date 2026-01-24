@@ -20,8 +20,8 @@ export default async function DashboardLayout({
     }
 
     if (!user) {
-        // Si no hay sesión en el servidor, redirigir al login limpiamente
-        redirect('/login');
+        // Si no hay sesión en el servidor, redirigir al login limpiamente con flag de error
+        redirect('/login?error=session_expired');
     }
 
     // Opcional: Fetch inicial del perfil para pasar al cliente

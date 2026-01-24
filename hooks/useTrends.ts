@@ -84,12 +84,19 @@ export function useTrends(referenceDate?: string) {
     };
 
     const calculateMetrics = (data: Appointment[]): TrendsMetrics => {
+        // Caja Real: Suma TODO lo confirmado (Servicios + Productos)
         const totalRev = data.reduce((sum, item) => sum + (item.confirmada ? (Number(item.Precio) || 0) : 0), 0);
+
         const totalCli = data.filter(a => a.confirmada).length;
-        const totalCuts = data.filter(a => !a.producto && a.confirmada).length;
+
+        // Total Cuts: Servicios (producto=false) SIN IMPORTAR confirmación
+        // Total Cuts: Servicios (producto=false) SIN IMPORTAR confirmación (Total Agendado)
+        const totalCuts = data.filter(item => item.producto === false).length;
+
         const totalProducts = data
             .filter(a => a.producto && a.confirmada)
             .reduce((sum, item) => sum + (Number(item.Telefono) || 0), 0);
+
         const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
         const totalNoShows = data.filter(cita => cita.cancelada).length;
 
@@ -107,6 +114,19 @@ export function useTrends(referenceDate?: string) {
     const fetchTrends = async () => {
         try {
             setLoading(true);
+
+            // 0. SEGURIDAD: Obtener ID Barbería
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return; // Silent fail o manejar error
+
+            const { data: profile } = await supabase
+                .from('perfiles')
+                .select('nombre_barberia')
+                .eq('id', user.id)
+                .single();
+
+            const barberiaId = profile?.nombre_barberia;
+            if (!barberiaId) return;
 
             // 1. Current Period Dates
             const refDate = referenceDate ? new Date(referenceDate) : new Date();
@@ -147,10 +167,11 @@ export function useTrends(referenceDate?: string) {
             const prevStartStr = formatDate(prevStartDate);
             const prevEndStr = formatDate(prevEndDate);
 
-            // 3. Parallel Queries
+            // 3. Parallel Queries (FILTRADAS POR BARBERÍA 🔒)
             const currentQuery = supabase
                 .from('citas')
                 .select('*')
+                .eq('barberia', barberiaId) // 🔒 FILTRO
                 .gte('Dia', currentStartStr)
                 .lte('Dia', currentEndStr)
                 .order('Dia', { ascending: true });
@@ -158,6 +179,7 @@ export function useTrends(referenceDate?: string) {
             const previousQuery = supabase
                 .from('citas')
                 .select('*')
+                .eq('barberia', barberiaId) // 🔒 FILTRO
                 .gte('Dia', prevStartStr)
                 .lte('Dia', prevEndStr);
 
@@ -202,11 +224,21 @@ export function useTrends(referenceDate?: string) {
             const groupKey = range === 'year' ? app.Dia.substring(0, 7) : app.Dia;
             if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
 
+            // Cuts: Contar siempre si es servicio (!producto), indiferente si confirmada
+            if (!app.producto) {
+                dataMap[groupKey].cuts += 1;
+            }
+
             if (app.confirmada) {
+                // Caja Real Chart: Sumar TODO si está confirmado
                 dataMap[groupKey].rev += (Number(app.Precio) || 0);
+
+                // Productos (estos sí mantenemos lógica de venta real confirmada o cantidad?)
+                // El usuario no especificó cambios en productos, solo cuts.
+                if (app.producto) {
+                    dataMap[groupKey].prods += (Number(app.Telefono) || 0);
+                }
                 dataMap[groupKey].cli += 1;
-                if (!app.producto) dataMap[groupKey].cuts += 1;
-                else dataMap[groupKey].prods += (Number(app.Telefono) || 0);
             }
             if (app.cancelada) dataMap[groupKey].no += 1;
         });
@@ -258,18 +290,41 @@ export function useTrends(referenceDate?: string) {
     };
 
     useEffect(() => {
-        fetchTrends();
+        let channel: any;
 
-        // Suscripción en tiempo real
-        const channel = supabase
-            .channel('trends-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'citas' }, () => {
-                fetchTrends();
-            })
-            .subscribe();
+        const setupRealtime = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data: profile } = await supabase
+                .from('perfiles')
+                .select('nombre_barberia')
+                .eq('id', user.id)
+                .single();
+
+            const barberiaId = profile?.nombre_barberia;
+            if (!barberiaId) return;
+
+            fetchTrends();
+
+            // Suscripción FILTRADA 🔒
+            channel = supabase
+                .channel('trends-realtime')
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'citas',
+                    filter: `barberia=eq.${barberiaId}`
+                }, () => {
+                    fetchTrends();
+                })
+                .subscribe();
+        };
+
+        setupRealtime();
 
         return () => {
-            supabase.removeChannel(channel);
+            if (channel) supabase.removeChannel(channel);
         };
     }, [range, referenceDate]); // Refetch when range OR referenceDate changes
 

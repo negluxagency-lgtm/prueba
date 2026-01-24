@@ -54,7 +54,7 @@ export default function TrendsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
         {[
           { id: 'revenue' as MetricType, label: 'Ingresos', val: `${metrics.totalRevenue}€`, icon: DollarSign, trend: range, color: 'text-green-500' },
-          { id: 'clients' as MetricType, label: 'Citas', val: metrics.totalClients, icon: Calendar, trend: range, color: 'text-amber-500' },
+          { id: 'clients' as MetricType, label: 'Citas', val: metrics.totalCuts, icon: Calendar, trend: range, color: 'text-amber-500' },
           { id: 'avgTicket' as MetricType, label: 'Ticket Medio', val: `${metrics.avgTicket}€`, icon: TrendingUp, trend: 'Avg', color: 'text-blue-500' },
           { id: 'noShows' as MetricType, label: 'No-Shows', val: metrics.noShows, icon: Users, trend: range, color: 'text-red-500' },
         ].map((stat, i) => (
