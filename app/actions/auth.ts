@@ -29,24 +29,13 @@ export async function signUp(data: SignUpData | string, arg2?: string, arg3?: st
         return { error: "Formato de datos inválido para el registro." };
     }
 
-    // 2. Definir URL base dinámica
-    const headerList = await headers();
-    const host = headerList.get('host') || 'app.nelux.es';
-    const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
+    // 2. Definir URL base (Prioridad absoluta a variables de entorno)
+    // Esto evita que Supabase use URLs internas de Netlify/Vercel (preview URLs)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ||
+        process.env.NEXT_PUBLIC_BASE_URL ||
+        'https://app.nelux.es';
 
-    // Prioridad: Variable de entorno (si no es localhost) > Host dinámico > Hardcoded fallback
-    let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-    if (!siteUrl || siteUrl.includes('localhost')) {
-        // Si no hay env var o es localhost, intentamos extraer del host
-        if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
-            siteUrl = `${protocol}://${host}`;
-        } else {
-            // Fallback final para producción si todo falla o estamos en local queriendo probar producción
-            siteUrl = 'https://app.nelux.es';
-        }
-    }
-
-    console.log("signUp: Detected Host:", host, "Final siteUrl:", siteUrl);
+    console.log("signUp: Final siteUrl:", siteUrl);
 
     // 3. Crear cliente Supabase
     const supabase = await createClient()

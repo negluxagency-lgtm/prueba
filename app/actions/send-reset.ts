@@ -16,20 +16,10 @@ export async function sendResetEmail(providedEmail?: string) {
         return { success: false, error: "Usuario no autenticado o sin email." };
     }
 
-    // Usar la misma lógica de siteUrl robusta
-    const { headers } = await import('next/headers');
-    const headerList = await headers();
-    const host = headerList.get('host');
-    const protocol = (host?.includes('localhost') || host?.includes('127.0.0.1')) ? 'http' : 'https';
-
-    let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-    if (!siteUrl || siteUrl.includes('localhost')) {
-        if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
-            siteUrl = `${protocol}://${host}`;
-        } else {
-            siteUrl = 'https://app.nelux.es';
-        }
-    }
+    // 2. Definir URL base (Prioridad absoluta a variables de entorno)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ||
+        process.env.NEXT_PUBLIC_BASE_URL ||
+        'https://app.nelux.es';
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${siteUrl}/update-password`,
