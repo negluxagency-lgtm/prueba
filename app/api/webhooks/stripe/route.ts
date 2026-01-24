@@ -18,8 +18,12 @@ const PLAN_MAPPING: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
+    console.log('--- [SISTEMA] Petición POST recibida en /api/webhooks/stripe ---');
+
     const body = await req.text();
     const signature = req.headers.get('stripe-signature') as string;
+
+    console.log(`--- [SISTEMA] Firma presente: ${!!signature} | Body length: ${body.length} ---`);
 
     let event: Stripe.Event;
 
@@ -60,45 +64,111 @@ export async function POST(req: Request) {
     try {
         switch (event.type) {
             case 'checkout.session.completed': {
-                const session = event.data.object as Stripe.Checkout.Session;
+                console.log('--- 🟢 INICIO PROCESAMIENTO CHECKOUT ---');
+                const sessionEvent = event.data.object as Stripe.Checkout.Session;
+
+                // 1. Recuperar sesión completa con line_items expandidos
+                // IMPORTANTE: Esto evita que line_items sea undefined
+                const session = await stripe.checkout.sessions.retrieve(sessionEvent.id, {
+                    expand: ['line_items']
+                });
+
                 const userId = session.client_reference_id;
                 const customerEmail = session.customer_details?.email;
                 const customerName = session.customer_details?.name || 'Barbero';
 
+                console.log(`[Paso 1] Datos Sesión extraídos: userId=${userId}, email=${customerEmail}`);
+
                 // 🔍 Identificar el plan comprado
-                const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-                const priceId = lineItems.data[0]?.price?.id;
-                const planName = priceId ? (PLAN_MAPPING[priceId] || 'Básico') : 'Básico';
+                // Ahora usamos session.line_items directamente porque lo hemos expandido
+                const priceId = session.line_items?.data[0]?.price?.id;
+
+                console.log(`[Paso 2] Price ID obtenido: ${priceId}`);
+
+                if (!priceId) {
+                    console.error("❌ ERROR CRÍTICO: No se encontró priceId en lineItems");
+                    return NextResponse.json({
+                        error: "No se encontró priceId en lineItems (array vacío)",
+                        details: "Stripe Session no devolvió productos. ¿Posible fallo de expansión?"
+                    }, { status: 400 });
+                }
+
+                const planName = PLAN_MAPPING[priceId];
+                console.log(`[Paso 3] Plan Mapeado: ${planName}`);
+
+                if (!planName) {
+                    const errorMsg = `ID de precio no reconocido: ${priceId}`;
+                    console.error(`❌ ERROR CRÍTICO: ${errorMsg}`);
+                    // Devolvemos el error al Dashboard de Stripe para que el usuario lo vea
+                    return NextResponse.json({
+                        error: errorMsg,
+                        received_id: priceId,
+                        expected_ids: Object.keys(PLAN_MAPPING),
+                        solution: "Añade este ID a tu .env.local mapeado al plan correcto."
+                    }, { status: 400 });
+                }
 
                 console.log(`💰 Pago completado: Plan [${planName}] para Usuario ID [${userId}] (${customerEmail})`);
 
+                let dbUpdated = false;
+
+                // 4A. Intento principal por USER ID
                 if (userId) {
-                    const { error: updateError } = await supabaseAdmin
+                    console.log(`[Paso 4A] Intentando actualizar por USER ID: ${userId}`);
+                    const { error: updateError, data: updateData } = await supabaseAdmin
                         .from('perfiles')
                         .update({
                             estado: 'pagado',
                             plan: planName
                         })
-                        .eq('id', userId);
+                        .eq('id', userId)
+                        .select(); // Select nos deja ver si realmente se actualizó alguna fila
 
-                    if (updateError) throw updateError;
-                } else if (customerEmail) {
-                    // Fallback por email si el ID no vino en el client_reference_id
-                    const { error: updateError } = await supabaseAdmin
+                    if (updateError) {
+                        console.error(`❌ [ERROR DB ID] Fallo actualizando por ID: ${updateError.message}`);
+                        // No lanzamos error aun, intentamos por email
+                    } else if (!updateData || updateData.length === 0) {
+                        console.warn(`⚠️ [WARN DB ID] Supabase no devolvió filas actualizadas para ID: ${userId}. Posiblemente no existe o UUID incorrecto.`);
+                    } else {
+                        console.log(`✅ [ÉXITO] Perfil actualizado exitosamente por ID:`, updateData[0]);
+                        dbUpdated = true;
+                    }
+                }
+
+                // 4B. Fallback por EMAIL (si falló ID o no venía)
+                if (!dbUpdated && customerEmail) {
+                    console.log(`[Paso 4B] USER ID falló o nulo. Intentando fallback por EMAIL: ${customerEmail}`);
+                    const { error: updateError, data: updateData } = await supabaseAdmin
                         .from('perfiles')
                         .update({
                             estado: 'pagado',
                             plan: planName
                         })
-                        .eq('email', customerEmail);
+                        .eq('email', customerEmail)
+                        .select();
 
-                    if (updateError) throw updateError;
+                    if (updateError) {
+                        console.error(`❌ [ERROR DB EMAIL] Fallo actualizando por Email: ${updateError.message}`);
+                        throw updateError; // Si falla aquí también, lanzamos error total
+                    }
+
+                    if (!updateData || updateData.length === 0) {
+                        console.warn(`⚠️ [WARN DB EMAIL] Fallback Email: No filas actualizadas para ${customerEmail}`);
+                        throw new Error(`No se pudo actualizar perfil ni por ID ni por Email: ${customerEmail}`);
+                    } else {
+                        console.log(`✅ [ÉXITO] Perfil actualizado exitosamente vía EMAIL.`);
+                        dbUpdated = true;
+                    }
+                }
+
+                if (!dbUpdated) {
+                    throw new Error("Fallo total: No se pudo actualizar el perfil del usuario (Ni por ID ni por Email)");
                 }
 
                 // 📧 EMAIL DE BIENVENIDA (Non-blocking)
                 if (customerEmail) {
                     try {
-                        console.log(`📧 Enviando email de bienvenida a ${customerEmail}...`);
+                        console.log(`[Paso 5] Enviando email de bienvenida a ${customerEmail}...`);
                         await sendEmail({
                             to: customerEmail,
                             subject: `¡Bienvenido a Nelux! Tu plan ${planName} ya está activo`,
@@ -165,9 +235,19 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true }, { status: 200 });
 
     } catch (err: any) {
-        console.error(`❌ Error procesando lógica de negocio: ${err.message}`);
-        // IMPORTANTE: Borramos el flag de idempotencia para que el reintento de Stripe pueda volver a entrar
-        await supabaseAdmin.from('stripe_procesados').delete().eq('id', eventId);
-        return NextResponse.json({ error: 'Error procesando el evento. Reintentando...' }, { status: 500 });
+        console.error(`❌ [WEBHOOK FATAL ERROR] ${err.message}`);
+
+        // Intento de limpiar flag de idempotencia (protegido para evitar crash en cadena)
+        try {
+            await supabaseAdmin.from('stripe_procesados').delete().eq('id', eventId);
+        } catch (cleanupErr) {
+            console.warn('⚠️ No se pudo borrar el flag de idempotencia (posiblemente la tabla no existe).');
+        }
+
+        return NextResponse.json({
+            error: 'Error CRÍTICO en la lógica del webhook',
+            details: err.message,
+            stack: err.stack ? err.stack.substring(0, 200) : 'No stack'
+        }, { status: 500 });
     }
 }

@@ -1,10 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-// 1. Change function to 'async'
 export async function createClient() {
-    // 2. Add 'await' here
     const cookieStore = await cookies()
+
+    // DEBUG DIAGNÓSTICO: Ver qué cookies llegan realmente al Layout
+    const allCookies = cookieStore.getAll();
+    const authCookie = allCookies.find(c => c.name.includes('sb-'));
+    console.log(`[ServerClient] Total Cookies: ${allCookies.length} | Auth Cookie Present: ${!!authCookie}`);
+    if (authCookie) console.log(`[ServerClient] Auth Cookie Name: ${authCookie.name}`);
 
     return createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,

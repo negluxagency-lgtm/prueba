@@ -19,21 +19,30 @@ export async function updateSession(request: NextRequest) {
                     supabaseResponse = NextResponse.next({
                         request,
                     })
-                    cookiesToSet.forEach(({ name, value, options }) =>
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        // console.log(`[Middleware] Setting Cookie: ${name}`);
                         supabaseResponse.cookies.set(name, value, options)
-                    )
+                    })
                 },
             },
         }
     )
 
     // IMPORTANT: Avoid writing any logic between createServerClient and
-    // supabase.auth.getUser(). A simple mistake can make it very hard to debug
-    // issues with sessions being lost.
-
+    // supabase.auth.getUser().
     const {
         data: { user },
     } = await supabase.auth.getUser()
+
+    // console.log(`[Middleware] Auth Check: ${user ? 'Authenticated: ' + user.email : 'No Session'}`);
+
+    // Si no hay usuario y estamos intentando acceder a rutas protegidas, redirigir al login
+    if (!user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth') && request.nextUrl.pathname !== '/') {
+        // console.log(`[Middleware] Redirecting unauthenticated user from ${request.nextUrl.pathname} to /login`);
+        // const url = request.nextUrl.clone()
+        // url.pathname = '/login'
+        // return NextResponse.redirect(url)
+    }
 
     return supabaseResponse
 }

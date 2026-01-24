@@ -1,0 +1,126 @@
+Arquitectura de Datos: Nelux (Estructura Real)
+El sistema se basa en 4 tablas principales. La clave de unión entre todas ellas no es el UUID de Supabase, sino el campo nombre_barberia, que actúa como identificador único para relacionar datos.
+
+1. Tabla perfiles (Configuración y Dashboard)
+Es la tabla maestra. Contiene la identidad, la configuración técnica para la IA y los KPIs (indicadores de rendimiento) que se muestran en el dashboard de la app.
+
+Identidad y Acceso:
+
+nombre_barberia: (PK) El identificador principal.
+
+correo / telefono: Contacto del dueño.
+
+nombre_encargado: Persona responsable.
+
+docs: Campo legado (irrelevante actualmente).
+
+Configuración (Formulario de Onboarding):
+
+Datos que la IA usa para trabajar: Direccion, horario, servicios, pagos, productos (configuración general), info (instrucciones extra).
+
+Suscripción (Stripe):
+
+plan: Nivel de suscripción (gratis, profesional, etc.).
+
+estado: Estado de la cuenta (activa, impagada).
+
+ultimo_pago: Timestamp de la última vez que pagaron la cuota.
+
+KPIs y Objetivos (Cálculo Automático):
+
+Objetivos: objetivo_ingresos, objetivo_citas, objetivo_productos. (Fijados manualmente por el barbero).
+
+Métricas Diarias: ingresos_dia, cortes_dia, productos_dia.
+
+Nota: Estos campos se recalculan automáticamente en base a los objetivos y la actividad real para mostrar el progreso diario en la App.
+
+2. Tabla citas (Agenda y Libro de Ventas)
+Esta tabla es híbrida. Funciona como agenda de reservas y también como registro de ventas de productos físicos (champús, gominas, etc.).
+
+Identificadores:
+
+id: Autonumérico.
+
+barberia: Vincula con perfiles.nombre_barberia.
+
+created_at: Fecha de creación del registro.
+
+Detalles de la Transacción:
+
+Nombre: Nombre del cliente.
+
+Servicio: Tipo de corte o nombre del producto vendido.
+
+Dia (YYYY-MM-DD) y Hora (Timestamptz): Cuándo ocurre la cita o venta.
+
+Precio: Dinero generado.
+
+Lógica de Producto vs. Servicio:
+
+producto (Boolean):
+
+FALSE (Default): Es una cita de peluquería.
+
+TRUE: Es una venta de producto físico.
+
+Telefono: Campo Polimórfico.
+
+Si es cita: Guarda el número de teléfono del cliente.
+
+Si es producto (producto=true): Guarda la CANTIDAD vendida.
+
+Estado y No-Shows:
+
+confirmada: true si la cita sigue en pie.
+
+cancelada: true si es un "No-Show" o cancelación.
+
+Lógica: Si cancelada pasa a true, automáticamente confirmada debe pasar a false.
+
+3. Tabla mensajes (Auditoría de Chat)
+Registro cronológico de la comunicación. Separa lo enviado de lo recibido en columnas distintas para facilitar la lectura humana.
+
+Contenido:
+
+mensaje_recibido: Texto que envía el cliente (NULL si somos nosotros los que escribimos).
+
+mensaje_enviado: Texto que envía la IA o el barbero (NULL si habla el cliente).
+
+Metadatos:
+
+numero: ID autoincremental.
+
+Tlf: Teléfono del cliente (ID de la conversación).
+
+fecha: Timestamp automático de Supabase.
+
+barberia: Vincula con perfiles.nombre_barberia.
+
+Control Humano:
+
+manual (Boolean):
+
+FALSE (Default): El mensaje lo envió la IA o el cliente.
+
+TRUE: El mensaje fue escrito manualmente por el barbero desde la App de Nelux.
+
+4. Tabla productos (Inventario de Barbería)
+No confundir con los productos de Stripe. Este es el inventario físico que tiene la barbería en su estantería para vender a clientes.
+
+Detalles:
+
+id: Autonumérico.
+
+nombre: Ej. "Cera Mate".
+
+precio: Ej. 15.00.
+
+foto: URL de la imagen subida manualmente al Storage de Supabase.
+
+Stock y Rendimiento:
+
+venta: Contador histórico de unidades vendidas.
+
+stock: Cantidad actual disponible.
+
+barberia: Vincula con perfiles.nombre_barberia.
