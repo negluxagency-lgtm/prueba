@@ -50,7 +50,7 @@ export function useSubscription() {
             try {
                 const { data: profile, error } = await supabase
                     .from('perfiles')
-                    .select('estado, plan, created_at, nombre_barberia, telefono')
+                    .select('estado, plan, created_at, nombre_barberia, telefono, onboarding_completado')
                     .eq('id', user.id)
                     .single();
 
@@ -80,7 +80,7 @@ export function useSubscription() {
                     return;
                 }
 
-                const isProfileComplete = !!profile?.telefono;
+                const isProfileComplete = profile.onboarding_completado === true;
 
                 // 1. Caso PAGADO
                 if (profile?.estado === 'pagado') {

@@ -28,3 +28,9 @@ Definir la estructura y el comportamiento del Paywall de Nelux Barbershop, asegu
 | :--- | :--- | :--- |
 | 2026-01-23 | Eliminación accidental de /pricing | Re-implementación y vinculación desde landing. |
 | 2026-01-23 | Error "use client" en Paywall.tsx | Se añadió la directiva "use client" al inicio del archivo. |
+| 2026-01-27 | Mensaje de prueba expirada innecesario | Se eliminó la frase "Tu periodo de prueba ha finalizado." a petición del usuario. |
+| 2026-01-27 | Layout cortado y superpuesto en móvil | Se cambió layout a `min-h-screen`, botón cerrar sesión a `fixed`, y se aumentó padding inferior. |
+| 2026-01-27 | Scroll bloqueado en Paywall móvil | Se revirtió `min-h-screen` a `h-full` manteniendo el padding extra, para permitir scroll dentro del contenedor fijo. |
+| 2026-01-27 | Flash of Content en Dashboard | Se migró la protección de Paywall al Layout de Servidor (`layout.tsx`), pasando estado inicial al cliente. Layout de impago ahora incluye Sidebar. |
+| 2026-01-27 | Bucle de redirección a /configuracion | Se actualizó `useSubscription` para usar `onboarding_completado` en lugar de `telefono`, alineando lógica cliente/servidor. |
+| 2026-01-27 | Bucle persistente por estado inicial del hook | Se modificó `DashboardLayoutClient` para priorizar `initialProfile.onboarding_completado` mientras el hook carga. |

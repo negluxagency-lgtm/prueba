@@ -11,23 +11,34 @@ import { TrialNoticeModal } from "@/components/TrialNoticeModal";
 
 export default function DashboardLayoutClient({
     children,
-    initialProfile
+    initialProfile,
+    serverStatus
 }: {
     children: React.ReactNode;
     initialProfile?: any;
+    serverStatus?: string;
 }) {
-    const { status, loading, daysRemaining, isProfileComplete } = useSubscription();
+    const { status: clientStatus, loading, daysRemaining, isProfileComplete } = useSubscription();
     const router = useRouter();
+
+    // Prioridad: Estado cliente (actualizado) > Estado servidor (inicial)
+    const status = clientStatus || serverStatus;
+
+    // Si tenemos estado del servidor, no estamos "cargando" visualmente (ya tenemos decisión)
+    const isLoading = loading && !serverStatus;
+
+    // FIX: Usar initialProfile mientras el hook carga (isProfileComplete empieza en false)
+    const resolvedIsProfileComplete = !loading ? isProfileComplete : (initialProfile?.onboarding_completado === true);
 
     useEffect(() => {
         // Redirigir si el perfil no está completo (falta configuración inicial)
-        if (!loading && !isProfileComplete && status) {
+        if (!isLoading && resolvedIsProfileComplete === false && status) {
             router.replace('/configuracion');
         }
-    }, [loading, isProfileComplete, status, router]);
+    }, [isLoading, resolvedIsProfileComplete, status, router]);
 
-    // 0. Estado de Carga Global
-    if (loading && !initialProfile) {
+    // 0. Estado de Carga Global (solo si no tenemos ni perfil ni estado del servidor)
+    if (isLoading && !initialProfile) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-[#0a0a0a]">
                 <div className="flex flex-col items-center gap-4">
@@ -38,11 +49,16 @@ export default function DashboardLayoutClient({
         );
     }
 
+    // 1. CASO BLOQUEO (IMPAGO) - Renderiza LAYOUT CON SIDEBAR + PAYWALL
     if (status === 'impago') {
-        // 1. CASO BLOQUEO (IMPAGO) - Renderiza SOLO el Paywall
         return (
-            <div className="fixed inset-0 z-[100]">
-                <Paywall />
+            <div className="flex h-screen overflow-hidden flex-col md:flex-row">
+                <Sidebar />
+                <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">
+                    <Paywall />
+                </div>
+                {/* Modal informativo por si acaso, aunque el Paywall ya es explícito */}
+                <TrialNoticeModal userStatus={status} />
             </div>
         );
     }
@@ -67,7 +83,7 @@ export default function DashboardLayoutClient({
                     </div>
                 </div>
             </div>
-            <TrialNoticeModal userStatus={status} />
+            <TrialNoticeModal userStatus={status as any} />
         </div>
     );
 }
