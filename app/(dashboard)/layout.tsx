@@ -27,7 +27,7 @@ export default async function DashboardLayout({
     // Opcional: Fetch inicial del perfil para pasar al cliente
     const { data: profile } = await supabase
         .from('perfiles')
-        .select('nombre_barberia, estado, telefono, onboarding_completado, created_at')
+        .select('nombre_barberia, estado, telefono, onboarding_completado, created_at, calendario_confirmado')
         .eq('id', user.id)
         .single();
 
@@ -58,8 +58,15 @@ export default async function DashboardLayout({
 
     console.log(`[DashboardLayout] Server Status: ${subscriptionStatus} (Days Passed: ${daysPassed})`);
 
+    // 5. Verificar estado de calendario (Server-Side)
+    const calendarioConfirmed = profile?.calendario_confirmado === true;
+
     return (
-        <DashboardLayoutClient initialProfile={profile} serverStatus={subscriptionStatus}>
+        <DashboardLayoutClient
+            initialProfile={profile}
+            serverStatus={subscriptionStatus}
+            calendarioConfirmed={calendarioConfirmed}
+        >
             {children}
         </DashboardLayoutClient>
     );

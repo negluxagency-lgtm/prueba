@@ -8,15 +8,18 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Paywall } from "@/components/Paywall";
 import { TrialBanner } from "@/components/TrialBanner";
 import { TrialNoticeModal } from "@/components/TrialNoticeModal";
+import MonthlyClosingModal from "@/components/MonthlyClosingModal";
 
 export default function DashboardLayoutClient({
     children,
     initialProfile,
-    serverStatus
+    serverStatus,
+    calendarioConfirmed
 }: {
     children: React.ReactNode;
     initialProfile?: any;
     serverStatus?: string;
+    calendarioConfirmed?: boolean;
 }) {
     const { status: clientStatus, loading, daysRemaining, isProfileComplete } = useSubscription();
     const router = useRouter();
@@ -84,6 +87,11 @@ export default function DashboardLayoutClient({
                 </div>
             </div>
             <TrialNoticeModal userStatus={status as any} />
+
+            {/* Modal de Cierre Mensual (Obligatorio) */}
+            {!isLoading && calendarioConfirmed === false && (
+                <MonthlyClosingModal />
+            )}
         </div>
     );
 }

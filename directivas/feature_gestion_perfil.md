@@ -34,3 +34,4 @@ Implementar una página de perfil (`/perfil`) segura y estética donde el usuari
 | Fecha | Error Detectado | Solución Implementada |
 | :--- | :--- | :--- |
 | | | |
+| 2026-01-28 | Implementación de Modal Calendario | Se creó `MonthlyClosingModal` obligatorio. Se usa `date-fns` y `react-day-picker`. Acción de servidor con deduplicación de fechas. |
