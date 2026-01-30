@@ -54,7 +54,7 @@ export default function MonthlyClosingModal() {
                 <p className="text-zinc-400 text-sm md:text-base text-center mb-6 px-4">
                     Para que la IA gestione tus citas, necesitamos saber qué días{" "}
                     <span className="text-amber-500 font-medium">cerrarás</span> el
-                    próximo mes.
+                    próximo mes. (seleccione también los domingos, si cierra)
                 </p>
 
                 {/* CONTENEDOR DEL CALENDARIO */}

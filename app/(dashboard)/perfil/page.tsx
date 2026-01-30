@@ -9,6 +9,7 @@ import { Store, CreditCard, Calendar, Mail, User, LogOut, Headset, Settings } fr
 import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
 import { ResetPasswordButton } from '@/components/ResetPasswordButton'
+import ManageSubscriptionButton from '@/components/ManageSubscriptionButton'
 
 // Función para formatear fecha
 function formatearFecha(fecha: string) {
@@ -252,16 +253,7 @@ export default function PerfilPage() {
 
                         {/* Botón de gestión - Solo visible si no es periodo de prueba */}
                         {perfil.estado !== 'prueba' && perfil.estado !== 'periodo_prueba' && (
-                            <a
-                                href="https://billing.stripe.com/p/login/7sY4gy54TaRS9eL6vT28800"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 
-                                         text-white font-medium rounded-lg transition-all duration-200
-                                         border border-zinc-700 hover:border-zinc-600 text-center block"
-                            >
-                                Gestionar Suscripción / Cancelar
-                            </a>
+                            <ManageSubscriptionButton className="w-full" />
                         )}
                     </div>
                 </div>
