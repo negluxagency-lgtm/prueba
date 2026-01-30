@@ -4,7 +4,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia', // Best practice: explicit version
+  apiVersion: '2025-12-15.clover', // Updated to match installed SDK type definition
 })
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        
+
         // Retrieve userId from metadata
         const userId = session.metadata?.userId
         const customerId = session.customer as string

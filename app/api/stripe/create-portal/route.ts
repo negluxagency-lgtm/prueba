@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia', // Using latest as per best practice or user config
+  apiVersion: '2025-12-15.clover', // Updated to match installed SDK type definition
 })
 
 export async function POST(request: Request) {
