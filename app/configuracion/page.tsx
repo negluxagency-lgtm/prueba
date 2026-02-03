@@ -290,7 +290,7 @@ export default function ConfigurationPage() {
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="max-w-3xl mx-auto w-full space-y-6 md:space-y-8 py-6"
+                className="max-w-3xl mx-auto w-full space-y-4 md:space-y-8 py-4 md:py-6"
             >
                 {/* Header */}
                 <div className="text-center space-y-1">
@@ -302,7 +302,7 @@ export default function ConfigurationPage() {
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800 rounded-[24px] md:rounded-[32px] p-5 md:p-10 shadow-2xl space-y-6 md:space-y-8">
+                <form onSubmit={handleSubmit} className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800 rounded-[24px] md:rounded-[32px] p-4 md:p-10 shadow-2xl space-y-5 md:space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
 
                         {/* --- Campos existentes (Teléfono, Encargado, Objetivos, etc) --- */}
@@ -369,7 +369,7 @@ export default function ConfigurationPage() {
                         </div>
 
                         {/* Cortes y Productos */}
-                        <div className="grid grid-cols-2 gap-4 md:gap-6 md:col-span-1">
+                        <div className="grid grid-cols-2 gap-3 md:gap-6 md:col-span-1">
                             <div className="space-y-1.5 md:space-y-2">
                                 <label className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-zinc-500 uppercase ml-1">
                                     <Scissors className="w-3 h-3 text-amber-500" />
@@ -432,35 +432,38 @@ export default function ConfigurationPage() {
 
                             <div className="space-y-2">
                                 {schedule.map((day, index) => (
-                                    <div key={day.dia_semana} className="flex items-center gap-3 bg-zinc-800/30 p-3 rounded-xl border border-zinc-700/50">
-                                        {/* Day Name */}
-                                        <span className="w-24 text-sm font-medium text-zinc-300">
-                                            {DAY_NAMES[day.dia_semana]}
-                                        </span>
+                                    <div key={day.dia_semana} className="flex md:flex-row flex-col md:items-center gap-3 bg-zinc-800/30 p-3 rounded-xl border border-zinc-700/50">
+                                        {/* Day Name + Toggle (Row en móvil) */}
+                                        <div className="flex items-center justify-between md:justify-start md:gap-3">
+                                            <span className="w-20 md:w-24 text-sm font-medium text-zinc-300">
+                                                {DAY_NAMES[day.dia_semana]}
+                                            </span>
 
-                                        {/* Toggle Switch */}
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const updated = [...schedule];
-                                                updated[index].esta_abierto = !updated[index].esta_abierto;
-                                                setSchedule(updated);
-                                            }}
-                                            className={cn(
-                                                "w-12 h-6 rounded-full transition-colors relative flex-shrink-0",
-                                                day.esta_abierto ? "bg-amber-500" : "bg-zinc-700"
-                                            )}
-                                        >
-                                            <span className={cn(
-                                                "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform",
-                                                day.esta_abierto ? "left-7" : "left-1"
-                                            )} />
-                                        </button>
+                                            {/* Toggle Switch */}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const updated = [...schedule];
+                                                    updated[index].esta_abierto = !updated[index].esta_abierto;
+                                                    setSchedule(updated);
+                                                }}
+                                                className={cn(
+                                                    "w-12 h-6 rounded-full transition-colors relative flex-shrink-0",
+                                                    day.esta_abierto ? "bg-amber-500" : "bg-zinc-700"
+                                                )}
+                                            >
+                                                <span className={cn(
+                                                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform",
+                                                    day.esta_abierto ? "left-7" : "left-1"
+                                                )} />
+                                            </button>
+                                        </div>
 
                                         {/* Time Inputs or Closed Text */}
                                         {day.esta_abierto ? (
-                                            <div className="flex flex-col gap-2 w-full">
-                                                <div className="flex items-center gap-2 flex-1">
+                                            <div className="flex flex-col gap-3 w-full">
+                                                {/* Horarios principales (Apertura/Cierre) */}
+                                                <div className="grid grid-cols-2 gap-2 md:flex md:items-center md:gap-2 md:flex-1">
                                                     <div className="flex flex-col gap-0.5">
                                                         <span className="text-[10px] text-zinc-500 font-bold uppercase">Apertura</span>
                                                         <input
@@ -475,9 +478,25 @@ export default function ConfigurationPage() {
                                                         />
                                                     </div>
 
-                                                    {/* Split Shift Toggle */}
-                                                    <div className="flex flex-col items-center justify-end h-full pb-1">
-                                                        <label className="flex items-center gap-1 cursor-pointer group">
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <span className="text-[10px] text-zinc-500 font-bold uppercase">Cierre</span>
+                                                        <input
+                                                            type="time"
+                                                            value={day.hora_cierre}
+                                                            onChange={(e) => {
+                                                                const updated = [...schedule];
+                                                                updated[index].hora_cierre = e.target.value;
+                                                                setSchedule(updated);
+                                                            }}
+                                                            className="bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-white outline-none focus:border-amber-500 transition-colors"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Split Shift Toggle + Break Times */}
+                                                <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <label className="flex items-center gap-1.5 cursor-pointer group">
                                                             <div className="relative">
                                                                 <input
                                                                     type="checkbox"
@@ -496,16 +515,16 @@ export default function ConfigurationPage() {
                                                                     }}
                                                                     className="sr-only peer"
                                                                 />
-                                                                <div className="w-7 h-4 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-600"></div>
+                                                                <div className="w-8 h-5 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
                                                             </div>
-                                                            <span className="text-[10px] uppercase font-bold text-zinc-600 group-hover:text-amber-500 transition-colors">¿Partido?</span>
+                                                            <span className="text-xs uppercase font-bold text-zinc-400 group-hover:text-amber-500 transition-colors">¿Turno Partido?</span>
                                                         </label>
                                                     </div>
 
-                                                    {/* Break Start (Only if split) */}
+                                                    {/* Break Start/End (Only if split) */}
                                                     {day.hora_inicio_pausa && (
-                                                        <>
-                                                            <div className="flex flex-col gap-0.5 animate-in fade-in slide-in-from-left-2">
+                                                        <div className="grid grid-cols-2 gap-2 md:flex md:items-center md:gap-2 animate-in fade-in slide-in-from-left-2">
+                                                            <div className="flex flex-col gap-0.5">
                                                                 <span className="text-[10px] text-zinc-500 font-bold uppercase">Inic. Pausa</span>
                                                                 <input
                                                                     type="time"
@@ -518,7 +537,7 @@ export default function ConfigurationPage() {
                                                                     className="bg-zinc-900 border border-amber-900/50 rounded-lg px-2 py-1.5 text-sm text-white outline-none focus:border-amber-500 transition-colors"
                                                                 />
                                                             </div>
-                                                            <div className="flex flex-col gap-0.5 animate-in fade-in slide-in-from-left-2">
+                                                            <div className="flex flex-col gap-0.5">
                                                                 <span className="text-[10px] text-zinc-500 font-bold uppercase">Fin Pausa</span>
                                                                 <input
                                                                     type="time"
@@ -531,26 +550,12 @@ export default function ConfigurationPage() {
                                                                     className="bg-zinc-900 border border-amber-900/50 rounded-lg px-2 py-1.5 text-sm text-white outline-none focus:border-amber-500 transition-colors"
                                                                 />
                                                             </div>
-                                                        </>
+                                                        </div>
                                                     )}
-
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="text-[10px] text-zinc-500 font-bold uppercase">Cierre</span>
-                                                        <input
-                                                            type="time"
-                                                            value={day.hora_cierre}
-                                                            onChange={(e) => {
-                                                                const updated = [...schedule];
-                                                                updated[index].hora_cierre = e.target.value;
-                                                                setSchedule(updated);
-                                                            }}
-                                                            className="bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-white outline-none focus:border-amber-500 transition-colors"
-                                                        />
-                                                    </div>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <span className="text-zinc-600 text-sm italic">Cerrado</span>
+                                            <span className="text-zinc-600 text-sm italic md:ml-0">Cerrado</span>
                                         )}
                                     </div>
                                 ))}
@@ -583,7 +588,7 @@ export default function ConfigurationPage() {
                             </label>
 
                             {/* Inputs para añadir nuevo servicio */}
-                            <div className="grid grid-cols-[2fr_1fr_1fr_auto] gap-2 items-end bg-zinc-800/30 p-3 rounded-xl border border-zinc-700/50">
+                            <div className="flex flex-col md:grid md:grid-cols-[2fr_1fr_1fr_auto] gap-3 md:gap-2 items-stretch md:items-end bg-zinc-800/30 p-3 md:p-3 rounded-xl border border-zinc-700/50">
                                 <div className="space-y-1">
                                     <span className="text-[10px] text-zinc-500 uppercase font-bold">Nombre</span>
                                     <input
@@ -594,53 +599,56 @@ export default function ConfigurationPage() {
                                         className="w-full bg-transparent border-b border-zinc-600 focus:border-amber-500 text-sm p-1 outline-none transition-colors"
                                     />
                                 </div>
-                                <div className="space-y-1">
-                                    <span className="text-[10px] text-zinc-500 uppercase font-bold">Precio (€)</span>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.5"
-                                        placeholder="15"
-                                        value={newService.precio || ''}
-                                        onChange={(e) => setNewService({ ...newService, precio: parseFloat(e.target.value) })}
-                                        className="w-full bg-transparent border-b border-zinc-600 focus:border-amber-500 text-sm p-1 outline-none transition-colors"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <span className="text-[10px] text-zinc-500 uppercase font-bold">Minutos</span>
-                                    <input
-                                        type="number"
-                                        min="5"
-                                        step="5"
-                                        placeholder="30"
-                                        value={newService.duracion}
-                                        onChange={(e) => setNewService({ ...newService, duracion: parseInt(e.target.value) })}
-                                        className="w-full bg-transparent border-b border-zinc-600 focus:border-amber-500 text-sm p-1 outline-none transition-colors"
-                                    />
+                                <div className="grid grid-cols-2 gap-3 md:contents">
+                                    <div className="space-y-1">
+                                        <span className="text-[10px] text-zinc-500 uppercase font-bold">Precio (€)</span>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.5"
+                                            placeholder="15"
+                                            value={newService.precio || ''}
+                                            onChange={(e) => setNewService({ ...newService, precio: parseFloat(e.target.value) })}
+                                            className="w-full bg-transparent border-b border-zinc-600 focus:border-amber-500 text-sm p-1 outline-none transition-colors"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <span className="text-[10px] text-zinc-500 uppercase font-bold">Minutos</span>
+                                        <input
+                                            type="number"
+                                            min="5"
+                                            step="5"
+                                            placeholder="30"
+                                            value={newService.duracion}
+                                            onChange={(e) => setNewService({ ...newService, duracion: parseInt(e.target.value) })}
+                                            className="w-full bg-transparent border-b border-zinc-600 focus:border-amber-500 text-sm p-1 outline-none transition-colors"
+                                        />
+                                    </div>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={handleAddService}
-                                    className="bg-amber-500 text-black p-2 rounded-lg hover:bg-amber-400 transition-colors"
+                                    className="bg-amber-500 text-black p-3 md:p-2 rounded-lg hover:bg-amber-400 transition-colors font-bold text-sm md:text-base flex items-center justify-center gap-2"
                                 >
                                     <Plus className="w-4 h-4" />
+                                    <span className="md:hidden">Añadir Servicio</span>
                                 </button>
                             </div>
 
                             {/* Lista de servicios añadidos */}
                             <div className="space-y-2">
                                 {servicesList.map((service, index) => (
-                                    <div key={index} className="flex items-center justify-between bg-zinc-900/50 p-3 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors">
-                                        <div className="flex items-center gap-4">
+                                    <div key={index} className="flex flex-col md:flex-row md:items-center md:justify-between bg-zinc-900/50 p-3 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-colors gap-2">
+                                        <div className="flex items-center justify-between md:justify-start md:gap-4">
                                             <div className="font-medium text-sm text-white">{service.nombre}</div>
-                                            <div className="text-xs text-zinc-400">{service.duracion} min</div>
+                                            <div className="text-xs text-zinc-400 md:block">{service.duracion} min</div>
                                         </div>
-                                        <div className="flex items-center gap-4">
+                                        <div className="flex items-center justify-between md:justify-end gap-4">
                                             <div className="font-bold text-amber-500">{service.precio}€</div>
                                             <button
                                                 type="button"
                                                 onClick={() => handleDeleteService(index)}
-                                                className="text-zinc-500 hover:text-red-500 transition-colors"
+                                                className="text-zinc-500 hover:text-red-500 transition-colors p-1"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>

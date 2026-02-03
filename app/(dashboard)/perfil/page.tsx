@@ -195,7 +195,7 @@ export default function PerfilPage() {
                             </label>
                             <input
                                 type="text"
-                                value={`nelux.es/${perfil.slug || '(sin-slug)'}`}
+                                value={`app.nelux.es/${perfil.slug || '(sin-slug)'}`}
                                 disabled
                                 className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
                                          rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
