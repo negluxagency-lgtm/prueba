@@ -60,6 +60,12 @@ export function DetailedRevenueChart({ data, activeMetric, loading, range, setRa
     const totalValue = currentTotal;
     const suffix = (activeMetric === 'revenue' || activeMetric === 'avgTicket') ? '€' : '';
 
+    // If showing Avg Ticket, we want a flat line representing the period average
+    // Otherwise, we show the actual data points
+    const chartData = activeMetric === 'avgTicket'
+        ? data.map(d => ({ ...d, avgTicket: totalValue }))
+        : data;
+
     return (
         <div className="h-[420px] md:h-[450px] w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl md:rounded-[2rem] p-5 md:p-8 shadow-2xl backdrop-blur-sm flex flex-col overflow-hidden">
             <div className="mb-4 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
@@ -68,7 +74,7 @@ export function DetailedRevenueChart({ data, activeMetric, loading, range, setRa
                         {METRIC_LABELS[activeMetric]} ({range === 'week' ? 'Semana' : range === 'month' ? 'Mes' : 'Año'})
                     </h3>
                     <p className="text-2xl md:text-4xl font-black text-white">
-                        {activeMetric === 'avgTicket' ? Math.round(totalValue / (data.length || 1)) : totalValue}{suffix}
+                        {totalValue}{suffix}
                         <span className={`text-sm md:text-lg font-medium ml-2 ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
                             {isPositive ? '+' : ''}{growthFormatted}%
                         </span>
@@ -87,7 +93,7 @@ export function DetailedRevenueChart({ data, activeMetric, loading, range, setRa
 
             <div className="h-[280px] md:h-full md:flex-1 w-full overflow-visible">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
                         <defs>
                             <linearGradient id="colorMetric" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />

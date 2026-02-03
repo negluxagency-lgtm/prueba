@@ -58,7 +58,7 @@ export default function DashboardLayoutClient({
             <div className="flex h-screen overflow-hidden flex-col md:flex-row">
                 <Sidebar />
                 <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">
-                    <Paywall />
+                    <Paywall showAllPlans={true} />
                 </div>
                 {/* Modal informativo por si acaso, aunque el Paywall ya es explícito */}
                 <TrialNoticeModal userStatus={status} />

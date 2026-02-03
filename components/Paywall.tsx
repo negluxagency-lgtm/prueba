@@ -8,9 +8,10 @@ import { useSubscription } from '@/hooks/useSubscription';
 interface PaywallProps {
     variant?: 'lock' | 'pricing';
     isSection?: boolean;
+    showAllPlans?: boolean; // Si true, siempre muestra los 3 planes. Si false, filtra por plan actual cuando está pagado.
 }
 
-export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) => {
+export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = false }: PaywallProps) => {
     const [user, setUser] = useState<any>(null);
     const { status, plan: paidPlan, loading: subLoading } = useSubscription();
 
@@ -32,7 +33,7 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
             price: "49€",
             period: "/mes",
             description: "Para barberos independientes que están empezando.",
-            features: ["Agenda ilimitada", "Gestión de clientes", "Reportes básicos", "Gestión de productos", "Sin tecnologías IA"],
+            features: ["Agenda ilimitada", "Página de citas personalizada", "Caja e ingresos", "Gestión de clientes", "Reportes básicos", "Gestión de productos", "Sin tecnologías IA"],
             link: "https://buy.stripe.com/7sY4gy54TaRS9eL6vT28800",
             highlight: false,
             icon: Shield
@@ -42,7 +43,7 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
             price: "75€",
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
-            features: ["Todo lo del Básico", "Citas automáticas (IA)", "Métricas avanzadas (IA)", "Soporte preferente", "Recordatorio de citas"],
+            features: ["Todo lo del Básico", "Citas automáticas WhatsApp", "Métricas avanzadas (IA)", "Soporte preferente", "Recordatorio de citas", "Galería profesional", "Recordatorios WhatsApp"],
             link: "https://buy.stripe.com/bJe3cu8h50dedv18E128801",
             highlight: true,
             icon: Star
@@ -52,7 +53,7 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
             price: "99€",
             period: "/mes",
             description: "Para barberías profesionales.",
-            features: ["Toda la tecnología IA", "Filtro Reviews Positivas", "Múltiples Barberos", "Soporte 24/7", "Recordatorio de citas"],
+            features: ["Todo lo del Profesional", "Toda la tecnología IA", "Filtro Reviews Positivas", "Múltiples Barberos", "Soporte 24/7", "Recordatorio de citas", "Consultoría mensual"],
             link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
             highlight: false,
             icon: Shield
@@ -61,8 +62,8 @@ export const Paywall = ({ variant = 'lock', isSection = false }: PaywallProps) =
 
     const isLock = variant === 'lock';
 
-    // Filtrar planes si ya está pagado
-    const displayPlans = (status === 'pagado' && paidPlan)
+    // Filtrar planes si ya está pagado (solo si showAllPlans === false)
+    const displayPlans = (!showAllPlans && status === 'pagado' && paidPlan)
         ? ALL_PLANS.filter(p => p.name.toLowerCase() === paidPlan.toLowerCase())
         : ALL_PLANS;
 

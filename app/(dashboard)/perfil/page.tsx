@@ -277,7 +277,7 @@ export default function PerfilPage() {
 
                 {/* Tarjeta 3: Planes y Precios */}
                 <div className="bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 overflow-hidden">
-                    <Paywall variant="pricing" isSection={true} />
+                    <Paywall variant="pricing" isSection={true} showAllPlans={false} />
                 </div>
 
                 {/* Tarjeta 4: Contactar con Soporte */}

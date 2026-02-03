@@ -38,29 +38,7 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
     )
 
     try {
-        // 2. RATE LIMITING CHECK (Seguridad Anti-Spam)
-        // Permitimos máx 3 citas por IP en la última hora
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-
-        const { count, error: countError } = await supabase
-            .from('citas')
-            .select('*', { count: 'exact', head: true })
-            .eq('ip_address', ip)
-            .gt('created_at', oneHourAgo)
-
-        if (countError) {
-            console.error('Error rate limit:', countError)
-            // No bloqueamos si falla la comprobación técnica, pero lo logueamos
-        }
-
-        if (count !== null && count >= 3) {
-            return {
-                success: false,
-                error: 'Demasiados intentos. Por favor espera una hora antes de volver a reservar.'
-            }
-        }
-
-        // 3. Buscar el ID de la barbería usando el Slug
+        // 2. Buscar el ID de la barbería usando el Slug
         const { data: profile, error: profileError } = await supabase
             .from('perfiles')
             .select('id')
@@ -71,13 +49,12 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
             return { success: false, error: 'La barbería no existe o el enlace es inválido.' }
         }
 
-        // 4. Validación básica
-        // 4. Validación básica
+        // 3. Validación básica
         if (!guestName || !guestPhone || !date || !time) {
             return { success: false, error: 'Faltan datos requeridos.' }
         }
 
-        // 4b. Obtener el precio del servicio seleccionado
+        // 4. Obtener el precio del servicio seleccionado
         const { data: serviceData, error: serviceError } = await supabase
             .from('servicios')
             .select('precio')
@@ -89,9 +66,8 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
         }
 
         // 5. Insertar la Cita
-        // IMPORTANTE: No enviamos 'cliente_id' porque la columna no existe.
-        // Mapeamos guestName -> nombre y guestPhone -> telefono
-        // Columnas fecha -> Dia, Hora (User Request)
+        // CRÍTICO: El trigger de DB valida automáticamente el rate limiting (5 citas/hora por IP)
+        // La IP se envía en el campo ip_address para que el trigger funcione correctamente
         const { error: insertError } = await supabase
             .from('citas')
             .insert({
@@ -103,12 +79,23 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
                 Telefono: guestPhone, // Usamos las columnas existentes
                 Precio: serviceData.precio, // Auto-fill precio
                 Automatica: true,     // Flag para distinguir reservas automáticas
-                ip_address: ip        // Guardamos la IP para seguridad futura
+                ip_address: ip        // 🔒 CRÍTICO: IP requerida para rate limiting del trigger
             })
 
         if (insertError) {
             console.error('Error inserting appointment:', insertError)
-            return { success: false, error: 'Error Supabase: ' + insertError.message }
+
+            // Capturar específicamente el error del trigger de rate limiting
+            if (insertError.message?.includes('Límite de citas excedido') ||
+                insertError.message?.includes('rate_limit')) {
+                return {
+                    success: false,
+                    error: 'Has superado el límite de reservas por hora. Por favor, inténtalo más tarde.'
+                }
+            }
+
+            // Error genérico para otros casos
+            return { success: false, error: 'No se pudo completar la reserva. Inténtalo de nuevo.' }
         }
 
         // 6. Revalidar para que se actualice el calendario si alguien lo está viendo

@@ -13,7 +13,7 @@ export default function PricingPage() {
         <main className="min-h-screen bg-[#0a0a0a]">
             {/* Nav placeholder for pricing page if needed, but Paywall has a back/home flow usually or is standalone */}
 
-            <Paywall variant="pricing" isSection={false} />
+            <Paywall variant="pricing" isSection={false} showAllPlans={true} />
         </main>
     );
 }
