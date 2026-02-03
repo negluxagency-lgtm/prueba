@@ -162,7 +162,7 @@ export default function Dashboard() {
     const handleDelete = async (item: Appointment) => {
         const isProductSale = (item as any)._isProductSale;
 
-        let promise;
+        let promise: Promise<any>;
         if (isProductSale) {
             // Delete from ventas_productos table (UUID id)
             promise = supabase
@@ -174,7 +174,7 @@ export default function Dashboard() {
                     // Remove from local sales state
                     setSales(prev => prev.filter(s => s.id !== item.id));
                     return { success: true };
-                });
+                }) as any as Promise<any>;
         } else {
             // Delete from citas table (bigint id)
             promise = deleteCita(item.id);
