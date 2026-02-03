@@ -10,7 +10,7 @@ interface AppointmentTableProps {
     appointments: Appointment[];
     selectedDate: string;
     onEdit: (cita: Appointment) => void;
-    onDelete: (id: number) => void;
+    onDelete: (item: Appointment) => void;
     onUpdateStatus: (id: number, status: 'pendiente' | 'confirmada' | 'cancelada') => void;
     loading?: boolean;
 }
@@ -140,7 +140,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                                         <Pencil className="w-2.5 h-2.5 md:w-5 md:h-5" />
                                                     </button>
                                                     <button
-                                                        onClick={() => onDelete(cita.id)}
+                                                        onClick={() => onDelete(cita)}
                                                         className="p-1 md:p-3 bg-zinc-800 hover:bg-red-500/20 hover:text-red-500 text-zinc-400 rounded-sm md:rounded-xl transition-all border border-transparent hover:border-red-500/50"
                                                         title="Eliminar"
                                                     >

@@ -147,77 +147,24 @@ export default function ProductosPage() {
         }
 
         const totalPrecio = Number(selectedProduct.precio) * cantidad;
-        const now = new Date();
-        const horaActual = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
-        const diaActual = now.toISOString().split('T')[0];
 
         try {
-            const saleNombre = selectedProduct.nombre; // Sin prefijo ahora
-            const saleTlf = cantidad;
-            const salePrecio = totalPrecio;
+            const { registerProductSale } = await import('@/app/actions/register-product-sale');
 
-            console.log('Intentando insertar cita de venta ajustada:', {
-                Nombre: saleNombre,
-                Telefono: saleTlf,
-                Precio: salePrecio,
-                Dia: diaActual,
-                Hora: horaActual
+            const result = await registerProductSale({
+                productoId: selectedProduct.id,
+                nombreProducto: selectedProduct.nombre,
+                precioVenta: totalPrecio,
+                cantidad: cantidad
             });
 
-            // 1. Crear Cita Especial (Venta)
-            let ventaId = null;
-            const maxRetries = 3;
-
-            for (let i = 0; i < maxRetries; i++) {
-                const { data: citaData, error: citaError } = await supabase
-                    .from('citas')
-                    .insert([{
-                        Nombre: saleNombre,
-                        Telefono: String(saleTlf),
-                        confirmada: true,
-                        Hora: horaActual,
-                        Dia: diaActual,
-                        Precio: salePrecio,
-                        Servicio: 'Venta de Producto',
-                        producto: true
-                    }])
-                    .select();
-
-                if (citaError) {
-                    if (citaError.code === '23505') {
-                        // Silently retry on duplicate key
-                        continue;
-                    }
-                    console.error('Error de Supabase al insertar cita:', citaError.message, citaError.details);
-                    throw citaError;
-                }
-
-                // Si tuvo éxito, salimos del bucle
-                console.log('Venta registrada correctamente en citas:', citaData);
-                ventaId = citaData;
-                break;
-            }
-
-            if (!ventaId) {
-                throw new Error("No se pudo registrar la venta. Por favor intente de nuevo.");
-            }
-
-            // 2. Actualizar contador de ventas y restar stock
-            const { error: prodError } = await supabase
-                .from('productos')
-                .update({
-                    venta: (selectedProduct.venta || 0) + cantidad,
-                    stock: (selectedProduct.stock || 0) - cantidad
-                })
-                .eq('id', selectedProduct.id);
-
-            if (prodError) {
-                console.warn("Error al actualizar producto:", prodError.message);
+            if (!result.success) {
+                throw new Error(result.error || 'Error desconocido');
             }
 
             toast.success(`Venta registrada: ${cantidad}x ${selectedProduct.nombre}`);
             fetchProductos();
-            setIsSellModalOpen(false); // Cerramos el modal tras el éxito
+            setIsSellModalOpen(false);
         } catch (error: any) {
             console.error('Error completo en handleSellProduct:', error);
             const errorMsg = error.message || (typeof error === 'string' ? error : 'Error desconocido');

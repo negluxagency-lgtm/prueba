@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { manageSubscription } from '@/app/actions/manage-subscription'
-import { Store, CreditCard, Calendar, Mail, User, LogOut, Headset, Settings } from 'lucide-react'
+import { Store, CreditCard, Calendar, Mail, User, LogOut, Headset, Settings, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
 import { ResetPasswordButton } from '@/components/ResetPasswordButton'
@@ -56,44 +56,45 @@ export default function PerfilPage() {
     const [email, setEmail] = useState('')
     const [userId, setUserId] = useState('')
 
-    useEffect(() => {
-        async function cargarPerfil() {
-            try {
-                // Obtener sesión actual
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    const cargarPerfil = useCallback(async () => {
+        setLoading(true)
+        try {
+            // Obtener sesión actual
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-                if (sessionError || !session) {
-                    router.push('/')
-                    return
-                }
-
-                setUserId(session.user.id)
-                setEmail(session.user.email || '')
-
-                // Obtener datos del perfil desde la tabla perfiles
-                const { data: perfilData, error: perfilError } = await supabase
-                    .from('perfiles')
-                    .select('nombre_barberia, estado, created_at')
-                    .eq('id', session.user.id)
-                    .single()
-
-                if (perfilError) {
-                    console.error('Error al obtener perfil:', perfilError)
-                    toast.error('Error al cargar datos del perfil')
-                    return
-                }
-
-                setPerfil(perfilData)
-            } catch (error) {
-                console.error('Error:', error)
-                toast.error('Error inesperado al cargar el perfil')
-            } finally {
-                setLoading(false)
+            if (sessionError || !session) {
+                router.push('/')
+                return
             }
-        }
 
-        cargarPerfil()
+            setUserId(session.user.id)
+            setEmail(session.user.email || '')
+
+            // Obtener datos del perfil desde la tabla perfiles
+            const { data: perfilData, error: perfilError } = await supabase
+                .from('perfiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single()
+
+            if (perfilError) {
+                console.error('Error al obtener perfil:', perfilError)
+                toast.error('Error al cargar datos del perfil')
+                return
+            }
+
+            setPerfil(perfilData)
+        } catch (error) {
+            console.error('Error:', error)
+            toast.error('Error inesperado al cargar el perfil')
+        } finally {
+            setLoading(false)
+        }
     }, [router])
+
+    useEffect(() => {
+        cargarPerfil()
+    }, [cargarPerfil])
 
     const handleLogout = async () => {
         try {
@@ -184,6 +185,22 @@ export default function PerfilPage() {
                                 className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
                                          rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
                             />
+                        </div>
+
+                        {/* Link para agendar */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                                <ExternalLink className="w-4 h-4" />
+                                Link para agendar en tu barbería
+                            </label>
+                            <input
+                                type="text"
+                                value={`nelux.es/${perfil.slug || '(sin-slug)'}`}
+                                disabled
+                                className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
+                                         rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                            />
+
                         </div>
 
                         {/* Email */}

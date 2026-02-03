@@ -2,25 +2,21 @@ export interface Appointment {
     id: number;
     created_at: string;
     Nombre: string;
-    Servicio: string;
     Dia: string;
     Hora: string;
     Telefono: string;
     Precio: string | number;
     confirmada?: boolean;
     cancelada?: boolean;
-    producto?: boolean;
 }
 
 export interface AppointmentFormData {
     Nombre: string;
-    Servicio: string;
     Dia: string;
     Hora: string;
     Telefono: string;
     Precio: string;
     confirmada?: boolean;
-    producto?: boolean;
 }
 
 export interface MessageRow {

@@ -50,28 +50,24 @@ export function useAppointments(selectedDate: string) {
             // Optimizada: Una sola query para métricas
             const { data: monthData, error: monthError } = await supabase
                 .from('citas')
-                .select('Precio, Servicio, Telefono, producto, confirmada') // ✅ Añadido confirmada
+                .select('Precio, confirmada') // Removed producto - no longer exists
                 .gte('Dia', startOfMonth)
                 .eq('barberia', barberiaId); // 🔒 FILTRO DE SEGURIDAD
 
             if (!monthError && monthData) {
-                // 1. Caja Real: Suma TODO lo confirmado (Servicios + Productos)
+                // 1. Caja Real: Suma TODO lo confirmado (solo servicios ahora)
                 const totalRevenue = monthData
                     .filter(item => item.confirmada)
                     .reduce((acc, curr) => acc + (Number(curr.Precio) || 0), 0);
 
                 setMonthlyRevenue(totalRevenue);
 
-                // 2. Citas: Solo SERVICIOS (producto=false) y CONFIRMADAS (confirmada=true)
-                const cutsConfirmed = monthData.filter(c => !c.producto && c.confirmada).length;
+                // 2. Citas: Solo citas confirmadas (producto ya no existe en citas)
+                const cutsConfirmed = monthData.filter(c => c.confirmada).length;
                 setMonthlyCuts(cutsConfirmed);
 
-                // 3. Productos: Suma cantidad vendida (campo Telefono)
-                const prods = monthData
-                    .filter(c => c.producto)
-                    .reduce((sum, item) => sum + (Number(item.Telefono) || 0), 0);
-
-                setMonthlyProducts(prods);
+                // 3. Productos: Ahora en tabla separada ventas_productos
+                setMonthlyProducts(0); // Will be calculated separately if needed
             }
 
         } catch (err: any) {
@@ -105,13 +101,11 @@ export function useAppointments(selectedDate: string) {
                     .from('citas')
                     .update({
                         Nombre: formData.Nombre,
-                        Servicio: formData.Servicio,
                         Dia: formData.Dia,
                         Hora: formData.Hora,
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada,
-                        producto: formData.producto
                     })
                     .eq('id', editingId)
                     .eq('barberia', barberiaId); // 🔒 Extra check
@@ -122,13 +116,11 @@ export function useAppointments(selectedDate: string) {
                     .from('citas')
                     .insert([{
                         Nombre: formData.Nombre,
-                        Servicio: formData.Servicio,
                         Dia: formData.Dia,
                         Hora: formData.Hora,
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada ?? false,
-                        producto: formData.producto ?? false,
                         barberia: barberiaId // 🔒 Asignación automática
                     }]);
                 error = insertError;

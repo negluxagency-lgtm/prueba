@@ -89,13 +89,11 @@ export function useTrends(referenceDate?: string) {
 
         const totalCli = data.filter(a => a.confirmada).length;
 
-        // Total Cuts: Servicios (producto=false) SIN IMPORTAR confirmación
-        // Total Cuts: Servicios (producto=false) SIN IMPORTAR confirmación (Total Agendado)
-        const totalCuts = data.filter(item => item.producto === false).length;
+        // Total Cuts: All appointments (no producto field anymore)
+        const totalCuts = data.length;
 
-        const totalProducts = data
-            .filter(a => a.producto && a.confirmada)
-            .reduce((sum, item) => sum + (Number(item.Telefono) || 0), 0);
+        // Products are now in separate ventas_productos table
+        const totalProducts = 0;
 
         const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
         const totalNoShows = data.filter(cita => cita.cancelada).length;
@@ -167,33 +165,77 @@ export function useTrends(referenceDate?: string) {
             const prevStartStr = formatDate(prevStartDate);
             const prevEndStr = formatDate(prevEndDate);
 
-            // 3. Parallel Queries (FILTRADAS POR BARBERÍA 🔒)
-            const currentQuery = supabase
+            // 3. Parallel Queries (CITAS + VENTAS_PRODUCTOS)
+            const currentCitasQuery = supabase
                 .from('citas')
                 .select('*')
-                .eq('barberia', barberiaId) // 🔒 FILTRO
+                .eq('barberia', barberiaId)
                 .gte('Dia', currentStartStr)
                 .lte('Dia', currentEndStr)
                 .order('Dia', { ascending: true });
 
-            const previousQuery = supabase
+            const previousCitasQuery = supabase
                 .from('citas')
                 .select('*')
-                .eq('barberia', barberiaId) // 🔒 FILTRO
+                .eq('barberia', barberiaId)
                 .gte('Dia', prevStartStr)
                 .lte('Dia', prevEndStr);
 
-            const [currentRes, prevRes] = await Promise.all([currentQuery, previousQuery]);
+            // Fetch product sales for current period
+            const currentSalesQuery = supabase
+                .from('ventas_productos')
+                .select('*')
+                .eq('barberia_id', user.id)
+                .gte('created_at', currentStartStr + ' 00:00:00')
+                .lte('created_at', currentEndStr + ' 23:59:59');
 
-            if (currentRes.error) throw currentRes.error;
-            if (prevRes.error) throw prevRes.error;
+            // Fetch product sales for previous period
+            const previousSalesQuery = supabase
+                .from('ventas_productos')
+                .select('*')
+                .eq('barberia_id', user.id)
+                .gte('created_at', prevStartStr + ' 00:00:00')
+                .lte('created_at', prevEndStr + ' 23:59:59');
 
-            // 4. Process
-            if (currentRes.data) {
-                processMetrics(currentRes.data as Appointment[], refDate);
+            const [currentCitasRes, prevCitasRes, currentSalesRes, prevSalesRes] = await Promise.all([
+                currentCitasQuery,
+                previousCitasQuery,
+                currentSalesQuery,
+                previousSalesQuery
+            ]);
+
+            if (currentCitasRes.error) throw currentCitasRes.error;
+            if (prevCitasRes.error) throw prevCitasRes.error;
+
+            // 4. Map ventas_productos to Appointment format and merge
+            const mapSalesToAppointments = (sales: any[]): Appointment[] => {
+                return sales.map((venta: any) => ({
+                    id: venta.id,
+                    created_at: venta.created_at,
+                    Nombre: venta.nombre_producto,
+                    Servicio: venta.nombre_producto,
+                    Dia: venta.created_at.split('T')[0], // Extract YYYY-MM-DD
+                    Hora: venta.created_at.split('T')[1]?.substring(0, 5) || '00:00',
+                    Telefono: String(venta.cantidad),
+                    Precio: venta.precio,
+                    confirmada: true,
+                    _isProductSale: true, // Internal marker
+                } as any));
+            };
+
+            const currentSales = currentSalesRes.data ? mapSalesToAppointments(currentSalesRes.data) : [];
+            const prevSales = prevSalesRes.data ? mapSalesToAppointments(prevSalesRes.data) : [];
+
+            // Merge citas with sales
+            const currentData = [...(currentCitasRes.data || []), ...currentSales];
+            const previousData = [...(prevCitasRes.data || []), ...prevSales];
+
+            // 5. Process merged data
+            if (currentData) {
+                processMetrics(currentData as Appointment[], refDate);
             }
-            if (prevRes.data) {
-                setPreviousMetrics(calculateMetrics(prevRes.data as Appointment[]));
+            if (previousData) {
+                setPreviousMetrics(calculateMetrics(previousData as Appointment[]));
             }
 
         } catch (err) {
@@ -224,20 +266,12 @@ export function useTrends(referenceDate?: string) {
             const groupKey = range === 'year' ? app.Dia.substring(0, 7) : app.Dia;
             if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
 
-            // Cuts: Contar siempre si es servicio (!producto), indiferente si confirmada
-            if (!app.producto) {
-                dataMap[groupKey].cuts += 1;
-            }
+            // All appointments in citas are now services (no producto field)
+            dataMap[groupKey].cuts += 1;
 
             if (app.confirmada) {
-                // Caja Real Chart: Sumar TODO si está confirmado
+                // Caja Real Chart: Sumar revenue si está confirmado
                 dataMap[groupKey].rev += (Number(app.Precio) || 0);
-
-                // Productos (estos sí mantenemos lógica de venta real confirmada o cantidad?)
-                // El usuario no especificó cambios en productos, solo cuts.
-                if (app.producto) {
-                    dataMap[groupKey].prods += (Number(app.Telefono) || 0);
-                }
                 dataMap[groupKey].cli += 1;
             }
             if (app.cancelada) dataMap[groupKey].no += 1;

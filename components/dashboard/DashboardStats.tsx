@@ -16,7 +16,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ appointments, mo
             <div className="flex flex-col md:flex-row gap-2 md:gap-4 w-full h-full">
                 <div className="bg-zinc-900/80 border border-zinc-800 p-2.5 md:p-6 rounded-xl md:rounded-3xl flex-1 flex flex-col justify-center">
                     <p className="text-[7px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Citas</p>
-                    <p className="text-base md:text-3xl font-bold">{appointments.filter(a => a.confirmada && !a.producto).length}</p>
+                    <p className="text-base md:text-3xl font-bold">{appointments.filter(a => a.confirmada).length}</p>
                 </div>
                 <div className="bg-zinc-900/80 border border-zinc-800 p-2.5 md:p-6 rounded-xl md:rounded-3xl flex-1 border-l-2 md:border-l-4 border-l-amber-500 shadow-xl flex flex-col justify-center">
                     <p className="text-[7px] md:text-[10px] text-zinc-500 uppercase font-black mb-0.5 md:mb-1">Caja Esperada</p>

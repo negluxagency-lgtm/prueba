@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 interface ProductSalesTableProps {
     sales: Appointment[];
     onEdit: (sale: Appointment) => void;
-    onDelete: (id: number) => void;
+    onDelete: (item: Appointment) => void;
     loading?: boolean;
 }
 
@@ -77,7 +77,7 @@ export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onE
                                                         <Pencil className="w-2.5 h-2.5 md:w-5 md:h-5" />
                                                     </button>
                                                     <button
-                                                        onClick={() => onDelete(sale.id)}
+                                                        onClick={() => onDelete(sale)}
                                                         className="p-1 md:p-3 bg-zinc-800 hover:bg-red-500/20 hover:text-red-500 text-zinc-400 rounded-sm md:rounded-xl transition-all border border-transparent hover:border-red-500/50"
                                                     >
                                                         <Trash2 className="w-2.5 h-2.5 md:w-5 md:h-5" />

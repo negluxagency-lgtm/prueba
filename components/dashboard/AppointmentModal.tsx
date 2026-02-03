@@ -9,10 +9,12 @@ interface AppointmentModalProps {
     onSave: (data: AppointmentFormData) => Promise<void>;
     initialData: AppointmentFormData;
     isEditing: boolean;
+    services?: any[]; // New prop
 }
 
-export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onClose, onSave, initialData, isEditing }) => {
+export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onClose, onSave, initialData, isEditing, services = [] }) => {
     const [formData, setFormData] = useState<AppointmentFormData>(initialData);
+    console.log('🎯 Modal received services:', services);
 
     useEffect(() => {
         setFormData(initialData);
@@ -21,6 +23,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         await onSave(formData);
+    };
+
+    const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedName = e.target.value;
+        const selectedService = services?.find(s => s.nombre === selectedName);
+
+        setFormData({
+            ...formData,
+            Precio: selectedService ? String(selectedService.precio) : formData.Precio
+        });
     };
 
     return (
@@ -52,12 +64,19 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                         <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
                             <input required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Nombre" value={formData.Nombre || ""} onChange={(e) => setFormData({ ...formData, Nombre: e.target.value })} />
                             <input type="tel" className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Telefono" value={formData.Telefono || ""} onChange={(e) => setFormData({ ...formData, Telefono: e.target.value })} />
-                            <select className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Servicio || ""} onChange={(e) => setFormData({ ...formData, Servicio: e.target.value })}>
+
+                            {/* Dynamic Service Selector */}
+                            <select
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                                defaultValue=""
+                                onChange={handleServiceChange}
+                            >
                                 <option value="" disabled>Selecciona un servicio</option>
-                                <option>Corte Normal</option>
-                                <option>Barba</option>
-                                <option>Corte + Barba</option>
-                                <option>Afeitado Clásico</option>
+                                {services?.map((service: any) => (
+                                    <option key={service.id} value={service.nombre}>
+                                        {service.nombre} ({service.precio}€)
+                                    </option>
+                                ))}
                             </select>
                             <div className="grid grid-cols-2 gap-3">
                                 <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 md:px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />
