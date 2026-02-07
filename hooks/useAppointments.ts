@@ -16,43 +16,31 @@ export function useAppointments(selectedDate: string) {
         try {
             setLoading(true);
 
-            // 1. SEGURIDAD: Obtener usuario y su barbería
+            // 1. SEGURIDAD: Obtener usuario autenticado
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("No hay sesión activa");
 
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia')
-                .eq('id', user.id)
-                .single();
-
-            if (!profile || !profile.nombre_barberia) {
-                throw new Error("No se encontró el perfil de la barbería");
-            }
-
-            const barberiaId = profile.nombre_barberia;
-
-            // 2. Fetch citas del día (FILTRADO POR BARBERÍA)
+            // 2. Fetch citas del día (FILTRADO POR BARBERÍA usando barberia_id)
             const { data: dayData, error: dayError } = await supabase
                 .from('citas')
                 .select('*')
                 .eq('Dia', selectedDate)
-                .eq('barberia', barberiaId) // 🔒 FILTRO DE SEGURIDAD
+                .eq('barberia_id', user.id) // 🔒 FILTRO DE SEGURIDAD con UUID
                 .order('Hora', { ascending: true });
 
             if (dayError) throw dayError;
             if (dayData) setAppointments(dayData as Appointment[]);
 
-            // 3. Fetch ingresos mensuales (FILTRADO POR BARBERÍA)
+            // 3. Fetch ingresos mensuales (FILTRADO POR BARBERÍA usando barberia_id)
             const now = new Date();
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
 
             // Optimizada: Una sola query para métricas
             const { data: monthData, error: monthError } = await supabase
                 .from('citas')
-                .select('Precio, confirmada') // Removed producto - no longer exists
+                .select('Precio, confirmada')
                 .gte('Dia', startOfMonth)
-                .eq('barberia', barberiaId); // 🔒 FILTRO DE SEGURIDAD
+                .eq('barberia_id', user.id); // 🔒 FILTRO DE SEGURIDAD con UUID
 
             if (!monthError && monthData) {
                 // 1. Caja Real: Suma TODO lo confirmado (solo servicios ahora)
@@ -62,12 +50,12 @@ export function useAppointments(selectedDate: string) {
 
                 setMonthlyRevenue(totalRevenue);
 
-                // 2. Citas: Solo citas confirmadas (producto ya no existe en citas)
+                // 2. Citas: Solo citas confirmadas
                 const cutsConfirmed = monthData.filter(c => c.confirmada).length;
                 setMonthlyCuts(cutsConfirmed);
 
                 // 3. Productos: Ahora en tabla separada ventas_productos
-                setMonthlyProducts(0); // Will be calculated separately if needed
+                setMonthlyProducts(0);
             }
 
         } catch (err: any) {
@@ -80,27 +68,19 @@ export function useAppointments(selectedDate: string) {
 
     const saveCita = async (formData: AppointmentFormData, editingId: number | null) => {
         try {
-            // Obtener barbería para asegurar el insert
+            // Obtener usuario autenticado
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("No autenticado");
-
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia')
-                .eq('id', user.id)
-                .single();
-
-            const barberiaId = profile?.nombre_barberia;
-            if (!barberiaId) throw new Error("Error de integridad: Sin barbería");
 
             let error;
 
             if (editingId) {
-                // --- EDITAR --- (Aseguramos que solo edite si pertenece a la barbería)
+                // --- EDITAR --- (RLS asegura que solo edite sus propias citas)
                 const { error: updateError } = await supabase
                     .from('citas')
                     .update({
                         Nombre: formData.Nombre,
+                        servicio: formData.servicio,
                         Dia: formData.Dia,
                         Hora: formData.Hora,
                         Telefono: formData.Telefono,
@@ -108,20 +88,27 @@ export function useAppointments(selectedDate: string) {
                         confirmada: formData.confirmada,
                     })
                     .eq('id', editingId)
-                    .eq('barberia', barberiaId); // 🔒 Extra check
+                    .eq('barberia_id', user.id); // 🔒 UUID check
                 error = updateError;
             } else {
-                // --- CREAR ---
+                // --- CREAR --- Cumple con RLS: barberia_id = auth.uid()
+                console.log('📝 Creating appointment with data:', {
+                    Nombre: formData.Nombre,
+                    servicio: formData.servicio,
+                    Precio: formData.Precio
+                });
+
                 const { error: insertError } = await supabase
                     .from('citas')
                     .insert([{
                         Nombre: formData.Nombre,
+                        servicio: formData.servicio,
                         Dia: formData.Dia,
                         Hora: formData.Hora,
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada ?? false,
-                        barberia: barberiaId // 🔒 Asignación automática
+                        barberia_id: user.id // 🔒 UUID requerido por RLS
                     }]);
                 error = insertError;
             }
@@ -190,26 +177,17 @@ export function useAppointments(selectedDate: string) {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia')
-                .eq('id', user.id)
-                .single();
-
-            const barberiaId = profile?.nombre_barberia;
-            if (!barberiaId) return;
-
             // Fetch inicial
             getCitas();
 
-            // Suscripción FILTRADA
+            // Suscripción FILTRADA usando barberia_id
             subscription = supabase
                 .channel('citas-realtime')
                 .on('postgres_changes', {
                     event: '*',
                     schema: 'public',
                     table: 'citas',
-                    filter: `barberia=eq.${barberiaId}` // 🔒 FILTRO REALTIME
+                    filter: `barberia_id=eq.${user.id}` // 🔒 FILTRO REALTIME con UUID
                 }, () => {
                     setTimeout(() => getCitas(), 500);
                 })

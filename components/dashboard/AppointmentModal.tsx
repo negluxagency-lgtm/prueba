@@ -27,12 +27,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
 
     const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedName = e.target.value;
+        console.log('🎯 Service selected:', selectedName);
         const selectedService = services?.find(s => s.nombre === selectedName);
 
-        setFormData({
+        const newFormData = {
             ...formData,
+            servicio: selectedName,
             Precio: selectedService ? String(selectedService.precio) : formData.Precio
-        });
+        };
+        console.log('📋 Updated formData:', newFormData);
+        setFormData(newFormData);
     };
 
     return (
@@ -68,7 +72,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                             {/* Dynamic Service Selector */}
                             <select
                                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
-                                defaultValue=""
+                                value={formData.servicio || ""}
                                 onChange={handleServiceChange}
                             >
                                 <option value="" disabled>Selecciona un servicio</option>

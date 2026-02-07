@@ -288,6 +288,7 @@ export default function Dashboard() {
                 services={services} // Pass services to modal
                 initialData={editingCita ? {
                     Nombre: editingCita.Nombre,
+                    servicio: editingCita.servicio,
                     Dia: editingCita.Dia,
                     Hora: editingCita.Hora,
                     Telefono: String(editingCita.Telefono),
@@ -295,6 +296,7 @@ export default function Dashboard() {
                     confirmada: !!editingCita.confirmada,
                 } : {
                     Nombre: '',
+                    servicio: '',
                     Dia: selectedDate,
                     Hora: '',
                     Telefono: '',

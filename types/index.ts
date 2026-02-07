@@ -2,6 +2,7 @@ export interface Appointment {
     id: number;
     created_at: string;
     Nombre: string;
+    servicio?: string;
     Dia: string;
     Hora: string;
     Telefono: string;
@@ -12,6 +13,7 @@ export interface Appointment {
 
 export interface AppointmentFormData {
     Nombre: string;
+    servicio?: string;
     Dia: string;
     Hora: string;
     Telefono: string;

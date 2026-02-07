@@ -83,20 +83,32 @@ export function useTrends(referenceDate?: string) {
         return `${year}-${month}-${day}`;
     };
 
-    const calculateMetrics = (data: Appointment[]): TrendsMetrics => {
-        // Caja Real: Suma TODO lo confirmado (Servicios + Productos)
-        const totalRev = data.reduce((sum, item) => sum + (item.confirmada ? (Number(item.Precio) || 0) : 0), 0);
+    const calculateMetrics = (appointments: Appointment[], productSales: any[]): TrendsMetrics => {
+        // Caja Real: Solo citas confirmadas
+        const appointmentRevenue = appointments.reduce((sum, item) =>
+            sum + (item.confirmada ? (Number(item.Precio) || 0) : 0), 0
+        );
 
-        const totalCli = data.filter(a => a.confirmada).length;
+        // Ingresos de productos
+        const productRevenue = productSales.reduce((sum, sale) =>
+            sum + (Number(sale.precio) || 0), 0
+        );
 
-        // Total Cuts: All appointments (no producto field anymore)
-        const totalCuts = data.length;
+        const totalRev = appointmentRevenue + productRevenue;
 
-        // Products are now in separate ventas_productos table
-        const totalProducts = 0;
+        // Clientes: Solo citas confirmadas
+        const totalCli = appointments.filter(a => a.confirmada).length;
+
+        // Total Cuts: SOLO citas confirmadas (no productos)
+        const totalCuts = appointments.filter(a => a.confirmada).length;
+
+        // Products: Sumar cantidad de productos vendidos
+        const totalProducts = productSales.reduce((sum, sale) =>
+            sum + (Number(sale.cantidad) || 0), 0
+        );
 
         const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
-        const totalNoShows = data.filter(cita => cita.cancelada).length;
+        const totalNoShows = appointments.filter(cita => cita.cancelada).length;
 
         return {
             totalRevenue: totalRev,
@@ -223,19 +235,18 @@ export function useTrends(referenceDate?: string) {
                 } as any));
             };
 
-            const currentSales = currentSalesRes.data ? mapSalesToAppointments(currentSalesRes.data) : [];
-            const prevSales = prevSalesRes.data ? mapSalesToAppointments(prevSalesRes.data) : [];
+            // DON'T merge sales with appointments - keep them separate!
+            const currentAppointments = currentCitasRes.data || [];
+            const previousAppointments = prevCitasRes.data || [];
+            const currentSales = currentSalesRes.data || [];
+            const prevSales = prevSalesRes.data || [];
 
-            // Merge citas with sales
-            const currentData = [...(currentCitasRes.data || []), ...currentSales];
-            const previousData = [...(prevCitasRes.data || []), ...prevSales];
-
-            // 5. Process merged data
-            if (currentData) {
-                processMetrics(currentData as Appointment[], refDate);
+            // 5. Process metrics with separate data
+            if (currentAppointments) {
+                processMetrics(currentAppointments as Appointment[], currentSales, refDate);
             }
-            if (previousData) {
-                setPreviousMetrics(calculateMetrics(previousData as Appointment[]));
+            if (previousAppointments) {
+                setPreviousMetrics(calculateMetrics(previousAppointments as Appointment[], prevSales));
             }
 
         } catch (err) {
@@ -245,9 +256,9 @@ export function useTrends(referenceDate?: string) {
         }
     };
 
-    const processMetrics = (appointments: Appointment[], refDate: Date) => {
+    const processMetrics = (appointments: Appointment[], productSales: any[], refDate: Date) => {
         // Set Current Metrics
-        setMetrics(calculateMetrics(appointments));
+        setMetrics(calculateMetrics(appointments, productSales));
 
         // Prepare Chart Data (Filling Gaps)
         const dataMap: Record<string, { rev: number; cli: number; no: number; cuts: number; prods: number }> = {};
@@ -262,19 +273,30 @@ export function useTrends(referenceDate?: string) {
         const current = new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()));
         const finalEnd = new Date(Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()));
 
+        // Process appointments (citas)
         appointments.forEach(app => {
             const groupKey = range === 'year' ? app.Dia.substring(0, 7) : app.Dia;
             if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
 
-            // All appointments in citas are now services (no producto field)
-            dataMap[groupKey].cuts += 1;
-
             if (app.confirmada) {
-                // Caja Real Chart: Sumar revenue si está confirmado
+                // Solo contar citas confirmadas
+                dataMap[groupKey].cuts += 1;
                 dataMap[groupKey].rev += (Number(app.Precio) || 0);
                 dataMap[groupKey].cli += 1;
             }
             if (app.cancelada) dataMap[groupKey].no += 1;
+        });
+
+        // Process product sales separately
+        productSales.forEach(sale => {
+            const dateStr = sale.created_at.split('T')[0];
+            const groupKey = range === 'year' ? dateStr.substring(0, 7) : dateStr;
+            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
+
+            // Sumar ingresos de productos
+            dataMap[groupKey].rev += (Number(sale.precio) || 0);
+            // Sumar cantidad de productos vendidos
+            dataMap[groupKey].prods += (Number(sale.cantidad) || 0);
         });
 
         const finalData: ChartDataPoint[] = [];
@@ -341,7 +363,7 @@ export function useTrends(referenceDate?: string) {
 
             fetchTrends();
 
-            // Suscripción FILTRADA 🔒
+            // Suscripción FILTRADA para citas 🔒
             channel = supabase
                 .channel('trends-realtime')
                 .on('postgres_changes', {
@@ -349,6 +371,14 @@ export function useTrends(referenceDate?: string) {
                     schema: 'public',
                     table: 'citas',
                     filter: `barberia=eq.${barberiaId}`
+                }, () => {
+                    fetchTrends();
+                })
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'ventas_productos',
+                    filter: `barberia_id=eq.${user.id}`
                 }, () => {
                     fetchTrends();
                 })
