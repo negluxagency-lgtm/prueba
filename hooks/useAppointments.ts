@@ -50,9 +50,9 @@ export function useAppointments(selectedDate: string) {
 
                 setMonthlyRevenue(totalRevenue);
 
-                // 2. Citas: Solo citas confirmadas
-                const cutsConfirmed = monthData.filter(c => c.confirmada).length;
-                setMonthlyCuts(cutsConfirmed);
+                // 2. Citas: CONTAR TODAS (confirmadas, pendientes, etc)
+                const totalCuts = monthData.length;
+                setMonthlyCuts(totalCuts);
 
                 // 3. Productos: Ahora en tabla separada ventas_productos
                 setMonthlyProducts(0);
@@ -71,6 +71,15 @@ export function useAppointments(selectedDate: string) {
             // Obtener usuario autenticado
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("No autenticado");
+
+            // Fetch profile for legacy barberia field support
+            const { data: profile } = await supabase
+                .from('perfiles')
+                .select('nombre_barberia')
+                .eq('id', user.id)
+                .single();
+
+            if (!profile?.nombre_barberia) throw new Error("Perfil incompleto");
 
             let error;
 
@@ -108,7 +117,9 @@ export function useAppointments(selectedDate: string) {
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada ?? false,
-                        barberia_id: user.id // 🔒 UUID requerido por RLS
+
+                        barberia_id: user.id, // 🔒 UUID requerido por RLS
+                        barberia: profile.nombre_barberia // ⚠️ Legacy support required
                     }]);
                 error = insertError;
             }
