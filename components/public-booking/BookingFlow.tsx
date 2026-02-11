@@ -306,7 +306,8 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
                         </div>
 
                         {/* Barber Selection (Premium Only) */}
-                        {barbers.length > 0 && plan === 'Premium' && (
+                        {/* Debug: console.log('BookingFlow Plan:', plan) */}
+                        {barbers.length > 0 && (plan || '').toLowerCase() === 'premium' && (
                             <div className="space-y-3">
                                 <p className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-2">
                                     <User size={12} className="text-amber-500" />
