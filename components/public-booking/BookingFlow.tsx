@@ -6,11 +6,13 @@ import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, User, Phone, CheckCircle2, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Loader2 } from 'lucide-react'
 import { bookGuestAppointment } from '@/app/actions/book-guest-appointment'
+import { getAvailableSlots } from '@/app/actions/get-available-slots'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { supabase } from '@/lib/supabase'
 
 // Types
+import { WeeklySchedule, TimeRange } from '@/types'
+
 type Service = {
     id: string
     nombre: string
@@ -18,107 +20,42 @@ type Service = {
     duracion: number
 }
 
-interface DaySchedule {
-    dia_semana: number;
-    hora_apertura: string;
-    hora_cierre: string;
-    esta_abierto: boolean;
-    hora_inicio_pausa?: string | null;
-    hora_fin_pausa?: string | null;
+// Keep legacy for Barber if needed, but BookingFlow main schedule is now WeeklySchedule
+interface ShopDaySchedule {
+    dia: number
+    abierto: boolean
+    franjas: { inicio: string, fin: string }[]
 }
 
-const DAY_NAMES_ES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-
-function generateTimeSlots(
-    selectedDate: Date,
-    scheduleArray: DaySchedule[]
-): { slots: string[]; isClosed: boolean; dayName: string } {
-    const dayOfWeek = getDay(selectedDate); // 0=Sunday, 6=Saturday
-    const dayName = DAY_NAMES_ES[dayOfWeek];
-    const rule = scheduleArray.find(r => r.dia_semana === dayOfWeek);
-
-    if (!rule || !rule.esta_abierto) {
-        return { slots: [], isClosed: true, dayName };
-    }
-
-    // Parse times (handle "HH:MM:SS" or "HH:MM" formats)
-    const [startHour, startMin] = rule.hora_apertura.split(':').map(Number);
-    const [endHour, endMin] = rule.hora_cierre.split(':').map(Number);
-
-    const slots: string[] = [];
-    let currentHour = startHour;
-    let currentMin = startMin;
-
-    // Parse break times if they exist
-    let breakStartTotalMins = -1;
-    let breakEndTotalMins = -1;
-
-    if (rule.hora_inicio_pausa && rule.hora_fin_pausa) {
-        const [bsH, bsM] = rule.hora_inicio_pausa.split(':').map(Number);
-        const [beH, beM] = rule.hora_fin_pausa.split(':').map(Number);
-        breakStartTotalMins = bsH * 60 + bsM;
-        breakEndTotalMins = beH * 60 + beM;
-    }
-
-    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
-        const currentTotalMins = currentHour * 60 + currentMin;
-
-        // Skip if inside break (Start <= current < End)
-        // Example: Break 14:00 - 16:00. 
-        // 14:00 is skipped. 15:30 is skipped. 16:00 is allowed.
-        if (breakStartTotalMins !== -1 && currentTotalMins >= breakStartTotalMins && currentTotalMins < breakEndTotalMins) {
-            // Inside break, skip adding
-        } else {
-            slots.push(`${String(currentHour).padStart(2, '0')}:${String(currentMin).padStart(2, '0')}`);
-        }
-
-        currentMin += 30;
-        if (currentMin >= 60) {
-            currentMin = 0;
-            currentHour++;
-        }
-    }
-
-    return { slots, isClosed: false, dayName };
+interface Barber {
+    id: string
+    barberia_id: string
+    nombre: string
+    foto?: string
+    horario_semanal?: ShopDaySchedule[] // Still using old format for barbers for now or need update? 
+    // The prompt implies we are refactoring SHOP schedule first. 
+    // Barber schedule might still be in old format or we should update it later. 
+    // For now, let's stick to Shop Schedule update.
 }
 
-function filterPastSlots(slots: string[], selectedDate: Date): string[] {
-    const now = new Date();
-    if (!isSameDay(selectedDate, now)) return slots;
-
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-    return slots.filter(slot => {
-        const [h, m] = slot.split(':').map(Number);
-        return (h * 60 + m) > currentTime;
-    });
-}
-
-function filterFullSlots(
-    slots: string[],
-    appointmentTimes: string[],
-    capacity: number
-): string[] {
-    return slots.filter(slot => {
-        const count = appointmentTimes.filter(t => t === slot).length
-        return count < capacity
-    })
-}
+// Removed local slot generation helpers - now using server action getAvailableSlots
 
 interface BookingFlowProps {
     services: Service[]
     slug: string
     shopName: string
     closingDates?: string[]
-    schedule?: DaySchedule[]
     profileId: string
-    capacidadSlots: number
+    barbers?: Barber[]
+    plan?: string // 'basico' | 'profesional' | 'premium'
 }
 
 type Step = 'SERVICE' | 'DATE' | 'FORM' | 'SUCCESS'
 
-export default function BookingFlow({ services, slug, shopName, closingDates = [], schedule = [], profileId, capacidadSlots }: BookingFlowProps) {
+export default function BookingFlow({ services, slug, shopName, closingDates = [], profileId, barbers = [], plan }: BookingFlowProps) {
     const [step, setStep] = useState<Step>('SERVICE')
     const [selectedService, setSelectedService] = useState<Service | null>(null)
+    const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null) // null = Cualquiera
 
     // Date & Time State
     const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -129,56 +66,41 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
     const [guestPhone, setGuestPhone] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Appointments for capacity check
-    const [appointmentsForDate, setAppointmentsForDate] = useState<string[]>([])
+    // Available slots from server
+    const [availableSlots, setAvailableSlots] = useState<string[]>([])
     const [loadingSlots, setLoadingSlots] = useState(false)
 
-    // Helper for local date string
-    const formatDateLocal = (date: Date) => {
-        const year = date.getFullYear()
-        const month = String(date.getMonth() + 1).padStart(2, '0')
-        const day = String(date.getDate()).padStart(2, '0')
-        return `${year}-${month}-${day}`
-    }
-
-    // Fetch appointments when date changes
+    // Fetch available slots when date or service changes
     useEffect(() => {
-        if (!selectedDate || !profileId) {
-            setAppointmentsForDate([])
+        if (!selectedDate || !selectedService) {
+            setAvailableSlots([])
             return
         }
 
-        const fetchAppointments = async () => {
+        const fetchSlots = async () => {
             setLoadingSlots(true)
-            const dateString = formatDateLocal(selectedDate)
-
-            const { data } = await supabase
-                .from('citas')
-                .select('Hora')
-                .eq('barberia_id', profileId)
-                .eq('Dia', dateString)
-
-            const times = (data || []).map((c: any) => c.Hora?.slice(0, 5) || '')
-            setAppointmentsForDate(times)
-            setLoadingSlots(false)
+            try {
+                const slots = await getAvailableSlots({
+                    slug,
+                    date: selectedDate,
+                    serviceDuration: selectedService.duracion,
+                    selectedBarberId
+                })
+                setAvailableSlots(slots)
+            } catch (error) {
+                console.error('Error fetching slots:', error)
+                toast.error('Error al cargar horarios disponibles')
+                setAvailableSlots([])
+            } finally {
+                setLoadingSlots(false)
+            }
         }
 
-        fetchAppointments()
-    }, [selectedDate, profileId])
-
-    // Dynamic Time Slots based on schedule + capacity
-    const { availableSlots, isClosed, dayName } = useMemo(() => {
-        if (!selectedDate || schedule.length === 0) {
-            return { availableSlots: [], isClosed: false, dayName: '' };
-        }
-        const result = generateTimeSlots(selectedDate, schedule);
-        let filtered = filterPastSlots(result.slots, selectedDate);
-        // Filter by capacity
-        filtered = filterFullSlots(filtered, appointmentsForDate, capacidadSlots);
-        return { availableSlots: filtered, isClosed: result.isClosed, dayName: result.dayName };
-    }, [selectedDate, schedule, appointmentsForDate, capacidadSlots])
+        fetchSlots()
+    }, [selectedDate, selectedService, selectedBarberId, slug])
 
     // --- CALENDAR LOGIC ---
+    console.log('🧑‍💼 [BookingFlow] Barbers prop:', barbers, 'Length:', barbers.length)
 
     // Constraints
     const today = startOfDay(new Date())
@@ -196,6 +118,14 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
     // We want Monday first.
     const startingDayIndex = (getDay(firstDayOfMonth) + 6) % 7 // Shift so Monday is 0
 
+    // Helper for local date string formatting
+    const formatDateLocal = (date: Date) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+    }
+
     const handleBook = async () => {
         if (!selectedService || !selectedDate || !selectedTime || !guestName || !guestPhone) return
 
@@ -208,7 +138,8 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
             date: formatDateLocal(selectedDate), // Send "2026-02-01" local
             time: selectedTime,                  // Send "10:00"
             guestName,
-            guestPhone
+            guestPhone,
+            barberId: selectedBarberId || undefined // Pass selected barber (or undefined for 'Cualquiera')
         })
 
         setIsSubmitting(false)
@@ -374,6 +305,58 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
                             </div>
                         </div>
 
+                        {/* Barber Selection (Premium Only) */}
+                        {barbers.length > 0 && plan === 'premium' && (
+                            <div className="space-y-3">
+                                <p className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-2">
+                                    <User size={12} className="text-amber-500" />
+                                    Selecciona tu Barbero
+                                </p>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    {/* Cualquiera (No Preference) */}
+                                    <button
+                                        onClick={() => setSelectedBarberId(null)}
+                                        className={cn(
+                                            "flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2 relative",
+                                            selectedBarberId === null
+                                                ? "bg-amber-500 text-black border-amber-500 shadow-lg"
+                                                : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                                        )}
+                                    >
+                                        <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
+                                            <User className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-xs font-bold text-center">Cualquiera</span>
+                                        <span className="text-[10px] opacity-70">Me es indiferente</span>
+                                    </button>
+
+                                    {/* Individual Barbers */}
+                                    {barbers.map((barber) => (
+                                        <button
+                                            key={barber.id}
+                                            onClick={() => setSelectedBarberId(barber.id)}
+                                            className={cn(
+                                                "flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2 relative",
+                                                selectedBarberId === barber.id
+                                                    ? "bg-amber-500 text-black border-amber-500 shadow-lg"
+                                                    : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                                            )}
+                                        >
+                                            {barber.foto ? (
+                                                <img src={barber.foto} alt={barber.nombre} className="w-10 h-10 rounded-full object-cover" />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-lg font-bold">
+                                                    {barber.nombre.charAt(0)}
+                                                </div>
+                                            )}
+                                            <span className="text-xs font-bold text-center truncate w-full px-1">{barber.nombre}</span>
+                                            <span className="text-[10px] opacity-70">Disponible</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Time Slots Grid */}
                         <div className={`space-y-2 transition-all duration-300 ${selectedDate ? 'opacity-100' : 'opacity-50 blur-sm pointer-events-none'}`}>
@@ -389,10 +372,10 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
                                 <div className="h-20 flex items-center justify-center">
                                     <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
                                 </div>
-                            ) : isClosed ? (
+                            ) : availableSlots.length === 0 ? (
                                 <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-center">
                                     <p className="text-red-400 font-medium">
-                                        Lo sentimos, la barbería no abre los {dayName}
+                                        Lo sentimos, no hay horarios disponibles este día
                                     </p>
                                 </div>
                             ) : availableSlots.length === 0 ? (
@@ -459,6 +442,18 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
                                 </div>
                                 <p className="text-white font-bold text-lg bg-zinc-800 px-3 py-1 rounded-md">{selectedTime}</p>
                             </div>
+                            {barbers.length > 0 && (
+                                <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
+                                    <div>
+                                        <p className="text-xs text-zinc-500 font-bold uppercase">Barbero</p>
+                                        <p className="text-white font-medium">
+                                            {selectedBarberId === null
+                                                ? 'Cualquiera (asignación automática)'
+                                                : barbers.find(b => b.id === selectedBarberId)?.nombre || 'Cualquiera'}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Form Input */}

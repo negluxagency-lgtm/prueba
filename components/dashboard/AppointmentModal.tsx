@@ -10,9 +10,10 @@ interface AppointmentModalProps {
     initialData: AppointmentFormData;
     isEditing: boolean;
     services?: any[]; // New prop
+    barbers?: { id: string, nombre: string }[]; // Updated prop
 }
 
-export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onClose, onSave, initialData, isEditing, services = [] }) => {
+export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onClose, onSave, initialData, isEditing, services = [], barbers = [] }) => {
     const [formData, setFormData] = useState<AppointmentFormData>(initialData);
     console.log('🎯 Modal received services:', services);
 
@@ -33,6 +34,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
         const newFormData = {
             ...formData,
             servicio: selectedName,
+            Servicio_id: selectedService?.id, // Capture ID with correct casing
             Precio: selectedService ? String(selectedService.precio) : formData.Precio
         };
         console.log('📋 Updated formData:', newFormData);
@@ -81,6 +83,25 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                                         {service.nombre} ({service.precio}€)
                                     </option>
                                 ))}
+                            </select>
+
+                            {/* Barber Selector */}
+                            <select
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                                value={formData.barbero || ""}
+                                onChange={(e) => setFormData({ ...formData, barbero: e.target.value })}
+                            >
+                                <option value="">Selecciona un barbero (Opcional)</option>
+                                {barbers?.map((barber: any, index: number) => {
+                                    const key = barber.id || index;
+                                    const value = barber.id || barber;
+                                    const label = barber.nombre || barber;
+                                    return (
+                                        <option key={key} value={value}>
+                                            {label}
+                                        </option>
+                                    );
+                                })}
                             </select>
                             <div className="grid grid-cols-2 gap-3">
                                 <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 md:px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />

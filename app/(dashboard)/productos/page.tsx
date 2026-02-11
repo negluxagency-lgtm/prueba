@@ -84,7 +84,8 @@ export default function ProductosPage() {
                     precio,
                     venta: 0,
                     stock,
-                    barberia: profile.nombre_barberia // Usamos 'barberia' como matching
+                    barberia: profile.nombre_barberia, // Usamos 'barberia' como matching (legacy)
+                    barberia_id: user.id // Usamos UUID para el nuevo matching seguro
                 }]);
 
             if (error) {

@@ -9,13 +9,15 @@ import Link from 'next/link';
 interface AppointmentTableProps {
     appointments: Appointment[];
     selectedDate: string;
+    userPlan?: string;
     onEdit: (cita: Appointment) => void;
     onDelete: (item: Appointment) => void;
     onUpdateStatus: (id: number, status: 'pendiente' | 'confirmada' | 'cancelada') => void;
     loading?: boolean;
+    barbers?: any[]; // { id, nombre } objects
 }
 
-export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments, selectedDate, onEdit, onDelete, onUpdateStatus, loading }) => {
+export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments, selectedDate, userPlan, onEdit, onDelete, onUpdateStatus, loading, barbers = [] }) => {
     const fechaVisual = new Date(selectedDate + "T12:00:00").toLocaleDateString('es-ES', {
         weekday: 'long', day: 'numeric', month: 'long'
     });
@@ -59,6 +61,10 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                     <thead className="text-zinc-500 text-[8px] md:text-xs uppercase tracking-[0.2em] bg-black/40">
                         <tr>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Cliente</th>
+                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Servicio</th>
+                            {userPlan === 'Premium' && (
+                                <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Barbero</th>
+                            )}
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">WhatsApp</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Estado</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Hora</th>
@@ -72,6 +78,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                             Array.from({ length: 5 }).map((_, i) => (
                                 <tr key={i}>
                                     <td className="px-6 py-4"><Skeleton className="h-5 w-32" /></td>
+                                    <td className="px-6 py-4"><Skeleton className="h-5 w-24" /></td>
                                     <td className="px-6 py-4 text-center"><Skeleton className="h-7 w-24 mx-auto" /></td>
                                     <td className="px-6 py-4 text-center"><Skeleton className="h-7 w-20 mx-auto" /></td>
                                     <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
@@ -94,6 +101,19 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             <td className="px-3 py-1 md:px-8 md:py-6 font-bold text-zinc-100 text-[11px] md:text-lg group-hover:text-amber-500 transition-colors">
                                                 {cita.Nombre}
                                             </td>
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-zinc-300 text-[10px] md:text-sm font-medium">
+                                                {cita.servicio || <span className="text-zinc-600 italic">--</span>}
+                                            </td>
+                                            {userPlan === 'Premium' && (
+                                                <td className="px-3 py-1 md:px-8 md:py-6 text-zinc-300 text-[10px] md:text-sm font-medium">
+                                                    {/* Lookup name if ID, otherwise show value (legacy name) */}
+                                                    {(() => {
+                                                        if (!cita.barbero) return <span className="text-zinc-600 italic">Sin asignar</span>;
+                                                        const barberObj = barbers.find(b => b.id === cita.barbero);
+                                                        return barberObj ? barberObj.nombre : cita.barbero;
+                                                    })()}
+                                                </td>
+                                            )}
                                             <td className="px-3 py-1 md:px-8 md:py-6 text-center">
                                                 {cita.Telefono ? (
                                                     <Link
@@ -152,7 +172,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={6} className="px-8 py-10 text-center text-zinc-600 italic uppercase tracking-widest text-[9px] md:text-xs">
+                                        <td colSpan={userPlan === 'Premium' ? 8 : 7} className="px-8 py-10 text-center text-zinc-600 italic uppercase tracking-widest text-[9px] md:text-xs">
                                             Sin citas hoy
                                         </td>
                                     </tr>

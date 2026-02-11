@@ -1,143 +1,167 @@
-Arquitectura de Datos: Nelux (Estructura Real)
-El sistema se basa en 4 tablas principales. La clave de unión entre todas ellas no es el UUID de Supabase, sino el campo nombre_barberia, que actúa como identificador único para relacionar datos.
+Arquitectura de Datos: Nelux (Estructura Real - v2.0)
+El sistema se basa ahora en tablas principales optimizadas. Aunque nombre_barberia se usa para slugs y relaciones legadas, el id (UUID) es la clave principal para las Políticas de Seguridad (RLS) y relaciones eficientes.
 
-1. Tabla "perfiles" (Configuración y Dashboard)
-Es la tabla maestra. Contiene la identidad, la configuración técnica para la IA y los KPIs (indicadores de rendimiento) que se muestran en el dashboard de la app.
+1. Tabla "perfiles" (Configuración Master y Horarios)
+Es la tabla maestra. Ahora incluye el horario de apertura para evitar consultas extra.
 
 Identidad y Acceso:
 
-id: (UUID): identificador único de cada usuario.
+id (UUID): Identificador único (vinculado a auth.users).
 
-nombre_barberia: (PK) El identificador principal.
+nombre_barberia: (PK lógica) Identificador legible.
 
-correo / telefono: Contacto del dueño.
+slug: (String, Unique) URL amigable para el perfil público (wolf_barbershop).
 
-nombre_encargado: Persona responsable.
+correo / telefono: Datos de contacto.
 
-docs: Campo legado (irrelevante actualmente).
+nombre_encargado: Responsable legal.
 
-Configuración (Formulario de Onboarding):
+twiliio: Número para automatizaciones n8n.
 
-Datos que la IA usa para trabajar: Direccion, horario, servicios, pagos, productos (configuración general), info (instrucciones extra).
+Configuración y Lógica de Negocio:
 
-onboarding_completado: Boolean que indica si el usuario completó la configuración inicial por primera vez.
+horario_semanal (JSONB - NUEVO): Array de objetos con la configuración de apertura de la tienda.
+
+Estructura: [{ "dia": 1, "abierto": true, "franjas": [{ "inicio": "09:00", "fin": "14:00" }] }]
+
+onboarding_completado: (Boolean) Control de flujo inicial.
+
+capacidad_slots: (Int) Cantidad de citas simultáneas posibles.
+
+configuracion: (JSONB/Columnas) Dirección, info extra, etc.
 
 Suscripción (Stripe):
 
-plan: Nivel de suscripción (Básico, Profesional, Premium).
+plan: 'basico' | 'profesional' | 'premium'.
 
-estado: Estado de la cuenta (prueba, pagado, impago).
+estado: 'active' | 'past_due' | 'trialing'.
 
-ultimo_pago: Timestamp de la última vez que pagaron la cuota.
+stripe_customer_id: ID de cliente (cus_xxx).
 
-stripe_customer_id: ID del cliente en Stripe (cus_xxxxx).
+KPIs (Cálculo Automático):
 
-KPIs y Objetivos (Cálculo Automático):
+objetivo_ingresos, objetivo_citas: Metas mensuales.
 
-Objetivos: objetivo_ingresos, objetivo_citas, objetivo_productos. (Fijados manualmente por el barbero).
+ingresos_dia, cortes_dia: Métricas en tiempo real.
 
-Métricas Diarias: ingresos_dia, cortes_dia, productos_dia.
-
-Nota: Estos campos se recalculan automáticamente en base a los objetivos y la actividad real para mostrar el progreso diario en la App.
-
-2. Tabla "citas" (Agenda y Libro de Ventas)
-Esta tabla es híbrida. Funciona como agenda de reservas y también como registro de ventas de productos físicos (champús, gominas, etc.).
+2. Tabla "citas" (Agenda Inteligente)
+Registro central de reservas y transacciones.
 
 Identificadores:
 
-id: Autonumérico.
+id: (Int8) ID único de la cita.
 
-barberia: Vincula con perfiles.nombre_barberia.
+user_id / barberia_id: (UUID) Vincula con perfiles.id (Crucial para RLS).
 
-created_at: Fecha de creación del registro.
+barberia: (Text) Vincula con perfiles.nombre_barberia (Legado).
 
-Detalles de la Transacción:
+created_at: Timestamp.
 
-Nombre: Nombre del cliente.
+Detalles de la Cita:
 
-Servicio: Tipo de corte o nombre del producto vendido.
+nombre: Nombre del cliente.
 
-Dia (YYYY-MM-DD) y Hora (Timestamptz): Cuándo ocurre la cita o venta.
+telefono: Contacto del cliente.
 
-Precio: Dinero generado.
+servicio_id: (UUID) Vincula con tabla servicios.
 
-Lógica de Producto vs. Servicio:
+servicio: (Text) Nombre del servicio snapshot (por si cambia el precio futuro).
 
-producto (Boolean):
+precio: (Numeric) Coste final.
 
-FALSE (Default): Es una cita de peluquería.
+fecha (Date) y hora (Time): Cuándo ocurre.
 
-TRUE: Es una venta de producto físico.
+barbero: (Text/UUID) NUEVO: Nombre o ID del barbero específico asignado (Visible solo en planes Premium).
 
-Telefono: Campo Polimórfico.
+Seguridad y Estado:
 
-Si es cita: Guarda el número de teléfono del cliente.
+ip_address: (Text) Dirección IP del cliente para Rate Limiting y bloqueos.
 
-Si es producto (producto=true): Guarda la CANTIDAD vendida.
+confirmada: (Bool) Cita activa.
 
-Estado y No-Shows:
+cancelada: (Bool) No-show o cancelación manual.
 
-confirmada: true si la cita sigue en pie.
+automatica: (Bool) true = App Cliente, false = Manual Barbero.
 
-cancelada: true si es un "No-Show" o cancelación.
+3. Tabla "barberos" (Staff y Turnos Flexibles)
+Optimizada para soportar turnos partidos, días libres rotativos y horarios complejos.
 
-Lógica: Si cancelada pasa a true, automáticamente confirmada debe pasar a false.
+Datos:
 
-3. Tabla "Mensajes" (Auditoría de Chat)
-Registro cronológico de la comunicación. Separa lo enviado de lo recibido en columnas distintas para facilitar la lectura humana.
+id: (UUID/Int) Identificador.
 
-Contenido:
+barberia_id: (UUID) Vincula con perfiles.id.
 
-mensaje_recibido: Texto que envía el cliente (NULL si somos nosotros los que escribimos).
+nombre: Nombre del empleado.
 
-mensaje_enviado: Texto que envía la IA o el barbero (NULL si habla el cliente).
+foto: (Text) URL de su foto de perfil (Opcional).
 
-Metadatos:
+Horario Inteligente:
 
-numero: ID autoincremental.
+horario_semanal (JSONB - NUEVO): Sustituye a todas las columnas antiguas de inicio_turno, fin_turno, etc.
 
-Tlf: Teléfono del cliente (ID de la conversación).
+Estructura: Array de 7 objetos. Permite múltiples turnos por día (ej: mañana y tarde).
 
-fecha: Timestamp automático de Supabase.
+Ejemplo: [{ "dia": 1, "activo": true, "turnos": [{ "inicio": "10:00", "fin": "14:00" }, { "inicio": "16:00", "fin": "20:00" }] }]
 
-barberia: Vincula con perfiles.nombre_barberia.
+4. Tabla "servicios" (Catálogo)
+id: (UUID).
 
-Control Humano:
+perfil_id: (UUID).
 
-manual (Boolean):
+nombre: (Text) "Corte Clásico".
 
-FALSE (Default): El mensaje lo envió la IA o el cliente.
+precio: (Numeric).
 
-TRUE: El mensaje fue escrito manualmente por el barbero desde la App de Nelux.
+duracion: (Int) Minutos que ocupa en la agenda.
 
-4. Tabla "productos" (Inventario de Barbería)
-No confundir con los productos de Stripe. Este es el inventario físico que tiene la barbería en su estantería para vender a clientes.
+5. Tabla "productos" (Inventario Tienda)
+id: (Int).
 
-Detalles:
+barberia_id: (UUID).
 
-id: Autonumérico.
+nombre: "Cera Mate".
 
-nombre: Ej. "Cera Mate".
+precio: Precio de venta.
 
-precio: Ej. 15.00.
+stock: Cantidad actual.
 
-foto: URL de la imagen subida manualmente al Storage de Supabase.
+venta: Histórico vendido.
 
-Stock y Rendimiento:
+foto: (Text) URL Storage.
 
-venta: Contador histórico de unidades vendidas.
+6. Tabla "ventas_productos" (Historial Ventas)
+Registro inmutable de ventas físicas.
 
-stock: Cantidad actual disponible.
+id: (UUID).
 
-barberia: Vincula con perfiles.nombre_barberia.
+barberia_id: (UUID).
 
-TABLA AÑADIDA!!
+nombre_producto: Snapshot del nombre.
 
-nombre: "stripe_procesados"
+precio: Precio al momento de la venta.
 
-Columnas: 
+cantidad: Unidades.
 
-id: Autonumérico.
+created_at: Fecha.
 
-created_at: Fecha de procesamiento automática.
+7. Tabla "mensajes" (Chat & Auditoría)
+id: (Int).
 
+barberia: Vincula con perfil.
+
+tlf: ID de conversación (Teléfono cliente).
+
+mensaje_enviado / mensaje_recibido: Contenido.
+
+manual: (Bool) true si intervino el humano, false si fue la IA.
+
+8. Nuevas Tablas de Seguridad y Marketing
+Tabla "rate_limits" (Seguridad)
+Controla el abuso del sistema mediante IPs.
+
+ip: (Text) PK. La dirección IP del usuario.
+
+attempts: (Int) Contador de intentos en la última hora.
+
+last_attempt: (Timestamp) Última vez que intentó reservar.

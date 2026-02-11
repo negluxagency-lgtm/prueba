@@ -11,6 +11,7 @@ export function useAppointments(selectedDate: string) {
     const [monthlyCuts, setMonthlyCuts] = useState(0);
     const [monthlyProducts, setMonthlyProducts] = useState(0);
     const [error, setError] = useState<string | null>(null);
+    const [userPlan, setUserPlan] = useState<string>('basico');
 
     const getCitas = async () => {
         try {
@@ -19,6 +20,17 @@ export function useAppointments(selectedDate: string) {
             // 1. SEGURIDAD: Obtener usuario autenticado
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("No hay sesión activa");
+
+            // 1.1. Fetch del plan del usuario
+            const { data: profileData } = await supabase
+                .from('perfiles')
+                .select('plan')
+                .eq('id', user.id)
+                .single();
+
+            if (profileData?.plan) {
+                setUserPlan(profileData.plan);
+            }
 
             // 2. Fetch citas del día (FILTRADO POR BARBERÍA usando barberia_id)
             const { data: dayData, error: dayError } = await supabase
@@ -50,9 +62,9 @@ export function useAppointments(selectedDate: string) {
 
                 setMonthlyRevenue(totalRevenue);
 
-                // 2. Citas: CONTAR TODAS (confirmadas, pendientes, etc)
-                const totalCuts = monthData.length;
-                setMonthlyCuts(totalCuts);
+                // 2. Citas: Solo citas confirmadas
+                const cutsConfirmed = monthData.filter(c => c.confirmada).length;
+                setMonthlyCuts(cutsConfirmed);
 
                 // 3. Productos: Ahora en tabla separada ventas_productos
                 setMonthlyProducts(0);
@@ -72,15 +84,6 @@ export function useAppointments(selectedDate: string) {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("No autenticado");
 
-            // Fetch profile for legacy barberia field support
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia')
-                .eq('id', user.id)
-                .single();
-
-            if (!profile?.nombre_barberia) throw new Error("Perfil incompleto");
-
             let error;
 
             if (editingId) {
@@ -90,11 +93,13 @@ export function useAppointments(selectedDate: string) {
                     .update({
                         Nombre: formData.Nombre,
                         servicio: formData.servicio,
+                        Servicio_id: formData.Servicio_id,
                         Dia: formData.Dia,
                         Hora: formData.Hora,
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada,
+                        barbero: formData.barbero || null // Include barber
                     })
                     .eq('id', editingId)
                     .eq('barberia_id', user.id); // 🔒 UUID check
@@ -103,7 +108,7 @@ export function useAppointments(selectedDate: string) {
                 // --- CREAR --- Cumple con RLS: barberia_id = auth.uid()
                 console.log('📝 Creating appointment with data:', {
                     Nombre: formData.Nombre,
-                    servicio: formData.servicio,
+                    Servicio: formData.servicio, // Log cleanup
                     Precio: formData.Precio
                 });
 
@@ -112,14 +117,14 @@ export function useAppointments(selectedDate: string) {
                     .insert([{
                         Nombre: formData.Nombre,
                         servicio: formData.servicio,
+                        Servicio_id: formData.Servicio_id,
                         Dia: formData.Dia,
                         Hora: formData.Hora,
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada ?? false,
-
-                        barberia_id: user.id, // 🔒 UUID requerido por RLS
-                        barberia: profile.nombre_barberia // ⚠️ Legacy support required
+                        barbero: formData.barbero || null, // Include barber
+                        barberia_id: user.id // 🔒 UUID requerido por RLS
                     }]);
                 error = insertError;
             }
@@ -217,6 +222,7 @@ export function useAppointments(selectedDate: string) {
         monthlyRevenue,
         monthlyCuts,
         monthlyProducts,
+        userPlan,
         loading,
         error,
         saveCita,

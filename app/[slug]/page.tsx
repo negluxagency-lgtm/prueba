@@ -14,15 +14,21 @@ export default async function PublicBookingPage(props: PageProps) {
     const supabase = await createClient()
 
     // 1. Fetch Profile (Shop) by Slug with Schedule
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
         .from('perfiles')
-        .select('*, horarios_laborales(*)')
+        .select('*') // Removed legacy relation
         .eq('slug', params.slug)
         .single()
 
+    if (profileError) {
+        console.error('❌ Error fetching profile:', profileError)
+    }
+
     if (!profile) {
+        console.error('❌ Profile not found for slug:', params.slug)
         return notFound()
     }
+    console.log('✅ Profile found:', profile.nombre_barberia)
 
     // 2. Fetch Services
     const { data: services } = await supabase
@@ -30,6 +36,13 @@ export default async function PublicBookingPage(props: PageProps) {
         .select('*')
         .eq('perfil_id', profile.id)
         .order('precio', { ascending: true })
+
+    // 3. Fetch Barbers
+    const { data: barbers } = await supabase
+        .from('barberos')
+        .select('*')
+        .eq('barberia_id', profile.id)
+
 
     return (
         <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-amber-500/30">
@@ -79,9 +92,9 @@ export default async function PublicBookingPage(props: PageProps) {
                     slug={params.slug}
                     shopName={profile.nombre_barberia || profile.nombre_negocio}
                     closingDates={(profile.fechas_cierre as string[]) || []}
-                    schedule={profile.horarios_laborales || []}
                     profileId={profile.id}
-                    capacidadSlots={profile.capacidad_slots || 1}
+                    barbers={barbers || []}
+                    plan={profile.plan} // Passed plan for conditional logic
                 />
             </main>
 

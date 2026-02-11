@@ -3,6 +3,8 @@ export interface Appointment {
     created_at: string;
     Nombre: string;
     servicio?: string;
+    Servicio_id?: string;
+    barbero?: string;
     Dia: string;
     Hora: string;
     Telefono: string;
@@ -14,6 +16,8 @@ export interface Appointment {
 export interface AppointmentFormData {
     Nombre: string;
     servicio?: string;
+    Servicio_id?: string;
+    barbero?: string;
     Dia: string;
     Hora: string;
     Telefono: string;
@@ -57,4 +61,22 @@ export interface Product {
     foto: string;
     venta?: number;
     stock?: number;
+    barberia_id?: string;
+}
+
+export interface TimeRange {
+    desde: string;
+    hasta: string;
+}
+
+export interface WeeklySchedule {
+    lunes: TimeRange[];
+    martes: TimeRange[];
+    miércoles: TimeRange[];
+    jueves: TimeRange[];
+    viernes: TimeRange[];
+    sábado: TimeRange[];
+    domingo: TimeRange[];
+    // Index signature to allow accessing by string key
+    [key: string]: TimeRange[];
 }

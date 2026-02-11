@@ -36,34 +36,114 @@ export default function ConfigurationPage() {
         duracion: number;
     }
 
-    // Weekly Schedule State
-    interface DaySchedule {
-        dia_semana: number; // 0 (Sunday) to 6 (Saturday)
-        hora_apertura: string; // "HH:MM"
-        hora_cierre: string; // "HH:MM"
-        esta_abierto: boolean;
-        hora_inicio_pausa?: string | null;
-        hora_fin_pausa?: string | null;
+    // --- NEW STRICT JSON SCHEDULE LOGIC ---
+    // Import shared types (or define locally if preferred, but using local for component clarity during refactor)
+    interface TimeRange {
+        desde: string; // HH:mm
+        hasta: string; // HH:mm
+    }
+
+    interface WeeklySchedule {
+        lunes: TimeRange[];
+        martes: TimeRange[];
+        miércoles: TimeRange[];
+        jueves: TimeRange[];
+        viernes: TimeRange[];
+        sábado: TimeRange[];
+        domingo: TimeRange[];
+        [key: string]: TimeRange[];
+    }
+
+    const INITIAL_SCHEDULE: WeeklySchedule = {
+        lunes: [],
+        martes: [],
+        miércoles: [],
+        jueves: [],
+        viernes: [],
+        sábado: [],
+        domingo: []
+    };
+
+    const [shopSchedule, setShopSchedule] = useState<WeeklySchedule>(INITIAL_SCHEDULE);
+
+    // Days in order for UI iteration
+    const ORDERED_DAYS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+    // Helper to check if a day is "open" (has at least one range)
+    const isDayOpen = (dayKey: string) => {
+        return shopSchedule[dayKey] && shopSchedule[dayKey].length > 0;
+    }
+
+    // Toggle Day: If closed -> add default range. If open -> clear ranges.
+    const toggleDay = (dayKey: string) => {
+        const isOpen = isDayOpen(dayKey);
+        if (isOpen) {
+            // Close it (empty array)
+            setShopSchedule(prev => ({ ...prev, [dayKey]: [] }));
+        } else {
+            // Open it (default range)
+            setShopSchedule(prev => ({ ...prev, [dayKey]: [{ desde: '09:00', hasta: '20:00' }] }));
+        }
+    }
+
+    // Update specific range
+    const updateRange = (dayKey: string, index: number, field: 'desde' | 'hasta', value: string) => {
+        const updatedRanges = [...shopSchedule[dayKey]];
+        updatedRanges[index] = { ...updatedRanges[index], [field]: value };
+        setShopSchedule(prev => ({ ...prev, [dayKey]: updatedRanges }));
+    }
+
+    // Add new range to a day
+    const addRange = (dayKey: string) => {
+        // Default new range, try to put it after the last one or default to afternoon
+        setShopSchedule(prev => ({
+            ...prev,
+            [dayKey]: [...prev[dayKey], { desde: '14:00', hasta: '18:00' }]
+        }));
+    };
+
+    // Remove a range
+    const removeRange = (dayKey: string, index: number) => {
+        const updatedRanges = [...shopSchedule[dayKey]];
+        updatedRanges.splice(index, 1);
+        setShopSchedule(prev => ({ ...prev, [dayKey]: updatedRanges }));
+    };
+
+    // Barber TimeRange (reuse TimeSlot)
+    // Legacy Barber support for now (we might update this later or map it)
+    interface BarberDaySchedule {
+        dia: number;
+        activo: boolean;
+        turnos: { inicio: string, fin: string }[];
+    }
+
+    interface Barber {
+        id?: string;
+        nombre: string;
+        horario_semanal: BarberDaySchedule[];
     }
 
     const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-    // Default schedule: Mon-Fri Open 09:00-20:00, Sat-Sun Closed
-    const getDefaultSchedule = (): DaySchedule[] => [
-        { dia_semana: 0, hora_apertura: '09:00', hora_cierre: '20:00', esta_abierto: false, hora_inicio_pausa: null, hora_fin_pausa: null }, // Domingo
-        { dia_semana: 1, hora_apertura: '09:00', hora_cierre: '20:00', esta_abierto: true, hora_inicio_pausa: null, hora_fin_pausa: null },  // Lunes
-        { dia_semana: 2, hora_apertura: '09:00', hora_cierre: '20:00', esta_abierto: true, hora_inicio_pausa: null, hora_fin_pausa: null },  // Martes
-        { dia_semana: 3, hora_apertura: '09:00', hora_cierre: '20:00', esta_abierto: true, hora_inicio_pausa: null, hora_fin_pausa: null },  // Miércoles
-        { dia_semana: 4, hora_apertura: '09:00', hora_cierre: '20:00', esta_abierto: true, hora_inicio_pausa: null, hora_fin_pausa: null },  // Jueves
-        { dia_semana: 5, hora_apertura: '09:00', hora_cierre: '20:00', esta_abierto: true, hora_inicio_pausa: null, hora_fin_pausa: null },  // Viernes
-        { dia_semana: 6, hora_apertura: '09:00', hora_cierre: '20:00', esta_abierto: false, hora_inicio_pausa: null, hora_fin_pausa: null }, // Sábado
-    ];
-
-    const [schedule, setSchedule] = useState<DaySchedule[]>(getDefaultSchedule());
+    // Default barber weekly schedule: Mon-Fri 09:00-20:00, Weekends closed
+    const getDefaultBarberSchedule = (): BarberDaySchedule[] => {
+        return Array.from({ length: 7 }, (_, index) => ({
+            dia: index,
+            activo: index >= 1 && index <= 5,  // Mon-Fri active
+            turnos: index >= 1 && index <= 5 ? [{ inicio: '09:00', fin: '20:00' }] : []
+        }));
+    };
 
     const [servicesList, setServicesList] = useState<Service[]>([]);
     const [newService, setNewService] = useState<Service>({ nombre: '', precio: 0, duracion: 30 });
-    const [deletedServiceIds, setDeletedServiceIds] = useState<string[]>([]); // Para el bonus de eliminación
+    const [deletedServiceIds, setDeletedServiceIds] = useState<string[]>([]);
+
+    const [barbers, setBarbers] = useState<Barber[]>([]);
+    const [newBarber, setNewBarber] = useState<Barber>({
+        nombre: '',
+        horario_semanal: getDefaultBarberSchedule()
+    });
+    const [deletedBarberIds, setDeletedBarberIds] = useState<string[]>([]);
 
     useEffect(() => {
         const checkUser = async () => {
@@ -114,6 +194,21 @@ export default function ConfigurationPage() {
                     capacidad_slots: String(profile.capacidad_slots || '1')
                 });
 
+                // Fetch Barberos
+                const { data: barbersData } = await supabase
+                    .from('barberos')
+                    .select('*')
+                    .eq('barberia_id', currentUser.id)
+                    .order('nombre', { ascending: true });
+
+                if (barbersData) {
+                    setBarbers(barbersData.map(b => ({
+                        id: b.id,
+                        nombre: b.nombre,
+                        horario_semanal: b.horario_semanal || getDefaultBarberSchedule()
+                    })));
+                }
+
                 // Fetch Servicios (Relational)
                 const { data: services } = await supabase
                     .from('servicios')
@@ -125,35 +220,58 @@ export default function ConfigurationPage() {
                     setServicesList(services);
                 }
 
-                // Fetch Horarios Laborales
-                const { data: horarios } = await supabase
-                    .from('horarios_laborales')
-                    .select('*')
-                    .eq('perfil_id', currentUser.id)
-                    .order('dia_semana', { ascending: true });
-
-                if (horarios && horarios.length > 0) {
-                    // Map DB data to state format
-                    const mappedSchedule = getDefaultSchedule().map(day => {
-                        const dbDay = horarios.find((h: any) => h.dia_semana === day.dia_semana);
-                        if (dbDay) {
-                            return {
-                                dia_semana: dbDay.dia_semana,
-                                hora_apertura: dbDay.hora_apertura?.slice(0, 5) || '09:00',
-                                hora_cierre: dbDay.hora_cierre?.slice(0, 5) || '20:00',
-                                esta_abierto: dbDay.esta_abierto,
-                                hora_inicio_pausa: dbDay.hora_inicio_pausa?.slice(0, 5) || null,
-                                hora_fin_pausa: dbDay.hora_fin_pausa?.slice(0, 5) || null
-                            };
-                        }
-                        return day;
-                    });
-                    setSchedule(mappedSchedule);
+                // Load shop schedule from profile (JSONB)
+                if (profile.horario_semanal) {
+                    // Ensure it matches our new structure
+                    if (Array.isArray(profile.horario_semanal)) {
+                        setShopSchedule(INITIAL_SCHEDULE); // Reset legacy array
+                    } else {
+                        setShopSchedule(profile.horario_semanal);
+                    }
+                } else {
+                    setShopSchedule(INITIAL_SCHEDULE);
                 }
             }
         };
         checkUser();
     }, [router]);
+
+    // Barber Handlers
+    const handleAddBarber = () => {
+        if (!newBarber.nombre.trim()) {
+            toast.error("El nombre del barbero es obligatorio");
+            return;
+        }
+        setBarbers([...barbers, { ...newBarber }]);
+        setNewBarber({
+            nombre: '',
+            horario_semanal: getDefaultBarberSchedule()
+        });
+    };
+
+    const handleCopyMondayToAll = () => {
+        const mondaySchedule = newBarber.horario_semanal[1]; // Monday is index 1
+        const updated = newBarber.horario_semanal.map((day, index) => {
+            if (index === 0 || index === 6) return day; // Skip Sunday (0) and Saturday (6)
+            return {
+                ...day,
+                activo: mondaySchedule.activo,
+                turnos: JSON.parse(JSON.stringify(mondaySchedule.turnos)) // Deep copy
+            };
+        });
+        setNewBarber({ ...newBarber, horario_semanal: updated });
+        toast.success("Horario de Lunes copiado a días laborales");
+    };
+
+    const handleDeleteBarber = (index: number) => {
+        const barberToDelete = barbers[index];
+        if (barberToDelete.id) {
+            setDeletedBarberIds([...deletedBarberIds, barberToDelete.id]);
+        }
+        const updated = [...barbers];
+        updated.splice(index, 1);
+        setBarbers(updated);
+    };
 
     // Service Handlers
     const handleAddService = () => {
@@ -197,14 +315,48 @@ export default function ConfigurationPage() {
                     objetivo_cortes: parseInt(formData.objetivo_cortes) || 0,
                     objetivo_productos: parseInt(formData.objetivo_productos) || 0,
                     capacidad_slots: parseInt(formData.capacidad_slots) || 1,
+                    horario_semanal: shopSchedule,  // NEW: Save shop schedule as JSONB
                     onboarding_completado: true
                 }, { onConflict: 'id' });
 
             if (profileError) throw profileError;
 
-            // Paso 2: Manejar Servicios
+            // Paso 2: Manejar Barberos
 
-            // 2a. Eliminar servicios borrados
+            // 2a. Eliminar barberos borrados
+            if (deletedBarberIds.length > 0) {
+                const { error: deleteBarberError } = await supabase
+                    .from('barberos')
+                    .delete()
+                    .in('id', deletedBarberIds);
+                if (deleteBarberError) throw deleteBarberError;
+            }
+
+            // 2b. Upsert barberos actuales
+            for (const barber of barbers) {
+                const barberToSave: any = {
+                    nombre: barber.nombre,
+                    horario_semanal: barber.horario_semanal,
+                    barberia_id: user.id
+                };
+
+                if (barber.id) {
+                    barberToSave.id = barber.id;
+                }
+
+                const { error: upsertBarberError } = await supabase
+                    .from('barberos')
+                    .upsert(barberToSave);
+
+                if (upsertBarberError) {
+                    console.error('Error guardando barbero:', barber.nombre, upsertBarberError);
+                    throw upsertBarberError;
+                }
+            }
+
+            // Paso 3: Manejar Servicios
+
+            // 3a. Eliminar servicios borrados
             if (deletedServiceIds.length > 0) {
                 const { error: deleteError } = await supabase
                     .from('servicios')
@@ -213,7 +365,7 @@ export default function ConfigurationPage() {
                 if (deleteError) throw deleteError;
             }
 
-            // 2b. Upsert servicios actuales (Modificado: Iterar para limpiar payload)
+            // 3b. Upsert servicios actuales
             if (servicesList.length > 0) {
                 // Iteramos para manejar cada servicio individualmente y evitar conflictos de tipos/nulls en bulk
                 for (const s of servicesList) {
@@ -241,25 +393,7 @@ export default function ConfigurationPage() {
                 }
             }
 
-            // Paso 3: Guardar Horarios Laborales
-            for (const day of schedule) {
-                const { error: scheduleError } = await supabase
-                    .from('horarios_laborales')
-                    .upsert({
-                        perfil_id: user.id,
-                        dia_semana: day.dia_semana,
-                        hora_apertura: day.hora_apertura,
-                        hora_cierre: day.hora_cierre,
-                        esta_abierto: day.esta_abierto,
-                        hora_inicio_pausa: day.hora_inicio_pausa || null,
-                        hora_fin_pausa: day.hora_fin_pausa || null
-                    }, { onConflict: 'perfil_id, dia_semana' });
 
-                if (scheduleError) {
-                    console.error('Error guardando horario día:', day.dia_semana, scheduleError);
-                    throw scheduleError;
-                }
-            }
 
             toast.success('Configuración guardada correctamente');
             router.push('/inicio');
@@ -404,161 +538,241 @@ export default function ConfigurationPage() {
                             </div>
                         </div>
 
-                        {/* Capacidad por Slot */}
-                        <div className="space-y-1.5 md:space-y-2">
+                        {/* Barbers Shift Builder */}
+                        <div className="md:col-span-2 space-y-4 pt-4">
                             <label className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-zinc-500 uppercase ml-1">
-                                <Scissors className="w-3 h-3 text-amber-500" />
-                                ¿Cuántos barberos trabajais a la vez?
+                                <User className="w-3 h-3 text-amber-500" />
+                                Barberos y Turnos
                             </label>
-                            <input
-                                type="number"
-                                name="capacidad_slots"
-                                min="1"
-                                max="10"
-                                placeholder="Ej: 2"
-                                value={formData.capacidad_slots}
-                                onChange={handleChange}
-                                required
-                                className="w-full p-3.5 md:p-4 rounded-xl md:rounded-2xl bg-zinc-800/30 border border-zinc-700/50 text-sm text-white outline-none focus:border-amber-500 transition-all placeholder:text-zinc-600 shadow-inner"
-                            />
+
+                            {/* Add new barber form */}
+                            <div className="bg-zinc-800/30 p-4 rounded-2xl border border-zinc-700/50 space-y-4">
+                                <input
+                                    type="text"
+                                    placeholder="Nombre del barbero"
+                                    value={newBarber.nombre}
+                                    onChange={(e) => setNewBarber({ ...newBarber, nombre: e.target.value })}
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500 transition-all"
+                                />
+
+                                {/* Weekly Schedule Builder */}
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-xs font-bold text-zinc-400">Horario Semanal</label>
+                                        <button
+                                            type="button"
+                                            onClick={handleCopyMondayToAll}
+                                            className="text-xs text-amber-500 hover:text-amber-400 flex items-center gap-1"
+                                        >
+                                            📋 Copiar Lunes a Todos
+                                        </button>
+                                    </div>
+
+                                    {DAY_NAMES.map((dayName, dayIndex) => (
+                                        <div key={dayIndex} className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-800 space-y-2">
+                                            {/* Day header with switch */}
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-bold text-sm text-white">{dayName}</span>
+                                                <label className="flex items-center gap-2">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={newBarber.horario_semanal[dayIndex].activo}
+                                                        onChange={(e) => {
+                                                            const updated = [...newBarber.horario_semanal];
+                                                            updated[dayIndex].activo = e.target.checked;
+                                                            if (e.target.checked && updated[dayIndex].turnos.length === 0) {
+                                                                updated[dayIndex].turnos = [{ inicio: '09:00', fin: '20:00' }];
+                                                            }
+                                                            setNewBarber({ ...newBarber, horario_semanal: updated });
+                                                        }}
+                                                        className="w-4 h-4 rounded border-zinc-700 text-amber-500 focus:ring-amber-500"
+                                                    />
+                                                    <span className="text-xs text-zinc-400">Activo</span>
+                                                </label>
+                                            </div>
+
+                                            {/* Time ranges */}
+                                            {newBarber.horario_semanal[dayIndex].activo && (
+                                                <div className="space-y-2">
+                                                    {newBarber.horario_semanal[dayIndex].turnos.map((turno, turnoIndex) => (
+                                                        <div key={turnoIndex} className="grid grid-cols-2 gap-2">
+                                                            <input
+                                                                type="time"
+                                                                value={turno.inicio}
+                                                                onChange={(e) => {
+                                                                    const updated = [...newBarber.horario_semanal];
+                                                                    updated[dayIndex].turnos[turnoIndex].inicio = e.target.value;
+                                                                    setNewBarber({ ...newBarber, horario_semanal: updated });
+                                                                }}
+                                                                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white"
+                                                            />
+                                                            <div className="flex gap-1">
+                                                                <input
+                                                                    type="time"
+                                                                    value={turno.fin}
+                                                                    onChange={(e) => {
+                                                                        const updated = [...newBarber.horario_semanal];
+                                                                        updated[dayIndex].turnos[turnoIndex].fin = e.target.value;
+                                                                        setNewBarber({ ...newBarber, horario_semanal: updated });
+                                                                    }}
+                                                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs text-white"
+                                                                />
+                                                                {newBarber.horario_semanal[dayIndex].turnos.length > 1 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            const updated = [...newBarber.horario_semanal];
+                                                                            updated[dayIndex].turnos.splice(turnoIndex, 1);
+                                                                            setNewBarber({ ...newBarber, horario_semanal: updated });
+                                                                        }}
+                                                                        className="px-2 bg-red-500/20 hover:bg-red-500/30 rounded text-red-400"
+                                                                    >
+                                                                        ×
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+
+                                                    {/* Add shift button */}
+                                                    {newBarber.horario_semanal[dayIndex].turnos.length < 2 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const updated = [...newBarber.horario_semanal];
+                                                                updated[dayIndex].turnos.push({ inicio: '14:00', fin: '16:00' });
+                                                                setNewBarber({ ...newBarber, horario_semanal: updated });
+                                                            }}
+                                                            className="text-xs text-amber-500 hover:text-amber-400"
+                                                        >
+                                                            + Añadir turno
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleAddBarber}
+                                    className="w-full flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-amber-500 font-bold py-2.5 rounded-xl transition-all border border-zinc-700"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Añadir Barbero
+                                </button>
+                            </div>
+
+                            {/* List of barbers */}
+                            {barbers.length > 0 && (
+                                <div className="space-y-2">
+                                    {barbers.map((barber, index) => (
+                                        <div key={barber.id || index} className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-800 flex justify-between items-start">
+                                            <div>
+                                                <div className="font-bold text-white text-sm">{barber.nombre}</div>
+                                                <div className="text-xs text-zinc-400 mt-1">
+                                                    {barber.horario_semanal
+                                                        .filter(d => d.activo)
+                                                        .map(d => DAY_NAMES[d.dia])
+                                                        .join(', ')}
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteBarber(index)}
+                                                className="text-red-500 hover:text-red-400 transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        {/* --- HORARIO SEMANAL (Schedule Builder) --- */}
+                        {/* --- HORARIO DE LA BARBERÍA (NUEVO FORMATO JSON) --- */}
                         <div className="md:col-span-2 space-y-4 pt-2">
                             <label className="flex items-center gap-2 text-[10px] md:text-xs font-bold text-zinc-500 uppercase ml-1">
                                 <Clock className="w-3 h-3 text-amber-500" />
-                                Horario Semanal
+                                Horario de Apertura General
                             </label>
 
-                            <div className="space-y-2">
-                                {schedule.map((day, index) => (
-                                    <div key={day.dia_semana} className="flex md:flex-row flex-col md:items-center gap-3 bg-zinc-800/30 p-3 rounded-xl border border-zinc-700/50">
-                                        {/* Day Name + Toggle (Row en móvil) */}
-                                        <div className="flex items-center justify-between md:justify-start md:gap-3">
-                                            <span className="w-20 md:w-24 text-sm font-medium text-zinc-300">
-                                                {DAY_NAMES[day.dia_semana]}
-                                            </span>
-
-                                            {/* Toggle Switch */}
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const updated = [...schedule];
-                                                    updated[index].esta_abierto = !updated[index].esta_abierto;
-                                                    setSchedule(updated);
-                                                }}
-                                                className={cn(
-                                                    "w-12 h-6 rounded-full transition-colors relative flex-shrink-0",
-                                                    day.esta_abierto ? "bg-amber-500" : "bg-zinc-700"
-                                                )}
-                                            >
-                                                <span className={cn(
-                                                    "absolute top-1 w-4 h-4 bg-white rounded-full transition-transform",
-                                                    day.esta_abierto ? "left-7" : "left-1"
-                                                )} />
-                                            </button>
-                                        </div>
-
-                                        {/* Time Inputs or Closed Text */}
-                                        {day.esta_abierto ? (
-                                            <div className="flex flex-col gap-3 w-full">
-                                                {/* Horarios principales (Apertura/Cierre) */}
-                                                <div className="grid grid-cols-2 gap-2 md:flex md:items-center md:gap-2 md:flex-1">
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="text-[10px] text-zinc-500 font-bold uppercase">Apertura</span>
+                            <div className="space-y-3">
+                                {ORDERED_DAYS.map((dayKey) => {
+                                    const isOpen = isDayOpen(dayKey);
+                                    return (
+                                        <div key={dayKey} className="bg-zinc-800/30 p-4 rounded-xl border border-zinc-700/50 space-y-3">
+                                            {/* Header del Día */}
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-bold text-sm text-white capitalize">{dayKey}</span>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <span className={`text-xs font-medium ${isOpen ? 'text-amber-500' : 'text-zinc-500'}`}>
+                                                        {isOpen ? 'ABIERTO' : 'CERRADO'}
+                                                    </span>
+                                                    <div className="relative inline-flex items-center cursor-pointer">
                                                         <input
-                                                            type="time"
-                                                            value={day.hora_apertura}
-                                                            onChange={(e) => {
-                                                                const updated = [...schedule];
-                                                                updated[index].hora_apertura = e.target.value;
-                                                                setSchedule(updated);
-                                                            }}
-                                                            className="bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-white outline-none focus:border-amber-500 transition-colors"
+                                                            type="checkbox"
+                                                            checked={isOpen}
+                                                            onChange={() => toggleDay(dayKey)}
+                                                            className="sr-only peer"
                                                         />
+                                                        <div className="w-11 h-6 bg-zinc-700/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
                                                     </div>
-
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="text-[10px] text-zinc-500 font-bold uppercase">Cierre</span>
-                                                        <input
-                                                            type="time"
-                                                            value={day.hora_cierre}
-                                                            onChange={(e) => {
-                                                                const updated = [...schedule];
-                                                                updated[index].hora_cierre = e.target.value;
-                                                                setSchedule(updated);
-                                                            }}
-                                                            className="bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-sm text-white outline-none focus:border-amber-500 transition-colors"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Split Shift Toggle + Break Times */}
-                                                <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <label className="flex items-center gap-1.5 cursor-pointer group">
-                                                            <div className="relative">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={!!day.hora_inicio_pausa}
-                                                                    onChange={(e) => {
-                                                                        const updated = [...schedule];
-                                                                        if (e.target.checked) {
-                                                                            // Default break times
-                                                                            updated[index].hora_inicio_pausa = '14:00';
-                                                                            updated[index].hora_fin_pausa = '16:00';
-                                                                        } else {
-                                                                            updated[index].hora_inicio_pausa = null;
-                                                                            updated[index].hora_fin_pausa = null;
-                                                                        }
-                                                                        setSchedule(updated);
-                                                                    }}
-                                                                    className="sr-only peer"
-                                                                />
-                                                                <div className="w-8 h-5 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
-                                                            </div>
-                                                            <span className="text-xs uppercase font-bold text-zinc-400 group-hover:text-amber-500 transition-colors">¿Turno Partido?</span>
-                                                        </label>
-                                                    </div>
-
-                                                    {/* Break Start/End (Only if split) */}
-                                                    {day.hora_inicio_pausa && (
-                                                        <div className="grid grid-cols-2 gap-2 md:flex md:items-center md:gap-2 animate-in fade-in slide-in-from-left-2">
-                                                            <div className="flex flex-col gap-0.5">
-                                                                <span className="text-[10px] text-zinc-500 font-bold uppercase">Inic. Pausa</span>
-                                                                <input
-                                                                    type="time"
-                                                                    value={day.hora_inicio_pausa}
-                                                                    onChange={(e) => {
-                                                                        const updated = [...schedule];
-                                                                        updated[index].hora_inicio_pausa = e.target.value;
-                                                                        setSchedule(updated);
-                                                                    }}
-                                                                    className="bg-zinc-900 border border-amber-900/50 rounded-lg px-2 py-1.5 text-sm text-white outline-none focus:border-amber-500 transition-colors"
-                                                                />
-                                                            </div>
-                                                            <div className="flex flex-col gap-0.5">
-                                                                <span className="text-[10px] text-zinc-500 font-bold uppercase">Fin Pausa</span>
-                                                                <input
-                                                                    type="time"
-                                                                    value={day.hora_fin_pausa || ''}
-                                                                    onChange={(e) => {
-                                                                        const updated = [...schedule];
-                                                                        updated[index].hora_fin_pausa = e.target.value;
-                                                                        setSchedule(updated);
-                                                                    }}
-                                                                    className="bg-zinc-900 border border-amber-900/50 rounded-lg px-2 py-1.5 text-sm text-white outline-none focus:border-amber-500 transition-colors"
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                </label>
                                             </div>
-                                        ) : (
-                                            <span className="text-zinc-600 text-sm italic md:ml-0">Cerrado</span>
-                                        )}
-                                    </div>
-                                ))}
+
+                                            {/* Rangos de Horario (Solo si está abierto) */}
+                                            {isOpen && (
+                                                <div className="space-y-3 pl-2 border-l-2 border-zinc-700/50 ml-1">
+                                                    {shopSchedule[dayKey]?.map((range, index) => (
+                                                        <div key={index} className="flex items-end gap-2 group animate-in fade-in slide-in-from-top-2 duration-300">
+                                                            <div className="grid grid-cols-2 gap-2 flex-1">
+                                                                <div className="space-y-1">
+                                                                    <label className="text-[10px] text-zinc-500 font-bold uppercase">Desde</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        value={range.desde}
+                                                                        onChange={(e) => updateRange(dayKey, index, 'desde', e.target.value)}
+                                                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:border-amber-500 outline-none transition-colors"
+                                                                    />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-[10px] text-zinc-500 font-bold uppercase">Hasta</label>
+                                                                    <input
+                                                                        type="time"
+                                                                        value={range.hasta}
+                                                                        onChange={(e) => updateRange(dayKey, index, 'hasta', e.target.value)}
+                                                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:border-amber-500 outline-none transition-colors"
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeRange(dayKey, index)}
+                                                                className="p-2.5 bg-zinc-900 hover:bg-red-900/30 text-zinc-500 hover:text-red-500 rounded-lg transition-colors border border-zinc-700 hover:border-red-800"
+                                                                title="Eliminar franja"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+
+                                                    {/* Botón Añadir Franja */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => addRange(dayKey)}
+                                                        className="flex items-center gap-2 text-xs font-bold text-amber-500 hover:text-amber-400 mt-2 px-2 py-1 rounded hover:bg-amber-500/10 transition-colors w-fit"
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                        AÑADIR TURNO
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </div>
 
@@ -715,7 +929,7 @@ export default function ConfigurationPage() {
                             />
                         </div>
 
-                    </div>
+                    </div >
 
                     <button
                         type="submit"
@@ -734,8 +948,8 @@ export default function ConfigurationPage() {
                             </>
                         )}
                     </button>
-                </form>
-            </motion.div>
+                </form >
+            </motion.div >
         </div >
     );
 }

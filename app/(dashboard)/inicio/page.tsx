@@ -28,10 +28,12 @@ export default function Dashboard() {
 
     const [sales, setSales] = useState<Appointment[]>([]);
     const [services, setServices] = useState<any[]>([]); // State for services
+    const [barbers, setBarbers] = useState<any[]>([]); // State for barbers (objects)
 
     const {
         appointments: dailyCitas,
         monthlyRevenue,
+        userPlan,
         loading: appointmentsLoading,
         deleteCita,
         saveCita,
@@ -52,6 +54,16 @@ export default function Dashboard() {
 
             if (servicesData) {
                 setServices(servicesData);
+            }
+
+            // Fetch barbers list
+            const { data: barbersData } = await supabase
+                .from('barberos')
+                .select('id, nombre') // Fetch ID too
+                .eq('barberia_id', user.id);
+
+            if (barbersData) {
+                setBarbers(barbersData);
             }
         };
         fetchServices();
@@ -267,10 +279,12 @@ export default function Dashboard() {
                 <AppointmentTable
                     appointments={appointments}
                     selectedDate={selectedDate}
+                    userPlan={userPlan}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onUpdateStatus={handleUpdateStatus}
                     loading={appointmentsLoading}
+                    barbers={barbers} // Pass barbers for name lookup
                 />
 
                 <ProductSalesTable
@@ -286,9 +300,11 @@ export default function Dashboard() {
                 onClose={() => { setIsModalOpen(false); setEditingCita(null); }}
                 onSave={handleSave}
                 services={services} // Pass services to modal
+                barbers={barbers} // Pass barbers to modal
                 initialData={editingCita ? {
                     Nombre: editingCita.Nombre,
                     servicio: editingCita.servicio,
+                    barbero: editingCita.barbero,
                     Dia: editingCita.Dia,
                     Hora: editingCita.Hora,
                     Telefono: String(editingCita.Telefono),
@@ -297,6 +313,7 @@ export default function Dashboard() {
                 } : {
                     Nombre: '',
                     servicio: '',
+                    barbero: '',
                     Dia: selectedDate,
                     Hora: '',
                     Telefono: '',
