@@ -61,10 +61,21 @@ export default async function PublicBookingPage(props: PageProps) {
 
                     {/* Avatar / Logo */}
                     <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-900 border-4 border-zinc-950 shadow-2xl flex items-center justify-center mb-6 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-rose-600 opacity-20 group-hover:opacity-30 transition-opacity" />
-                        <span className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-amber-400 to-rose-500">
-                            {profile.nombre_barberia?.charAt(0) || profile.nombre_negocio?.charAt(0) || 'B'}
-                        </span>
+
+                        {profile.logo_url ? (
+                            <img
+                                src={profile.logo_url}
+                                alt={profile.nombre_barberia || 'Logo'}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <>
+                                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-rose-600 opacity-20 group-hover:opacity-30 transition-opacity" />
+                                <span className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-amber-400 to-rose-500">
+                                    {profile.nombre_barberia?.charAt(0) || profile.nombre_negocio?.charAt(0) || 'B'}
+                                </span>
+                            </>
+                        )}
                     </div>
 
                     {/* Shop Name & Details */}

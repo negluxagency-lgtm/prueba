@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Save, Clock, MapPin, Phone, CreditCard, ShoppingBag, Info, Scissors, Loader2, User, DollarSign, Target, Plus, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { AvatarUpload } from '@/components/AvatarUpload';
 
 export default function ConfigurationPage() {
     const router = useRouter();
@@ -26,6 +27,10 @@ export default function ConfigurationPage() {
         objetivo_productos: '',
         capacidad_slots: '1'
     });
+
+    // Logo State
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
 
     // Nueva lógica de Servicios (Relacional)
     interface Service {
@@ -193,6 +198,7 @@ export default function ConfigurationPage() {
                     objetivo_productos: String(profile.objetivo_productos || ''),
                     capacidad_slots: String(profile.capacidad_slots || '1')
                 });
+                setCurrentAvatarUrl(profile.logo_url || null);
 
                 // Fetch Barberos
                 const { data: barbersData } = await supabase
@@ -299,12 +305,35 @@ export default function ConfigurationPage() {
 
         setLoading(true);
         try {
+            // Paso 0: Subir Logo si hay cambio
+            let finalLogoUrl = currentAvatarUrl;
+
+            if (avatarFile) {
+                const fileExt = avatarFile.name.split('.').pop();
+                const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+                // Upload to Supabase Storage
+                const { error: uploadError } = await supabase.storage
+                    .from('logos_barberias')
+                    .upload(fileName, avatarFile, { upsert: true });
+
+                if (uploadError) throw uploadError;
+
+                // Get Public URL
+                const { data: urlData } = supabase.storage
+                    .from('logos_barberias')
+                    .getPublicUrl(fileName);
+
+                finalLogoUrl = urlData.publicUrl;
+            }
+
             // Paso 1: Actualizar Perfil (sin servicios ni horario - ahora relacional)
             const { error: profileError } = await supabase
                 .from('perfiles')
                 .upsert({
                     id: user.id,
                     nombre_barberia: user.user_metadata?.barberia_nombre || 'Mi Barbería',
+                    logo_url: finalLogoUrl, // Save Logo URL
                     Direccion: formData.Direccion,
                     telefono: formData.telefono,
                     pagos: formData.pagos,
@@ -437,6 +466,16 @@ export default function ConfigurationPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800 rounded-[24px] md:rounded-[32px] p-4 md:p-10 shadow-2xl space-y-5 md:space-y-8">
+
+                    {/* Logo Upload */}
+                    <div className="flex justify-center -mt-2 mb-4">
+                        <AvatarUpload
+                            currentImageUrl={currentAvatarUrl}
+                            onFileSelect={setAvatarFile}
+                            loading={loading}
+                        />
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
 
                         {/* --- Campos existentes (Teléfono, Encargado, Objetivos, etc) --- */}

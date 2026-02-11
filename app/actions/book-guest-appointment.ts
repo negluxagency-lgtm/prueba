@@ -241,7 +241,7 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
 
         if (barberValueToStore) {
             appointmentData.barbero = barberValueToStore
-            appointmentData.Barbero = barberValueToStore // Try capitalized incase DB column is case-sensitive "Barbero"
+            // Removed incorrect capitalized 'Barbero' key
         }
 
         console.log('📦 [Insert Debug] Final payload:', appointmentData)
