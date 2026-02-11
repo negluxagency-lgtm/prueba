@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@supabase/supabase-js' // Use direct client for public data
 import { notFound } from 'next/navigation'
 import BookingFlow from '@/components/public-booking/BookingFlow'
 import { MapPin, Phone } from 'lucide-react'
@@ -11,7 +11,11 @@ interface PageProps {
 
 export default async function PublicBookingPage(props: PageProps) {
     const params = await props.params
-    const supabase = await createClient()
+    // Use Service Role to ensure public data is always visible (bypass RLS for anon users)
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
     // 1. Fetch Profile (Shop) by Slug with Schedule
     const { data: profile, error: profileError } = await supabase
