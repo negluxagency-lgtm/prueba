@@ -59,6 +59,8 @@ function hasOverlap(
 
         if (dbBarber !== targetName && dbBarber !== targetId) return false
 
+        // console.log(`   [Name Match] Found ${dbBarber} vs ${targetName}`)
+
         const appStartMin = toMinutes(app.Hora)
         const appDuration = app.duracion || defaultDuration
         const appEndMin = appStartMin + appDuration
@@ -141,7 +143,11 @@ export async function getAvailableSlots({
         .select('Hora, barbero, duracion, Dia, cancelada')
         .eq('barberia_id', profile.id)
         .order('created_at', { ascending: false })
-        .limit(200)
+        .order('created_at', { ascending: false })
+        .limit(500) // Increased limit to ensure we catch recent bookings even with history
+
+    // DEBUG: Log raw fetch count
+    console.log(`🔍 [getAvailableSlots] Raw fetched: ${rawAppointments?.length} for shop ${profile.id}`)
 
     if (appointmentError) {
         console.error('❌ [getAvailableSlots] DB Error fetching appointments:', appointmentError)
@@ -160,8 +166,15 @@ export async function getAvailableSlots({
             appDateStr = appDateStr.split('T')[0]
         }
 
-        return appDateStr.trim() === dateString.trim()
+        const match = appDateStr.trim() === dateString.trim()
+        // if (!match) console.log(`   [Date Skip] ${appDateStr} != ${dateString}`)
+        return match
     })
+
+    console.log(`📋 [getAvailableSlots] Filtered active appointments: ${appointmentList.length}`)
+    if (appointmentList.length > 0) {
+        console.log('   Appts:', appointmentList.map(a => `${a.Hora} (${a.duracion}m) - ${a.barbero}`))
+    }
 
     console.log(`📋 [getAvailableSlots] Found ${appointmentList.length} active appointment(s) for ${dateString}`)
     if (appointmentList.length > 0) {
