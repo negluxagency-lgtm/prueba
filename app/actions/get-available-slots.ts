@@ -90,10 +90,22 @@ export async function getAvailableSlots({
 
     console.log('🔍 [getAvailableSlots] Input:', { slug, date, serviceDuration, selectedBarberId })
 
-    // 0. Normalize date to string YYYY-MM-DD
-    const dateObj = typeof date === 'string' ? new Date(date) : date
-    const dateString = format(dateObj, 'yyyy-MM-dd')
-    const dayOfWeek = dateObj.getDay() // 0=Sunday, 6=Saturday
+    // 0. Normalize date to string YYYY-MM-DD (Timezone Safe)
+    let dateString: string
+    if (typeof date === 'string') {
+        // Assume YYYY-MM-DD coming from client (e.g. "2026-02-11")
+        dateString = date.split('T')[0]
+    } else {
+        // Fallback for Legacy Date
+        // Risk: toISOString() uses UTC. If server is UTC and date is Local 00:00, it becomes previous day 23:00
+        // We really want client to send strings.
+        dateString = date.toISOString().split('T')[0]
+    }
+
+    // Calculate Day of Week from the DATE STRING (force local interpretation)
+    // "2026-02-11" -> "2026-02-11T00:00:00"
+    const targetDate = new Date(dateString + 'T00:00:00')
+    const dayOfWeek = targetDate.getDay() === 0 ? 6 : targetDate.getDay() - 1 // Fix Sunday=0 to Monday=0, Sunday=6
 
     // Map to Spanish day keys (0=domingo, 1=lunes, ..., 6=sábado)
     const DAY_KEYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
@@ -280,8 +292,10 @@ export async function getAvailableSlots({
     console.log(`\n🎯 [getAvailableSlots] Total unique slots before filtering:`, availableSlots.length)
 
     // 6. Filter past times if date is today
+    // 6. Filter past times if date is today
     const now = new Date()
-    if (isSameDay(dateObj, now)) {
+    // Compare date strings to avoid time issues or use targetDate
+    if (isSameDay(targetDate, now)) {
         const currentMinutes = now.getHours() * 60 + now.getMinutes()
         const beforeFilter = availableSlots.length
         availableSlots = availableSlots.filter(slot => toMinutes(slot) > currentMinutes)

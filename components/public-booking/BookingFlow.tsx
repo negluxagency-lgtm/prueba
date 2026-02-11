@@ -82,7 +82,7 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
             try {
                 const slots = await getAvailableSlots({
                     slug,
-                    date: selectedDate,
+                    date: format(selectedDate, 'yyyy-MM-dd'), // Pass string to avoid timezone shifts
                     serviceDuration: selectedService.duracion,
                     selectedBarberId
                 })
