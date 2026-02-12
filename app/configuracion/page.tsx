@@ -786,15 +786,6 @@ export default function ConfigurationPage() {
                                                                     />
                                                                 </div>
                                                             </div>
-
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeRange(dayKey, index)}
-                                                                className="p-2.5 bg-zinc-900 hover:bg-red-900/30 text-zinc-500 hover:text-red-500 rounded-lg transition-colors border border-zinc-700 hover:border-red-800"
-                                                                title="Eliminar franja"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
                                                         </div>
                                                     ))}
 

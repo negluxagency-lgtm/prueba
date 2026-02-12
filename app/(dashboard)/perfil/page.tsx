@@ -10,6 +10,12 @@ import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
 import { ResetPasswordButton } from '@/components/ResetPasswordButton'
 import ManageSubscriptionButton from '@/components/ManageSubscriptionButton'
+import { ShopScheduleManager } from '@/components/management/ShopScheduleManager'
+import { BarberManager } from '@/components/management/BarberManager'
+import { AvatarUpload } from '@/components/AvatarUpload'
+import { Save, Loader2, Calendar as CalendarIcon, ChevronRight } from 'lucide-react'
+import MonthlyClosingModal from '@/components/MonthlyClosingModal'
+import { cn } from '@/lib/utils'
 
 // Función para formatear fecha
 function formatearFecha(fecha: string) {
@@ -55,6 +61,9 @@ export default function PerfilPage() {
     const [perfil, setPerfil] = useState<any>(null)
     const [email, setEmail] = useState('')
     const [userId, setUserId] = useState('')
+    const [avatarFile, setAvatarFile] = useState<File | null>(null)
+    const [uploadingLogo, setUploadingLogo] = useState(false)
+    const [showClosingModal, setShowClosingModal] = useState(false)
 
     const cargarPerfil = useCallback(async () => {
         setLoading(true)
@@ -123,6 +132,48 @@ export default function PerfilPage() {
         }
     }
 
+    const handleUploadLogo = async () => {
+        if (!avatarFile || !userId) return;
+
+        setUploadingLogo(true);
+        try {
+            const fileExt = avatarFile.name.split('.').pop();
+            const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+            // Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('logos_barberias')
+                .upload(fileName, avatarFile, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // Get Public URL
+            const { data: urlData } = supabase.storage
+                .from('logos_barberias')
+                .getPublicUrl(fileName);
+
+            const finalLogoUrl = urlData.publicUrl;
+
+            // Update Profile Table
+            const { error: profileError } = await supabase
+                .from('perfiles')
+                .update({ logo_url: finalLogoUrl })
+                .eq('id', userId);
+
+            if (profileError) throw profileError;
+
+            // Update local state
+            setPerfil((prev: any) => ({ ...prev, logo_url: finalLogoUrl }));
+            setAvatarFile(null);
+            toast.success('Foto de perfil actualizada');
+        } catch (error: any) {
+            console.error('Error:', error);
+            toast.error('Error al subir imagen: ' + (error.message || 'Error desconocido'));
+        } finally {
+            setUploadingLogo(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
@@ -171,77 +222,154 @@ export default function PerfilPage() {
                         </h2>
                     </div>
 
-                    <div className="space-y-4">
-                        {/* Nombre del negocio */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-                                <User className="w-4 h-4" />
-                                Nombre del Negocio
-                            </label>
-                            <input
-                                type="text"
-                                value={perfil.nombre_barberia || 'Sin nombre'}
-                                disabled
-                                className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
-                                         rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                    <div className="flex flex-col md:flex-row gap-8 items-start">
+                        {/* Selector de Foto de Perfil */}
+                        <div className="flex flex-col items-center gap-4 w-full md:w-auto">
+                            <AvatarUpload
+                                currentImageUrl={perfil?.logo_url}
+                                onFileSelect={setAvatarFile}
+                                loading={uploadingLogo}
                             />
+                            {avatarFile && (
+                                <button
+                                    onClick={handleUploadLogo}
+                                    disabled={uploadingLogo}
+                                    className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                                >
+                                    {uploadingLogo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                    Guardar Nueva Foto
+                                </button>
+                            )}
                         </div>
 
-                        {/* Link para agendar */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-                                <ExternalLink className="w-4 h-4" />
-                                Link para agendar en tu barbería
-                            </label>
-                            <input
-                                type="text"
-                                value={`app.nelux.es/${perfil.slug || '(sin-slug)'}`}
-                                disabled
-                                className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
+                        <div className="space-y-4 flex-1 w-full">
+                            {/* Nombre del negocio */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                                    <User className="w-4 h-4" />
+                                    Nombre del Negocio
+                                </label>
+                                <input
+                                    type="text"
+                                    value={perfil.nombre_barberia || 'Sin nombre'}
+                                    disabled
+                                    className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
                                          rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                            />
+                                />
+                            </div>
 
-                        </div>
-
-                        {/* Email */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-                                <Mail className="w-4 h-4" />
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                value={email}
-                                disabled
-                                className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
+                            {/* Link para agendar */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                                    <ExternalLink className="w-4 h-4" />
+                                    Link para agendar en tu barbería
+                                </label>
+                                <input
+                                    type="text"
+                                    value={`app.nelux.es/${perfil.slug || '(sin-slug)'}`}
+                                    disabled
+                                    className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
                                          rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                            />
-                        </div>
+                                />
 
-                        {/* Miembro desde */}
-                        <div className="flex items-center gap-2 text-zinc-400">
-                            <Calendar className="w-4 h-4" />
-                            <span className="text-sm">
-                                Miembro desde: <span className="text-white font-medium">
-                                    {formatearFecha(perfil.created_at)}
+                            </div>
+
+                            {/* Email */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                                    <Mail className="w-4 h-4" />
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    disabled
+                                    className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
+                                         rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
+                                />
+                            </div>
+
+                            {/* Miembro desde */}
+                            <div className="flex items-center gap-2 text-zinc-400">
+                                <Calendar className="w-4 h-4" />
+                                <span className="text-sm">
+                                    Miembro desde: <span className="text-white font-medium">
+                                        {formatearFecha(perfil.created_at)}
+                                    </span>
                                 </span>
-                            </span>
-                        </div>
+                            </div>
 
-                        {/* Botón Cambiar Datos */}
-                        <div className="pt-4 border-t border-zinc-800/50">
-                            <Link
-                                href="/configuracion"
-                                className="inline-flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-zinc-800 hover:bg-zinc-700 
+                            {/* Botón Cambiar Datos */}
+                            <div className="pt-4 border-t border-zinc-800/50">
+                                <Link
+                                    href="/configuracion"
+                                    className="inline-flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-zinc-800 hover:bg-zinc-700 
                                          text-white text-[10px] md:text-sm font-bold uppercase tracking-widest rounded-xl 
                                          border border-zinc-700 hover:border-zinc-600 transition-all active:scale-95"
-                            >
-                                <Settings className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
-                                <span className="leading-none">Cambiar Datos de Configuración</span>
-                            </Link>
+                                >
+                                    <Settings className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
+                                    <span className="leading-none">Cambiar Datos de Configuración</span>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                {/* Sección de Gestión Operativa (NUEVO) */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Tarjeta: Gestión de Equipo */}
+                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit">
+                        <BarberManager perfilId={userId} />
+                    </div>
+
+                    {/* Tarjeta: Horario de Apertura */}
+                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit text-sm">
+                        <ShopScheduleManager
+                            perfilId={userId}
+                            initialSchedule={perfil.horario_semanal}
+                        />
+                    </div>
+
+                    {/* Tarjeta: Gestión de Cierres y Vacaciones (NUEVO) */}
+                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit flex flex-col justify-between space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-amber-500/10 rounded-lg">
+                                <CalendarIcon className="w-5 h-5 text-amber-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-white font-bold text-sm">Cierres Mensuales</h3>
+                                <p className={cn(
+                                    "uppercase tracking-wider font-black transition-all",
+                                    perfil.calendario_confirmado
+                                        ? "text-[10px] text-zinc-500"
+                                        : "text-xs text-red-500 animate-pulse"
+                                )}>
+                                    {perfil.calendario_confirmado ? '✓ Calendario Verificado' : '⚠ Confirmación Pendiente'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-zinc-400">
+                            Define qué días cerrarás el próximo mes para que la IA no agende citas.
+                            Confirmar tu planificación mensual es obligatorio para asegurar el servicio.
+                        </p>
+
+                        <button
+                            onClick={() => setShowClosingModal(true)}
+                            className="flex items-center justify-between w-full px-4 py-3 bg-zinc-800/50 hover:bg-zinc-800 text-white rounded-xl border border-zinc-700/50 transition-all group mt-auto"
+                        >
+                            <span className="text-xs font-bold uppercase tracking-widest">Abrir Calendario</span>
+                            <ChevronRight className="w-4 h-4 text-amber-500 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Modal de Cierre */}
+                <MonthlyClosingModal
+                    isOpen={showClosingModal}
+                    onClose={() => setShowClosingModal(false)}
+                    currentClosingDates={perfil.fechas_cierre}
+                />
 
                 {/* Tarjeta 2: Suscripción y Facturación */}
                 <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-6">

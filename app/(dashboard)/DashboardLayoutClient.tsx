@@ -9,6 +9,8 @@ import { Paywall } from "@/components/Paywall";
 import { TrialBanner } from "@/components/TrialBanner";
 import { TrialNoticeModal } from "@/components/TrialNoticeModal";
 import MonthlyClosingModal from "@/components/MonthlyClosingModal";
+import { AlertCircle, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function DashboardLayoutClient({
     children,
@@ -80,6 +82,25 @@ export default function DashboardLayoutClient({
                 )}
 
                 <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' ? 'pt-[52px] md:pt-0' : ''}`}>
+                    {/* Banner de Confirmación de Calendario (NUEVO) */}
+                    {!isLoading && calendarioConfirmed === false && (
+                        <div className="bg-amber-500/10 border-b border-amber-500/20 p-3 md:p-4 flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 animate-in slide-in-from-top duration-500">
+                            <div className="flex items-center gap-2 text-amber-500">
+                                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                <p className="text-xs md:text-sm font-bold uppercase tracking-wider">
+                                    Acción Requerida: Planificación mensual pendiente
+                                </p>
+                            </div>
+                            <Link
+                                href="/perfil"
+                                className="flex items-center gap-2 px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-[10px] md:text-xs font-black uppercase rounded-full transition-all hover:scale-105 active:scale-95"
+                            >
+                                Gestionar Cierres
+                                <ArrowRight className="w-3 h-3" />
+                            </Link>
+                        </div>
+                    )}
+
                     <div className="relative flex-1 pt-0 md:pt-0 pb-20 md:pb-0">
                         <LogoutButton />
                         {children}
@@ -87,11 +108,6 @@ export default function DashboardLayoutClient({
                 </div>
             </div>
             <TrialNoticeModal userStatus={status as any} />
-
-            {/* Modal de Cierre Mensual (Obligatorio) */}
-            {!isLoading && calendarioConfirmed === false && (
-                <MonthlyClosingModal />
-            )}
         </div>
     );
 }

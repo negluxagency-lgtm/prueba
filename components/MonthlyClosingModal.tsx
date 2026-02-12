@@ -1,20 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, addMonths, startOfToday } from "date-fns";
 import { es } from "date-fns/locale";
 import { DayPicker } from "react-day-picker";
 import { updateClosingDates } from "@/app/actions/update-closing-dates";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 import "react-day-picker/dist/style.css";
 
-export default function MonthlyClosingModal() {
+interface MonthlyClosingModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    currentClosingDates?: string[];
+}
+
+export default function MonthlyClosingModal({ isOpen, onClose, currentClosingDates = [] }: MonthlyClosingModalProps) {
     const [selectedDates, setSelectedDates] = useState<Date[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [initialized, setInitialized] = useState(false);
     const router = useRouter();
 
-    const nextMonth = addMonths(new Date(), 1);
+    // Inteligencia de Mes: Si es antes del 25, gestiona mes actual. Si es 25 o más, gestiona mes siguiente.
+    const now = new Date();
+    const targetMonth = now.getDate() < 25 ? now : addMonths(now, 1);
+
+    // Initialize with current dates if provided
+    useEffect(() => {
+        if (isOpen && !initialized && currentClosingDates.length > 0) {
+            const parsedDates = currentClosingDates.map(d => new Date(d));
+            setSelectedDates(parsedDates);
+            setInitialized(true);
+        }
+    }, [isOpen, initialized, currentClosingDates]);
+
+    if (!isOpen) return null;
 
     const handleConfirm = async () => {
         setIsSubmitting(true);
@@ -26,6 +47,7 @@ export default function MonthlyClosingModal() {
 
             if (result.success) {
                 toast.success("Calendario confirmado correctamente.");
+                onClose();
                 router.refresh();
             } else {
                 toast.error(result.error || "Error al guardar fechas.");
@@ -46,15 +68,24 @@ export default function MonthlyClosingModal() {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-6 w-full max-w-md md:max-w-xl flex flex-col items-center animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl p-6 w-full max-w-md md:max-w-xl flex flex-col items-center animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto relative">
+
+                {/* Close Button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
                 <h2 className="text-xl md:text-2xl font-bold text-white mb-2 text-center">
-                    Planifica tu Mes
+                    Planificación Mensual
                 </h2>
 
                 <p className="text-zinc-400 text-sm md:text-base text-center mb-6 px-4">
-                    Para que la IA gestione tus citas, necesitamos saber qué días{" "}
-                    <span className="text-amber-500 font-medium">cerrarás</span> el
-                    próximo mes. (seleccione también los domingos, si cierra)
+                    Para que la IA gestione correctamente tus citas de <span className="text-white font-bold capitalize">{format(targetMonth, 'MMMM', { locale: es })}</span>,
+                    necesitamos saber qué días <span className="text-amber-500 font-medium font-bold">cerrarás</span>.
+                    (Marca también los festivos o domingos si no abres).
                 </p>
 
                 {/* CONTENEDOR DEL CALENDARIO */}
@@ -76,7 +107,10 @@ export default function MonthlyClosingModal() {
                             selected={selectedDates}
                             onSelect={(dates) => setSelectedDates(dates || [])}
                             locale={es}
-                            defaultMonth={nextMonth}
+                            defaultMonth={targetMonth}
+                            fromMonth={targetMonth}
+                            toMonth={targetMonth}
+                            disableNavigation
                             disabled={[{ before: startOfToday() }]}
                             classNames={{
                                 root: "p-2",

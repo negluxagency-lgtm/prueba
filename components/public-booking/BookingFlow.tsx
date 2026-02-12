@@ -72,7 +72,10 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
 
     // Fetch available slots when date or service changes
     useEffect(() => {
-        if (!selectedDate || !selectedService) {
+        const dateString = selectedDate ? formatDateLocal(selectedDate) : ''
+        const isClosed = closingDates.includes(dateString)
+
+        if (!selectedDate || !selectedService || isClosed) {
             setAvailableSlots([])
             return
         }
@@ -104,7 +107,7 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
 
     // Constraints
     const today = startOfDay(new Date())
-    const maxDate = addDays(today, 20)
+    const maxDate = addDays(today, 25)
 
     // Calendar Helpers
     const firstDayOfMonth = startOfMonth(currentMonth)
@@ -194,9 +197,7 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
                                     }}
                                     className="relative group flex flex-col items-start p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 hover:border-amber-500/50 transition-all text-left active:scale-[0.98]"
                                 >
-                                    <div className="mb-3 p-2 rounded-lg bg-zinc-950 group-hover:bg-amber-500/10 transition-colors">
-                                        <Check className="w-5 h-5 text-zinc-700 group-hover:text-amber-500" />
-                                    </div>
+
                                     <h3 className="font-bold text-white text-sm md:text-base leading-tight mb-1">
                                         {service.nombre}
                                     </h3>

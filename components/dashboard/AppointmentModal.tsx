@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { AppointmentFormData } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TimePicker24h } from '@/components/ui/TimePicker24h';
 
 interface AppointmentModalProps {
     isOpen: boolean;
@@ -105,7 +106,15 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                             </select>
                             <div className="grid grid-cols-2 gap-3">
                                 <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 md:px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />
-                                <input type="time" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 md:px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Hora || ""} onChange={(e) => setFormData({ ...formData, Hora: e.target.value })} />
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-zinc-500 font-bold uppercase ml-2">Hora (24h)</label>
+                                    <TimePicker24h
+                                        value={formData.Hora || "09:00"}
+                                        onChange={(val) => setFormData({ ...formData, Hora: val })}
+                                        className="h-[52px]" // Match height of native inputs
+                                    />
+                                </div>
+
                             </div>
                             <input type="number" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Precio (€)" value={formData.Precio || ""} onChange={(e) => setFormData({ ...formData, Precio: e.target.value })} />
 

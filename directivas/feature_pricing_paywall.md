@@ -33,4 +33,4 @@ Definir la estructura y el comportamiento del Paywall de Nelux Barbershop, asegu
 | 2026-01-27 | Scroll bloqueado en Paywall móvil | Se revirtió `min-h-screen` a `h-full` manteniendo el padding extra, para permitir scroll dentro del contenedor fijo. |
 | 2026-01-27 | Flash of Content en Dashboard | Se migró la protección de Paywall al Layout de Servidor (`layout.tsx`), pasando estado inicial al cliente. Layout de impago ahora incluye Sidebar. |
 | 2026-01-27 | Bucle de redirección a /configuracion | Se actualizó `useSubscription` para usar `onboarding_completado` en lugar de `telefono`, alineando lógica cliente/servidor. |
-| 2026-01-27 | Bucle persistente por estado inicial del hook | Se modificó `DashboardLayoutClient` para priorizar `initialProfile.onboarding_completado` mientras el hook carga. |
+| 2026-02-11 | Mensaje IA (1% facturación) eliminado | Se eliminó el aviso informativo sobre el cargo del 1% en planes IA por redundancia/petición. |

@@ -102,26 +102,34 @@ export async function getAvailableSlots({
         dateString = date.toISOString().split('T')[0]
     }
 
-    // Calculate Day of Week from the DATE STRING (force local interpretation)
-    // "2026-02-11" -> "2026-02-11T00:00:00"
+    // Standard JS indexing: 0=Sunday, 1=Monday, ..., 6=Saturday
     const targetDate = new Date(dateString + 'T00:00:00')
-    const dayOfWeek = targetDate.getDay() === 0 ? 6 : targetDate.getDay() - 1 // Fix Sunday=0 to Monday=0, Sunday=6
+    const dayOfWeek = targetDate.getDay()
 
-    // Map to Spanish day keys (0=domingo, 1=lunes, ..., 6=sábado)
     const DAY_KEYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
     const dayKey = DAY_KEYS[dayOfWeek]
 
     console.log('📅 [getAvailableSlots] Date Info:', { dateString, dayOfWeek, dayKey })
 
-    // 1. Get Shop ID
+    // 1. Get Shop ID and Closing Dates
     const { data: profile } = await supabase
         .from('perfiles')
-        .select('id')
+        .select('id, fechas_cierre')
         .eq('slug', slug)
         .single()
 
     if (!profile) {
         console.error('❌ [getAvailableSlots] Profile not found for slug:', slug)
+        return []
+    }
+
+    // 1.1 Check if date is a closing date
+    const closingDates: string[] = Array.isArray(profile.fechas_cierre)
+        ? profile.fechas_cierre
+        : []
+
+    if (closingDates.includes(dateString)) {
+        console.log(`🚫 [getAvailableSlots] Date ${dateString} is marked as CLOSED. Returning empty slots.`)
         return []
     }
 

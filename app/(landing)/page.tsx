@@ -5,6 +5,7 @@ import DemoRingChart from '@/components/landing/DemoRingChart';
 import DemoGrowthChart from '@/components/landing/DemoGrowthChart';
 import DemoChatPreview from '@/components/landing/DemoChatPreview';
 import DemoProductTable from '@/components/landing/DemoProductTable';
+import DemoBookingPreview from '@/components/landing/DemoBookingPreview';
 
 export const metadata = {
     title: 'Nelux - Tu Barbería en Piloto Automático',
@@ -153,6 +154,65 @@ export default function InicioPage() {
                         {/* Graphic Right */}
                         <div className="order-2 lg:order-1">
                             <DemoAppointmentTable />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══════════════════════════════════════════════════════════════════════
+                SECTION A.5: PUBLIC BOOKING PAGE
+            ═══════════════════════════════════════════════════════════════════════ */}
+            <section className="relative py-20 md:py-32 px-6 bg-transparent md:bg-zinc-900/30">
+                {/* Subtle glow */}
+                <div
+                    className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none"
+                    style={{
+                        background: 'radial-gradient(circle, rgba(245, 158, 11, 0.05) 0%, transparent 70%)',
+                    }}
+                />
+
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                        {/* Preview Right (Desktop) / Top (Mobile) */}
+                        <div className="order-2 lg:order-2 flex justify-center">
+                            <DemoBookingPreview />
+                        </div>
+
+                        {/* Text Left (Desktop) / Bottom (Mobile) */}
+                        <div className="order-1 lg:order-1">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/30">
+                                    <Smartphone className="w-6 h-6 text-indigo-500" />
+                                </div>
+                                <span className="text-indigo-500 text-sm font-bold uppercase tracking-wider">Tu Web App</span>
+                            </div>
+
+                            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
+                                Sin Descargas,{' '}
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-indigo-600">
+                                    Solo Reservas
+                                </span>
+                            </h2>
+
+                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
+                                Tus clientes no quieren otra app ocupando espacio.
+                                Te creamos una <span className="text-white font-semibold">página de reservas personalizada</span> donde pueden agendar en segundos.
+                                Sin registrarse, sin contraseñas, directo al grano.
+                            </p>
+
+                            <ul className="space-y-4 mb-8">
+                                {[
+                                    'Página web exclusiva (nelux.app/tubarberia)',
+                                    'No requiere descargar ninguna App',
+                                    'Cliente no necesita crearse cuenta (Guest Mode)',
+                                    'Selección de barbero y servicio visual',
+                                ].map((item, idx) => (
+                                    <li key={idx} className="flex items-center gap-3 text-zinc-300">
+                                        <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -371,7 +431,7 @@ export default function InicioPage() {
                                         ACTIVA EL NÚCLEO
                                     </h3>
                                     <p className="text-zinc-400 leading-relaxed">
-                                        Elige tu plan desde 50€/mes + 1% de la facturación agendada por IA. Esto cubre gastos de línea móvil exclusiva y asegura un uso responsable de nuestra tecnología.
+                                        Elige tu plan desde 49€/mes. Sin comisiones ni sorpresas. Configura tu perfil, tus horarios y se creará tu nueva Web de Citas Personalizada automáticamente. Tu negocio, digitalizado al instante.
                                     </p>
                                 </div>
                             </div>
@@ -398,7 +458,7 @@ export default function InicioPage() {
                                         LA LÍNEA ROJA
                                     </h3>
                                     <p className="text-zinc-400 leading-relaxed">
-                                        Te asignamos un número virtual exclusivo para WhatsApp. Se acabó dar tu número personal. Tu móvil vuelve a ser tuyo.
+                                        Si lo necesitas, con el plan premium, te asignamos un número virtual exclusivo para la IA. Se acabó dar tu número personal o mezclar chats de amigos con clientes. Tu móvil vuelve a ser tuyo; la IA se encarga de la barrera de entrada en WhatsApp.
                                     </p>
                                 </div>
                             </div>
@@ -422,10 +482,10 @@ export default function InicioPage() {
                                 {/* Content */}
                                 <div className="relative z-10">
                                     <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
-                                        EL CEREBRO (GPT-5)
+                                        SINCRONIZACIÓN NEURONAL
                                     </h3>
                                     <p className="text-zinc-400 leading-relaxed">
-                                        Volcamos toda tu información en nuestro modelo de IA. No es un bot simple; responde, agenda citas sabiendo tus horarios y huecos libres, agendando siempre en las horas que más te convengan para optimizar tu agenda.
+                                        La magia ocurre aquí: Tu agenda se llena por dos vías. Los clientes reservan en tu Web o chatean con nuestra IA (GPT-5). Ambos sistemas están conectados en tiempo real: si alguien reserva por la web, la IA ya sabe que ese hueco está ocupado. Cero conflictos.
                                     </p>
                                 </div>
                             </div>
@@ -452,7 +512,7 @@ export default function InicioPage() {
                                         DESPLIEGUE VISUAL
                                     </h3>
                                     <p className="text-zinc-400 leading-relaxed">
-                                        Recibirás tarjetas personalizadas con un QR que redirige a vuestro chat de WhatsApp. Recomendamos colocar el número en tu Bio de Instagram y en Google Maps.
+                                        Recibirás el enlace único de tu web. Coloca el link en tu Bio de Instagram y en Google Maps. Ahora capturas citas automáticamente tanto del tráfico de redes sociales como de los clientes que pasan por delante de tu local.
                                     </p>
                                 </div>
                             </div>

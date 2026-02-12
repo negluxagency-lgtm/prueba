@@ -4,11 +4,8 @@ import { cookies } from 'next/headers'
 export async function createClient() {
     const cookieStore = await cookies()
 
-    // DEBUG DIAGNÓSTICO: Ver qué cookies llegan realmente al Layout
-    const allCookies = cookieStore.getAll();
-    const authCookie = allCookies.find(c => c.name.includes('sb-'));
-    console.log(`[ServerClient] Total Cookies: ${allCookies.length} | Auth Cookie Present: ${!!authCookie}`);
-    if (authCookie) console.log(`[ServerClient] Auth Cookie Name: ${authCookie.name}`);
+    // Create a server's supabase client with newly configured cookie,
+    // which could be used to maintain user's session
 
     return createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
