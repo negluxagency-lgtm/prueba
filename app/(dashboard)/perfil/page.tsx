@@ -368,6 +368,7 @@ export default function PerfilPage() {
                 <MonthlyClosingModal
                     isOpen={showClosingModal}
                     onClose={() => setShowClosingModal(false)}
+                    onSuccess={cargarPerfil}
                     currentClosingDates={perfil.fechas_cierre}
                 />
 

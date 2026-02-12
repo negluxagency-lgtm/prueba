@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { format, addDays, isSameDay, startOfMonth, endOfMonth, getDay, isBefore, startOfDay, isAfter, addMonths, subMonths } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -23,8 +23,10 @@ type Service = {
 // Keep legacy for Barber if needed, but BookingFlow main schedule is now WeeklySchedule
 interface ShopDaySchedule {
     dia: number
-    abierto: boolean
-    franjas: { inicio: string, fin: string }[]
+    activo?: boolean // Added for availability check
+    abierto?: boolean // Legacy support
+    turnos?: { inicio: string, fin: string }[] // Added for availability check
+    franjas?: { inicio: string, fin: string }[] // Legacy support
 }
 
 interface Barber {
@@ -70,6 +72,14 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
     const [availableSlots, setAvailableSlots] = useState<string[]>([])
     const [loadingSlots, setLoadingSlots] = useState(false)
 
+    // --- HELPER: Is Barber Available on Selected Day? ---
+    const isBarberAvailable = useCallback((barber: Barber, date: Date | null) => {
+        if (!date || !barber.horario_semanal) return true;
+        const dayOfWeek = getDay(date); // 0=Sun, 1=Mon...
+        const daySchedule = barber.horario_semanal.find(d => d.dia === dayOfWeek);
+        return daySchedule?.activo && (daySchedule.turnos?.length || 0) > 0;
+    }, []);
+
     // Fetch available slots when date or service changes
     useEffect(() => {
         const dateString = selectedDate ? formatDateLocal(selectedDate) : ''
@@ -78,6 +88,14 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
         if (!selectedDate || !selectedService || isClosed) {
             setAvailableSlots([])
             return
+        }
+
+        // AUTO-RESET: If selected barber is not available on new date, reset to null
+        if (selectedBarberId) {
+            const currentBarber = barbers.find(b => b.id === selectedBarberId);
+            if (currentBarber && !isBarberAvailable(currentBarber, selectedDate)) {
+                setSelectedBarberId(null);
+            }
         }
 
         const fetchSlots = async () => {
@@ -332,29 +350,33 @@ export default function BookingFlow({ services, slug, shopName, closingDates = [
                                         <span className="text-[10px] opacity-70">Me es indiferente</span>
                                     </button>
 
-                                    {/* Individual Barbers */}
-                                    {barbers.map((barber) => (
-                                        <button
-                                            key={barber.id}
-                                            onClick={() => setSelectedBarberId(barber.id)}
-                                            className={cn(
-                                                "flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2 relative",
-                                                selectedBarberId === barber.id
-                                                    ? "bg-amber-500 text-black border-amber-500 shadow-lg"
-                                                    : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
-                                            )}
-                                        >
-                                            {barber.foto ? (
-                                                <img src={barber.foto} alt={barber.nombre} className="w-10 h-10 rounded-full object-cover" />
-                                            ) : (
-                                                <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-lg font-bold">
-                                                    {barber.nombre.charAt(0)}
-                                                </div>
-                                            )}
-                                            <span className="text-xs font-bold text-center truncate w-full px-1">{barber.nombre}</span>
-                                            <span className="text-[10px] opacity-70">Disponible</span>
-                                        </button>
-                                    ))}
+                                    {/* Individual Barbers - Only show available ones for the selected date */}
+                                    {barbers
+                                        .filter(barber => !selectedDate || isBarberAvailable(barber, selectedDate))
+                                        .map((barber) => (
+                                            <button
+                                                key={barber.id}
+                                                onClick={() => setSelectedBarberId(barber.id)}
+                                                className={cn(
+                                                    "flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2 relative",
+                                                    selectedBarberId === barber.id
+                                                        ? "bg-amber-500 text-black border-amber-500 shadow-lg"
+                                                        : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800"
+                                                )}
+                                            >
+                                                {barber.foto ? (
+                                                    <img src={barber.foto} alt={barber.nombre} className="w-10 h-10 rounded-full object-cover" />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-lg font-bold">
+                                                        {barber.nombre.charAt(0)}
+                                                    </div>
+                                                )}
+                                                <span className="text-xs font-bold text-center truncate w-full px-1">{barber.nombre}</span>
+                                                <span className="text-[10px] opacity-70">
+                                                    {selectedDate ? 'Disponible' : 'Selecciona fecha'}
+                                                </span>
+                                            </button>
+                                        ))}
                                 </div>
                             </div>
                         )}

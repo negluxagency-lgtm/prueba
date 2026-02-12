@@ -13,10 +13,11 @@ import "react-day-picker/dist/style.css";
 interface MonthlyClosingModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
     currentClosingDates?: string[];
 }
 
-export default function MonthlyClosingModal({ isOpen, onClose, currentClosingDates = [] }: MonthlyClosingModalProps) {
+export default function MonthlyClosingModal({ isOpen, onClose, onSuccess, currentClosingDates = [] }: MonthlyClosingModalProps) {
     const [selectedDates, setSelectedDates] = useState<Date[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [initialized, setInitialized] = useState(false);
@@ -47,6 +48,7 @@ export default function MonthlyClosingModal({ isOpen, onClose, currentClosingDat
 
             if (result.success) {
                 toast.success("Calendario confirmado correctamente.");
+                onSuccess?.();
                 onClose();
                 router.refresh();
             } else {
