@@ -55,6 +55,44 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
             return { success: false, error: 'Faltan datos requeridos.' }
         }
 
+        // 3.5 CRITICAL: Bloqueo de duplicados (Corte de Energía - Take 4)
+        // Buscamos TODAS las citas futuras para esta barbería para filtrar con precisión quirúrgica
+        const today = new Date().toISOString().split('T')[0]
+        const cleanTargetPhone = guestPhone.replace(/\D/g, '')
+
+        const { data: allFutureAppointments, error: pendingError } = await supabase
+            .from('citas')
+            .select('id, Telefono, cancelada')
+            .eq('barberia_id', profile.id)
+            .gte('Dia', today)
+
+        if (pendingError) {
+            console.error('Error fetching future appointments for validation:', pendingError)
+        }
+
+        if (allFutureAppointments && allFutureAppointments.length > 0) {
+            const hasDuplicate = allFutureAppointments.some(apt => {
+                // Si la cita está explícitamente cancelada, la ignoramos
+                if (apt.cancelada === true) return false
+
+                // Normalizamos el teléfono de la DB para comparar
+                const dbPhone = String(apt.Telefono || '').replace(/\D/g, '')
+
+                // Verificamos si coinciden (mismo número o uno contiene al otro, min 9 dígitos)
+                if (dbPhone.length >= 9 && cleanTargetPhone.length >= 9) {
+                    return dbPhone.endsWith(cleanTargetPhone) || cleanTargetPhone.endsWith(dbPhone)
+                }
+                return dbPhone === cleanTargetPhone
+            })
+
+            if (hasDuplicate) {
+                return {
+                    success: false,
+                    error: 'Ya detectamos una cita activa para este número de teléfono hoy o en una fecha futura. Por favor, revisa tus citas o contacta con la barbería.'
+                }
+            }
+        }
+
         // 4. Obtener el precio del servicio seleccionado
         const { data: serviceData, error: serviceError } = await supabase
             .from('servicios')
@@ -172,6 +210,8 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
             Telefono: guestPhone, // Usamos las columnas existentes
             Precio: serviceData.precio, // Auto-fill precio
             duracion: serviceDuration, // Store service duration for future overlap checks
+            confirmada: false,    // 🔒 Inicialización explícita para evitar NULLs
+            cancelada: false,     // 🔒 Inicialización explícita para evitar NULLs
             Automatica: true,     // Flag para distinguir reservas automáticas
             ip_address: ip        // 🔒 CRÍTICO: IP requerida para rate limiting del trigger
         }

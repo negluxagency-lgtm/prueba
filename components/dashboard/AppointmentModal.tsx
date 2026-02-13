@@ -95,10 +95,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                                 <option value="">Selecciona un barbero (Opcional)</option>
                                 {barbers?.map((barber: any, index: number) => {
                                     const key = barber.id || index;
-                                    const value = barber.id || barber;
                                     const label = barber.nombre || barber;
                                     return (
-                                        <option key={key} value={value}>
+                                        <option key={key} value={label}>
                                             {label}
                                         </option>
                                     );

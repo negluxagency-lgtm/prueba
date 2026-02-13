@@ -22,7 +22,7 @@ const DemoBookingPreview = () => {
     };
 
     return (
-        <div className="relative mx-auto w-full max-w-[200px] xs:max-w-[240px] md:max-w-[360px] aspect-[9/19] bg-black rounded-[2rem] md:rounded-[2.5rem] border-4 md:border-8 border-zinc-900 shadow-2xl overflow-hidden ring-1 ring-zinc-800/50 transform-gpu">
+        <div className="relative mx-auto w-full max-w-[200px] xs:max-w-[240px] md:max-w-[360px] aspect-[9/19] bg-zinc-950 rounded-[2rem] md:rounded-[2.5rem] border-4 md:border-8 border-zinc-900 shadow-2xl overflow-hidden ring-1 ring-zinc-800/50 transform-gpu">
             {/* Dynamic Island / Notch */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 h-5 w-20 md:h-7 md:w-28 bg-black rounded-b-xl md:rounded-b-2xl z-20 flex items-center justify-center">
                 <div className="w-12 h-1 md:w-16 md:h-1.5 bg-zinc-900 rounded-full" />
@@ -38,8 +38,11 @@ const DemoBookingPreview = () => {
                 </div>
             </div>
 
+            {/* Separate Background Layer: No rounding here so it fills corners perfectly as a rectangle, clipped by parent's overflow-hidden */}
+            <div className="absolute inset-y-0 -left-40 -right-10 bg-gradient-to-br from-zinc-950 to-zinc-900 z-0" />
+
             {/* Content Container */}
-            <div className="relative h-full flex flex-col pt-8 md:pt-12 px-3 md:px-4 pb-4 md:pb-6 bg-gradient-to-br from-zinc-950 to-zinc-900">
+            <div className="relative h-full flex flex-col pt-8 md:pt-12 px-3 md:px-4 pb-4 md:pb-6 z-10 scale-75 origin-top">
 
                 {/* Header */}
                 {step !== 4 && (
@@ -171,7 +174,7 @@ const DemoBookingPreview = () => {
                                 <div>
                                     <h3 className="text-2xl font-black text-white mb-2">¡Confirmada!</h3>
                                     <p className="text-zinc-400 text-sm">
-                                        Te hemos enviado los detalles por WhatsApp.
+                                        Tu cita ha sido confirmada, te esperamos!
                                     </p>
                                 </div>
 
@@ -195,14 +198,10 @@ const DemoBookingPreview = () => {
                     </AnimatePresence>
                 </div>
 
-                {/* Bottom Bar */}
-                <div className="mt-4 flex justify-center">
-                    <div className="w-1/3 h-1 bg-zinc-800 rounded-full" />
-                </div>
             </div>
 
             {/* Gloss Effect */}
-            <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent rounded-[2.5rem]" />
+            <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-white/5 to-transparent rounded-[inherit]" />
         </div>
     );
 };
