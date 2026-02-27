@@ -118,7 +118,8 @@ export default function MonthlyClosingModal({ isOpen, onClose, onSuccess, curren
                                 root: "p-2",
                                 month: "space-y-4",
                                 caption: "flex justify-center pt-1 relative items-center text-amber-500 capitalize font-bold",
-                                nav_button: "h-7 w-7 bg-transparent hover:opacity-50 text-zinc-400 hover:text-white transition-colors",
+                                nav: "hidden",
+                                nav_button: "hidden",
                                 table: "w-full border-collapse",
                                 head_cell: "text-zinc-500 font-normal text-[0.9rem] md:text-base pb-3",
                                 // Eliminamos tamaños fijos aquí para que usen la variable CSS

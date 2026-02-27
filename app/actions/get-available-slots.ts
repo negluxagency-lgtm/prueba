@@ -157,38 +157,24 @@ export async function getAvailableSlots({
     const barberIds = barbers.map(b => b.id)
 
     // 3. Get Existing Appointments
-    // INFO: Fetch active appointments filtering in JS to handle NULL cancelada and Date mismatches
     const { data: rawAppointments, error: appointmentError } = await supabase
         .from('citas')
         .select('Hora, barbero, duracion, Dia, cancelada')
         .eq('barberia_id', profile.id)
-        .order('created_at', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(500) // Increased limit to ensure we catch recent bookings even with history
+        .like('Dia', `${dateString}%`) // Filtro estricto en BD por día (soporta formatos YYYY-MM-DD y YYYY-MM-DDTHH...)
 
     // DEBUG: Log raw fetch count
-    console.log(`🔍 [getAvailableSlots] Raw fetched: ${rawAppointments?.length} for shop ${profile.id}`)
+    console.log(`🔍 [getAvailableSlots] SQL fetched: ${rawAppointments?.length} for shop ${profile.id} on ${dateString}`)
 
     if (appointmentError) {
         console.error('❌ [getAvailableSlots] DB Error fetching appointments:', appointmentError)
     }
 
-    // Filter in Javascript
+    // Filter in Javascript solo para ignorar las citas canceladas
     const appointmentList = (rawAppointments || []).filter((app: any) => {
-        if (!app.Dia) return false
-
         // Treat NULL cancelada as FALSE (Active)
         if (app.cancelada === true) return false;
-
-        // Normalize Date
-        let appDateStr = String(app.Dia)
-        if (appDateStr.includes('T')) {
-            appDateStr = appDateStr.split('T')[0]
-        }
-
-        const match = appDateStr.trim() === dateString.trim()
-        // if (!match) console.log(`   [Date Skip] ${appDateStr} != ${dateString}`)
-        return match
+        return true;
     })
 
     console.log(`📋 [getAvailableSlots] Filtered active appointments: ${appointmentList.length}`)

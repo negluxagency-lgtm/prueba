@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Calendar, TrendingUp, MessageSquare, Scissors, Package, CreditCard, User } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export function Sidebar() {
     const pathname = usePathname();
+    const { plan } = useSubscription();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -39,9 +41,11 @@ export function Sidebar() {
                     <Package className={`${isActive("/productos")} hover:text-amber-500 transition-colors cursor-pointer`} size={26} />
                 </Link>
 
-                <Link href="/mensajes" className="p-4">
-                    <MessageSquare className={`${isActive("/mensajes")} hover:text-amber-500 transition-colors cursor-pointer`} size={26} />
-                </Link>
+                {plan?.toLowerCase() === 'premium' && (
+                    <Link href="/mensajes" className="p-4">
+                        <MessageSquare className={`${isActive("/mensajes")} hover:text-amber-500 transition-colors cursor-pointer`} size={26} />
+                    </Link>
+                )}
 
 
                 <Link href="/perfil" className="p-4">

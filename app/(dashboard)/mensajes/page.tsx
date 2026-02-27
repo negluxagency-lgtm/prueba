@@ -178,7 +178,27 @@ function ChatInterface() {
     );
 }
 
+import { useSubscription } from '@/hooks/useSubscription';
+import { Paywall } from '@/components/Paywall';
+
 export default function MensajesPage() {
+    const { plan, loading: subLoading } = useSubscription();
+
+    if (subLoading) {
+        return (
+            <div className="h-full w-full flex items-center justify-center bg-[#0a0a0a]">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-zinc-800 border-t-amber-500 rounded-full animate-spin"></div>
+                    <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest animate-pulse">Verificando Credenciales...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (plan?.toLowerCase() !== 'premium') {
+        return <Paywall variant="lock" />;
+    }
+
     return (
         <Suspense fallback={<div>Cargando...</div>}>
             <ChatInterface />

@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { headers } from 'next/headers'
+import { BookingSchema } from '@/schemas/booking'
 
 // Define types for inputs
 interface BookingData {
@@ -13,6 +14,7 @@ interface BookingData {
     guestName: string
     guestPhone: string
     barberId?: string // Optional: ID of the selected barber
+    address_confirm?: string // Honeypot: must be empty
 }
 
 interface ActionResponse {
@@ -21,7 +23,15 @@ interface ActionResponse {
 }
 
 export async function bookGuestAppointment(data: BookingData): Promise<ActionResponse> {
-    const { slug, serviceId, date, time, guestName, guestPhone, barberId } = data
+    // ── Zod Validation ─────────────────────────────────────────
+    const parsed = BookingSchema.safeParse(data)
+    if (!parsed.success) {
+        const firstError = parsed.error.issues[0]?.message || 'Datos de reserva inválidos.'
+        return { success: false, error: firstError }
+    }
+    // ───────────────────────────────────────────────────────────
+
+    const { slug, serviceId, date, time, guestName, guestPhone, barberId } = parsed.data
 
     // 1. Get Client IP
     const headersList = await headers()

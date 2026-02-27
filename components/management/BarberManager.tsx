@@ -17,6 +17,8 @@ interface Barber {
     id: string;
     nombre: string;
     horario_semanal: BarberDaySchedule[];
+    salario_base?: number | null;
+    porcentaje_comision?: number | null;
 }
 
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -85,7 +87,11 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
             try {
                 const { error } = await supabase
                     .from('barberos')
-                    .update({ horario_semanal: barber.horario_semanal })
+                    .update({
+                        horario_semanal: barber.horario_semanal,
+                        salario_base: barber.salario_base,
+                        porcentaje_comision: barber.porcentaje_comision
+                    })
                     .eq('id', barberId);
 
                 if (error) throw error;
@@ -114,7 +120,9 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                 .insert({
                     nombre: newBarberName,
                     barberia_id: perfilId,
-                    horario_semanal: getDefaultBarberSchedule()
+                    horario_semanal: getDefaultBarberSchedule(),
+                    salario_base: 0,
+                    porcentaje_comision: 0
                 })
                 .select()
                 .single();
@@ -166,6 +174,17 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
 
         if (field === 'activo' && value && !expandedDays.includes(`${barberId}-${dayIndex}`)) {
             toggleExpandDay(barberId, dayIndex);
+        }
+    };
+
+    const updateBarberField = (barberId: string, field: 'salario_base' | 'porcentaje_comision', value: number) => {
+        setBarbers(prev => prev.map(b => {
+            if (b.id !== barberId) return b;
+            return { ...b, [field]: value };
+        }));
+
+        if (!barbersWithChanges.includes(barberId)) {
+            setBarbersWithChanges(prev => [...prev, barberId]);
         }
     };
 
@@ -276,6 +295,31 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                                             ) : (
                                                 <span className="text-emerald-500/80">✓ Sincronizado</span>
                                             )}
+                                        </div>
+                                    </div>
+
+                                    {/* Ajustes de Salario */}
+                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                        <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
+                                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5">Salario Base (€)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={barber.salario_base || 0}
+                                                onChange={(e) => updateBarberField(barber.id, 'salario_base', parseFloat(e.target.value) || 0)}
+                                                className="w-full bg-zinc-900 border border-zinc-700 rounded text-sm px-2 py-1 text-white outline-none focus:border-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            />
+                                        </div>
+                                        <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
+                                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5">% Comisión</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={barber.porcentaje_comision || 0}
+                                                onChange={(e) => updateBarberField(barber.id, 'porcentaje_comision', parseFloat(e.target.value) || 0)}
+                                                className="w-full bg-zinc-900 border border-zinc-700 rounded text-sm px-2 py-1 text-white outline-none focus:border-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            />
                                         </div>
                                     </div>
 

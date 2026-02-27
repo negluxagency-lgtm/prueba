@@ -116,13 +116,22 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             )}
                                             <td className="px-3 py-1 md:px-8 md:py-6 text-center">
                                                 {cita.Telefono ? (
-                                                    <Link
-                                                        href={`/mensajes?tlf=${String(cita.Telefono).replace(/\+/g, '')}`}
-                                                        className="inline-flex items-center gap-1 md:gap-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-green-500 px-1.5 py-0.5 md:px-4 md:py-2 rounded-sm md:rounded-xl text-[7px] md:text-xs transition-all border border-zinc-700/50"
-                                                    >
-                                                        <MessageCircle className="w-2 h-2 md:w-4 md:h-4" />
-                                                        {cita.Telefono}
-                                                    </Link>
+                                                    userPlan === 'Premium' ? (
+                                                        <Link
+                                                            href={`/mensajes?tlf=${String(cita.Telefono).replace(/\+/g, '')}`}
+                                                            className="inline-flex items-center gap-1 md:gap-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-green-500 px-1.5 py-0.5 md:px-4 md:py-2 rounded-sm md:rounded-xl text-[7px] md:text-xs transition-all border border-zinc-700/50"
+                                                        >
+                                                            <MessageCircle className="w-2 h-2 md:w-4 md:h-4" />
+                                                            {cita.Telefono}
+                                                        </Link>
+                                                    ) : (
+                                                        <div
+                                                            className="inline-flex items-center gap-1 md:gap-3 bg-zinc-800 text-zinc-300 px-1.5 py-0.5 md:px-4 md:py-2 rounded-sm md:rounded-xl text-[7px] md:text-xs transition-all border border-zinc-700/50"
+                                                        >
+                                                            <MessageCircle className="w-2 h-2 md:w-4 md:h-4" />
+                                                            {cita.Telefono}
+                                                        </div>
+                                                    )
                                                 ) : (
                                                     <span className="text-zinc-600 text-[7px] md:text-xs italic">Sin Telefono</span>
                                                 )}

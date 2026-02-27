@@ -33,7 +33,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             price: "49€",
             period: "/mes",
             description: "Para barberos independientes que están empezando.",
-            features: ["Agenda ilimitada", "Página de citas personalizada", "Caja e ingresos", "Gestión de clientes", "Reportes básicos", "Gestión de productos"],
+            features: ["Agenda ilimitada", "Página de citas personalizada", "Gestión de salarios y horas extra", "Caja e ingresos", "Gestión de clientes", "Reportes básicos", "Gestión de productos"],
             link: "https://buy.stripe.com/7sY4gy54TaRS9eL6vT28800",
             highlight: false,
             icon: Shield
@@ -43,7 +43,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             price: "75€",
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
-            features: ["Todo lo del plan Básico", "Métricas avanzadas (IA)", "Soporte preferente", "Recordatorio citas WhatsApp", "Filtro Reviews Positivas (IA)"],
+            features: ["Todo lo del plan Básico", "Métricas avanzadas (IA)", "Soporte preferente", "Recordatorio citas WhatsApp", "Filtro Reviews Positivas Google", "Reserva con barbero específico"],
             link: "https://buy.stripe.com/bJe3cu8h50dedv18E128801",
             highlight: true,
             icon: Star
@@ -53,7 +53,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             price: "99€",
             period: "/mes",
             description: "Para barberías profesionales.",
-            features: ["Todo lo del plan Profesional", "Mensajes automáticos IA-WhatsApp", "Reserva con barbero específico", "Soporte 24/7", "Consultoría mensual"],
+            features: ["Todo lo del plan Profesional", "Mensajes automáticos IA-WhatsApp", "Soporte 24/7", "Consultoría mensual"],
             link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
             highlight: false,
             icon: Shield
