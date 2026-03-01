@@ -9,6 +9,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { AppointmentTable } from "@/components/dashboard/AppointmentTable";
 import { AppointmentModal } from "@/components/dashboard/AppointmentModal";
+import { InvoiceModal } from "@/components/dashboard/InvoiceModal";
 import { ProductSalesTable } from '@/components/dashboard/ProductSalesTable';
 import ObjectiveRings from "@/components/dashboard/ObjectiveRings";
 import MonthlyGoalsChart from "@/components/dashboard/MonthlyGoalsChart";
@@ -29,6 +30,8 @@ export default function Dashboard() {
     const [sales, setSales] = useState<Appointment[]>([]);
     const [services, setServices] = useState<any[]>([]); // State for services
     const [barbers, setBarbers] = useState<any[]>([]); // State for barbers (objects)
+    const [shopData, setShopData] = useState<any>(null); // State for shop profile info
+    const [user, setUser] = useState<any>(null); // State for current auth user
 
     const {
         appointments: dailyCitas,
@@ -43,14 +46,15 @@ export default function Dashboard() {
     // Fetch Services for Dropdown
     React.useEffect(() => {
         const fetchServices = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            if (!currentUser) return;
+            setUser(currentUser);
 
             // Link perfiles.id with servicios.perfil_id
             const { data: servicesData } = await supabase
                 .from('servicios')
                 .select('id, nombre, precio')
-                .eq('perfil_id', user.id);
+                .eq('perfil_id', currentUser.id);
 
             if (servicesData) {
                 setServices(servicesData);
@@ -60,10 +64,36 @@ export default function Dashboard() {
             const { data: barbersData } = await supabase
                 .from('barberos')
                 .select('id, nombre') // Fetch ID too
-                .eq('barberia_id', user.id);
+                .eq('barberia_id', currentUser.id);
 
             if (barbersData) {
                 setBarbers(barbersData);
+            }
+
+            // Fetch shop profile data
+            const { data: profile } = await supabase
+                .from('perfiles')
+                .select('nombre_barberia, Direccion, telefono, correo, "CIF/NIF"')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (profile) {
+                setShopData({
+                    name: profile.nombre_barberia || currentUser.user_metadata?.barberia_nombre || 'Mi Barbería',
+                    address: profile.Direccion || '',
+                    phone: profile.telefono || '',
+                    email: profile.correo || currentUser.email || '',
+                    cif: profile['CIF/NIF'] || ''
+                });
+            } else {
+                // Fallback to metadata if profile record is missing for some reason
+                setShopData({
+                    name: currentUser.user_metadata?.barberia_nombre || 'Mi Barbería',
+                    address: '',
+                    phone: '',
+                    email: currentUser.email || '',
+                    cif: ''
+                });
             }
         };
         fetchServices();
@@ -116,6 +146,20 @@ export default function Dashboard() {
 
     const { chartData, loading: trendsLoading, setRange } = useTrends(selectedDate);
 
+    // Function to update CIF in perfiles
+    const updateShopCIF = async (newCIF: string) => {
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('perfiles')
+            .update({ 'CIF/NIF': newCIF })
+            .eq('id', user.id);
+
+        if (!error) {
+            setShopData((prev: any) => ({ ...prev, cif: newCIF }));
+        }
+    };
+
     // Fetch Objetivos de Perfil
     React.useEffect(() => {
         const fetchObjectives = async () => {
@@ -142,6 +186,8 @@ export default function Dashboard() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCita, setEditingCita] = useState<Appointment | null>(null);
+    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [invoiceAppointment, setInvoiceAppointment] = useState<Appointment | null>(null);
 
     // Separar citas de ventas usando el marcador interno
     const productSales = allAppointments.filter(a => (a as any)._isProductSale);
@@ -217,8 +263,8 @@ export default function Dashboard() {
         });
     };
 
-    const handleUpdateStatus = async (id: number, status: 'pendiente' | 'confirmada' | 'cancelada') => {
-        const promise = updateAppointmentStatus(id, status).then(res => {
+    const handleUpdateStatus = async (id: number, status: 'pendiente' | 'confirmada' | 'cancelada', pago?: string) => {
+        const promise = updateAppointmentStatus(id, status, pago).then(res => {
             if (!res.success) throw new Error(res.error);
             return res;
         });
@@ -228,6 +274,11 @@ export default function Dashboard() {
             success: 'Estado actualizado',
             error: (err) => `Error: ${err.message}`
         });
+    };
+
+    const handleGenerateInvoice = (cita: Appointment) => {
+        setInvoiceAppointment(cita);
+        setIsInvoiceModalOpen(true);
     };
 
     return (
@@ -283,6 +334,7 @@ export default function Dashboard() {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onUpdateStatus={handleUpdateStatus}
+                    onGenerateInvoice={handleGenerateInvoice}
                     loading={appointmentsLoading}
                     barbers={barbers} // Pass barbers for name lookup
                 />
@@ -310,6 +362,7 @@ export default function Dashboard() {
                     Telefono: String(editingCita.Telefono),
                     Precio: String(editingCita.Precio),
                     confirmada: !!editingCita.confirmada,
+                    pago: editingCita.pago,
                 } : {
                     Nombre: '',
                     servicio: '',
@@ -321,6 +374,14 @@ export default function Dashboard() {
                     confirmada: false
                 }}
                 isEditing={!!editingCita}
+            />
+
+            <InvoiceModal
+                isOpen={isInvoiceModalOpen}
+                onClose={() => { setIsInvoiceModalOpen(false); setInvoiceAppointment(null); }}
+                appointment={invoiceAppointment}
+                shopData={shopData || { name: user?.user_metadata?.barberia_nombre || 'Mi Barbería', cif: '' }}
+                onUpdateCIF={updateShopCIF}
             />
 
         </main>

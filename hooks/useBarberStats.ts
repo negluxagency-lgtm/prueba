@@ -9,6 +9,7 @@ export interface BarberStat {
     salario_base?: number
     porcentaje_comision?: number
     totalExtraHoursAmount?: number
+    totalExtraHours?: number
 }
 
 /**
@@ -105,7 +106,8 @@ export function useBarberStats(mes?: string) {
                     totalCuts: 0,
                     salario_base: (b as any).salario_base || 0,
                     porcentaje_comision: (b as any).porcentaje_comision || 0,
-                    totalExtraHoursAmount: 0
+                    totalExtraHoursAmount: 0,
+                    totalExtraHours: 0
                 }
             }
 
@@ -119,7 +121,8 @@ export function useBarberStats(mes?: string) {
                         totalCuts: 0,
                         salario_base: 0,
                         porcentaje_comision: 0,
-                        totalExtraHoursAmount: 0
+                        totalExtraHoursAmount: 0,
+                        totalExtraHours: 0
                     }
                 }
                 map[name].totalRevenue += Number(cita.Precio) || 0
@@ -132,7 +135,9 @@ export function useBarberStats(mes?: string) {
                     const name = bMatch.nombre.trim()
                     if (map[name]) {
                         const amount = Number(h.cantidad_horas) * Number(h.precio_hora_extra)
+                        const hours = Number(h.cantidad_horas)
                         map[name].totalExtraHoursAmount = (map[name].totalExtraHoursAmount || 0) + amount
+                        map[name].totalExtraHours = (map[name].totalExtraHours || 0) + hours
                     }
                 }
             }

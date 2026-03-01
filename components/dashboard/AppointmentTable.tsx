@@ -1,10 +1,11 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Clock, MessageCircle, Pencil, Trash2 } from 'lucide-react';
+import { Check, Clock, MessageCircle, Settings2, Receipt, Pencil, Trash2, Banknote, CreditCard, Smartphone, MoreHorizontal } from 'lucide-react';
 import { Appointment } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/Skeleton';
 import Link from 'next/link';
+import { PaymentMethodModal, PaymentMethod } from './PaymentMethodModal';
 
 interface AppointmentTableProps {
     appointments: Appointment[];
@@ -12,40 +13,66 @@ interface AppointmentTableProps {
     userPlan?: string;
     onEdit: (cita: Appointment) => void;
     onDelete: (item: Appointment) => void;
-    onUpdateStatus: (id: number, status: 'pendiente' | 'confirmada' | 'cancelada') => void;
+    onUpdateStatus: (id: number, status: 'pendiente' | 'confirmada' | 'cancelada', pago?: string) => void;
+    onGenerateInvoice?: (cita: Appointment) => void;
     loading?: boolean;
     barbers?: any[]; // { id, nombre } objects
 }
 
-export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments, selectedDate, userPlan, onEdit, onDelete, onUpdateStatus, loading, barbers = [] }) => {
+const PAGO_ICONS: Record<string, React.ReactNode> = {
+    efectivo: <Banknote className="w-2.5 h-2.5 md:w-3 md:h-3" />,
+    tarjeta: <CreditCard className="w-2.5 h-2.5 md:w-3 md:h-3" />,
+    bizum: <Smartphone className="w-2.5 h-2.5 md:w-3 md:h-3" />,
+    otra: <MoreHorizontal className="w-2.5 h-2.5 md:w-3 md:h-3" />,
+};
+
+const PAGO_COLORS: Record<string, string> = {
+    efectivo: 'bg-green-500/10 text-green-400 border-green-500/20',
+    tarjeta: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    bizum: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    otra: 'bg-zinc-800 text-zinc-400 border-zinc-700',
+};
+
+export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments, selectedDate, userPlan, onEdit, onDelete, onUpdateStatus, onGenerateInvoice, loading, barbers = [] }) => {
     const fechaVisual = new Date(selectedDate + "T12:00:00").toLocaleDateString('es-ES', {
         weekday: 'long', day: 'numeric', month: 'long'
     });
     const fechaFormateada = fechaVisual.charAt(0).toUpperCase() + fechaVisual.slice(1);
 
-    const [menuState, setMenuState] = React.useState<{ id: number; x: number; y: number } | null>(null);
+    const [menuState, setMenuState] = React.useState<{ id: number; x: number; y: number; type: 'status' | 'actions' } | null>(null);
+    const [paymentModal, setPaymentModal] = React.useState<{ id: number } | null>(null);
 
     // Encontrar la cita activa si hay menú abierto
     const activeAppointment = menuState ? appointments.find(a => a.id === menuState.id) : null;
 
-    const handleOpenMenu = (e: React.MouseEvent<HTMLButtonElement>, id: number) => {
+    const handleOpenMenu = (e: React.MouseEvent<HTMLButtonElement>, id: number, type: 'status' | 'actions') => {
         e.stopPropagation();
-        e.preventDefault(); // Prevenir comportamientos por defecto touch
+        e.preventDefault();
 
-        // Si ya está abierto este ID, cerrar
-        if (menuState?.id === id) {
+        if (menuState?.id === id && menuState?.type === type) {
             setMenuState(null);
             return;
         }
 
         const rect = e.currentTarget.getBoundingClientRect();
-        // Calcular posición centrada debajo del botón
-        // Ajuste para móvil vs desktop si es necesario, pero fixed va bien
         setMenuState({
             id,
+            type,
             x: rect.left + (rect.width / 2),
             y: rect.bottom + 5
         });
+    };
+
+    const handleConfirmClick = (id: number) => {
+        setMenuState(null);
+        setPaymentModal({ id });
+    };
+
+    const handlePaymentSelect = (method: PaymentMethod) => {
+        if (paymentModal) {
+            onUpdateStatus(paymentModal.id, 'confirmada', method);
+            setPaymentModal(null);
+        }
     };
 
     return (
@@ -60,16 +87,17 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                 <table className="w-full text-left border-collapse">
                     <thead className="text-zinc-500 text-[8px] md:text-xs uppercase tracking-[0.2em] bg-black/40">
                         <tr>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Cliente</th>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Servicio</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Cliente</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Servicio</th>
                             {userPlan === 'Premium' && (
-                                <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Barbero</th>
+                                <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Barbero</th>
                             )}
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">WhatsApp</th>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Estado</th>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Hora</th>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-amber-500/80">Precio</th>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-right">Acciones</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">WhatsApp</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">Estado</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Hora</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-amber-500/80">Precio</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-zinc-400/80">Pago</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-right">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/40">
@@ -83,6 +111,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                     <td className="px-6 py-4 text-center"><Skeleton className="h-7 w-20 mx-auto" /></td>
                                     <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
                                     <td className="px-6 py-4"><Skeleton className="h-5 w-12" /></td>
+                                    <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
                                     <td className="px-6 py-4"><div className="flex justify-end gap-2"><Skeleton className="h-7 w-7 rounded-lg" /><Skeleton className="h-7 w-7 rounded-lg" /></div></td>
                                 </tr>
                             ))
@@ -98,15 +127,14 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             transition={{ duration: 0.2, delay: index * 0.05 }}
                                             className="hover:bg-amber-500/[0.03] transition-all group"
                                         >
-                                            <td className="px-3 py-1 md:px-8 md:py-6 font-bold text-zinc-100 text-[11px] md:text-lg group-hover:text-amber-500 transition-colors">
+                                            <td className="px-2 py-1 md:px-4 md:py-3 font-bold text-zinc-100 text-[11px] md:text-sm group-hover:text-amber-500 transition-colors">
                                                 {cita.Nombre}
                                             </td>
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-zinc-300 text-[10px] md:text-sm font-medium">
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-zinc-300 text-[10px] md:text-xs font-medium">
                                                 {cita.servicio || <span className="text-zinc-600 italic">--</span>}
                                             </td>
                                             {userPlan === 'Premium' && (
-                                                <td className="px-3 py-1 md:px-8 md:py-6 text-zinc-300 text-[10px] md:text-sm font-medium">
-                                                    {/* Lookup name if ID, otherwise show value (legacy name) */}
+                                                <td className="px-2 py-1 md:px-4 md:py-3 text-zinc-300 text-[10px] md:text-xs font-medium">
                                                     {(() => {
                                                         if (!cita.barbero) return <span className="text-zinc-600 italic">Sin asignar</span>;
                                                         const barberObj = barbers.find(b => b.id === cita.barbero);
@@ -114,74 +142,76 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                                     })()}
                                                 </td>
                                             )}
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-center">
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-center">
                                                 {cita.Telefono ? (
                                                     userPlan === 'Premium' ? (
                                                         <Link
                                                             href={`/mensajes?tlf=${String(cita.Telefono).replace(/\+/g, '')}`}
-                                                            className="inline-flex items-center gap-1 md:gap-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-green-500 px-1.5 py-0.5 md:px-4 md:py-2 rounded-sm md:rounded-xl text-[7px] md:text-xs transition-all border border-zinc-700/50"
+                                                            className="inline-flex items-center gap-1 md:gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-green-500 px-1.5 py-0.5 md:px-3 md:py-1.5 rounded-sm md:rounded-lg text-[7px] md:text-xs transition-all border border-zinc-700/50"
                                                         >
-                                                            <MessageCircle className="w-2 h-2 md:w-4 md:h-4" />
+                                                            <MessageCircle className="w-2 h-2 md:w-3 md:h-3" />
                                                             {cita.Telefono}
                                                         </Link>
                                                     ) : (
                                                         <div
-                                                            className="inline-flex items-center gap-1 md:gap-3 bg-zinc-800 text-zinc-300 px-1.5 py-0.5 md:px-4 md:py-2 rounded-sm md:rounded-xl text-[7px] md:text-xs transition-all border border-zinc-700/50"
+                                                            className="inline-flex items-center gap-1 md:gap-2 bg-zinc-800 text-zinc-300 px-1.5 py-0.5 md:px-3 md:py-1.5 rounded-sm md:rounded-lg text-[7px] md:text-xs transition-all border border-zinc-700/50"
                                                         >
-                                                            <MessageCircle className="w-2 h-2 md:w-4 md:h-4" />
+                                                            <MessageCircle className="w-2 h-2 md:w-3 md:h-3" />
                                                             {cita.Telefono}
                                                         </div>
                                                     )
                                                 ) : (
-                                                    <span className="text-zinc-600 text-[7px] md:text-xs italic">Sin Telefono</span>
+                                                    <span className="text-zinc-600 text-[7px] md:text-xs italic">Sin Tlf</span>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-center">
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-center">
                                                 <div className="relative inline-block">
                                                     <button
                                                         type="button"
-                                                        onClick={(e) => handleOpenMenu(e, cita.id)}
-                                                        className={`inline-flex items-center gap-1 md:gap-2 px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[7px] md:text-xs font-black transition-all border ${cita.cancelada
+                                                        onClick={(e) => handleOpenMenu(e, cita.id, 'status')}
+                                                        className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-lg text-[7px] md:text-[10px] font-black transition-all border ${cita.cancelada
                                                             ? 'bg-red-500/20 text-red-500 border-red-500/50 hover:bg-red-500/30'
                                                             : cita.confirmada
                                                                 ? 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
                                                                 : 'bg-amber-500/20 text-amber-500 border-amber-500/50 hover:bg-amber-500/30'
                                                             }`}
                                                     >
-                                                        <Check className={`w-2 h-2 md:w-4 md:h-4 opacity-100`} strokeWidth={4} />
+                                                        <Check className={`w-2 h-2 md:w-3 md:h-3 opacity-100`} strokeWidth={4} />
                                                         {cita.cancelada ? 'CANCELADA' : cita.confirmada ? 'CONFIRMADA' : 'PENDIENTE'}
                                                     </button>
                                                 </div>
                                             </td>
 
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-amber-500 text-[11px] md:text-lg font-bold">
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-amber-500 text-[11px] md:text-sm font-bold">
                                                 {cita.Hora ? cita.Hora.slice(0, 5) : "--:--"}
                                             </td>
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-xs md:text-xl font-black text-amber-500/90">{cita.Precio || 0}€</td>
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-xs md:text-base font-black text-amber-500/90">{cita.Precio || 0}€</td>
 
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <button
-                                                        onClick={() => onEdit(cita)}
-                                                        className="p-1 md:p-3 bg-zinc-800 hover:bg-blue-500/20 hover:text-blue-500 text-zinc-400 rounded-sm md:rounded-xl transition-all border border-transparent hover:border-blue-500/50"
-                                                        title="Editar"
-                                                    >
-                                                        <Pencil className="w-2.5 h-2.5 md:w-5 md:h-5" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => onDelete(cita)}
-                                                        className="p-1 md:p-3 bg-zinc-800 hover:bg-red-500/20 hover:text-red-500 text-zinc-400 rounded-sm md:rounded-xl transition-all border border-transparent hover:border-red-500/50"
-                                                        title="Eliminar"
-                                                    >
-                                                        <Trash2 className="w-2.5 h-2.5 md:w-5 md:h-5" />
-                                                    </button>
-                                                </div>
+                                            <td className="px-2 py-1 md:px-4 md:py-3">
+                                                {cita.pago ? (
+                                                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded-lg border text-[7px] md:text-[10px] font-black uppercase tracking-widest ${PAGO_COLORS[cita.pago] || PAGO_COLORS.otra}`}>
+                                                        {PAGO_ICONS[cita.pago]}
+                                                        <span className="hidden md:inline">{cita.pago}</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-zinc-700 text-[7px] md:text-xs italic">--</span>
+                                                )}
+                                            </td>
+
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => handleOpenMenu(e, cita.id, 'actions')}
+                                                    className="p-1.5 md:p-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-amber-500 rounded-lg transition-all border border-zinc-700/50 hover:border-amber-500/50"
+                                                >
+                                                    <Settings2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                </button>
                                             </td>
                                         </motion.tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={userPlan === 'Premium' ? 8 : 7} className="px-8 py-10 text-center text-zinc-600 italic uppercase tracking-widest text-[9px] md:text-xs">
+                                        <td colSpan={userPlan === 'Premium' ? 9 : 8} className="px-8 py-10 text-center text-zinc-600 italic uppercase tracking-widest text-[9px] md:text-xs">
                                             Sin citas hoy
                                         </td>
                                     </tr>
@@ -192,58 +222,99 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                 </table>
             </div>
 
-            {/* PORTAL/OVERLAY MENU (Fuera del overflow y de cualquier transform) */}
+            {/* PORTAL/OVERLAY MENU */}
             {menuState && activeAppointment && createPortal(
                 <>
-                    {/* Backdrop Invisible */}
                     <div
                         className="fixed inset-0 z-[9998] cursor-default"
                         onClick={() => setMenuState(null)}
                     />
 
-                    {/* Menú Posicionado */}
                     <div
-                        className="fixed z-[9999] w-28 md:w-36 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/50 animate-in fade-in zoom-in-95 duration-100"
+                        className="fixed z-[9999] w-36 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/50 animate-in fade-in zoom-in-95 duration-100"
                         style={{
                             left: `${menuState.x}px`,
                             top: `${menuState.y}px`,
                             transform: 'translateX(-50%)'
                         }}
                     >
-                        <button
-                            onClick={() => {
-                                onUpdateStatus(activeAppointment.id, 'pendiente');
-                                setMenuState(null);
-                            }}
-                            className="w-full text-left px-2 py-2 md:px-4 md:py-3 text-[9px] md:text-xs font-bold text-amber-500 hover:bg-zinc-800/80 transition-colors flex items-center gap-2 md:gap-3"
-                        >
-                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
-                            PENDIENTE
-                        </button>
-                        <button
-                            onClick={() => {
-                                onUpdateStatus(activeAppointment.id, 'confirmada');
-                                setMenuState(null);
-                            }}
-                            className="w-full text-left px-2 py-2 md:px-4 md:py-3 text-[9px] md:text-xs font-bold text-green-500 hover:bg-zinc-800/80 transition-colors flex items-center gap-2 md:gap-3 border-t border-zinc-800/50"
-                        >
-                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                            CONFIRMADA
-                        </button>
-                        <button
-                            onClick={() => {
-                                onUpdateStatus(activeAppointment.id, 'cancelada');
-                                setMenuState(null);
-                            }}
-                            className="w-full text-left px-2 py-2 md:px-4 md:py-3 text-[9px] md:text-xs font-bold text-red-500 hover:bg-zinc-800/80 transition-colors flex items-center gap-2 md:gap-3 border-t border-zinc-800/50"
-                        >
-                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
-                            CANCELADA
-                        </button>
+                        {menuState.type === 'status' ? (
+                            <div className="bg-zinc-950">
+                                <button
+                                    onClick={() => {
+                                        onUpdateStatus(activeAppointment.id, 'pendiente');
+                                        setMenuState(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 md:px-4 md:py-3 text-[9px] md:text-xs font-bold text-amber-500 hover:bg-zinc-800/80 transition-colors flex items-center gap-2 md:gap-3"
+                                >
+                                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
+                                    PENDIENTE
+                                </button>
+                                <button
+                                    onClick={() => handleConfirmClick(activeAppointment.id)}
+                                    className="w-full text-left px-3 py-2 md:px-4 md:py-3 text-[9px] md:text-xs font-bold text-green-500 hover:bg-zinc-800/80 transition-colors flex items-center gap-2 md:gap-3 border-t border-zinc-800/50"
+                                >
+                                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+                                    CONFIRMADA
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        onUpdateStatus(activeAppointment.id, 'cancelada');
+                                        setMenuState(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 md:px-4 md:py-3 text-[9px] md:text-xs font-bold text-red-500 hover:bg-zinc-800/80 transition-colors flex items-center gap-2 md:gap-3 border-t border-zinc-800/50"
+                                >
+                                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                                    CANCELADA
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="p-1">
+                                {onGenerateInvoice && (
+                                    <button
+                                        onClick={() => {
+                                            onGenerateInvoice(activeAppointment);
+                                            setMenuState(null);
+                                        }}
+                                        className="w-full text-left px-3 py-2 md:px-4 md:py-2.5 rounded-lg text-xs font-bold text-white hover:bg-amber-500 hover:text-black transition-all flex items-center gap-3 group"
+                                    >
+                                        <Receipt className="w-4 h-4 opacity-60 group-hover:opacity-100" />
+                                        Hacer Factura
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        onEdit(activeAppointment);
+                                        setMenuState(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 md:px-4 md:py-2.5 rounded-lg text-xs font-bold text-zinc-400 hover:bg-white/10 hover:text-white transition-all flex items-center gap-3"
+                                >
+                                    <Pencil className="w-4 h-4 opacity-60" />
+                                    Editar Cita
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        onDelete(activeAppointment);
+                                        setMenuState(null);
+                                    }}
+                                    className="w-full text-left px-3 py-2 md:px-4 md:py-2.5 rounded-lg text-xs font-bold text-red-500/70 hover:bg-red-500/10 hover:text-red-500 transition-all flex items-center gap-3 border-t border-zinc-800/50 mt-1 pt-2"
+                                >
+                                    <Trash2 className="w-4 h-4 opacity-60" />
+                                    Eliminar
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </>,
                 document.body
             )}
+
+            {/* Payment Method Modal */}
+            <PaymentMethodModal
+                isOpen={!!paymentModal}
+                onClose={() => setPaymentModal(null)}
+                onSelect={handlePaymentSelect}
+            />
         </div>
     );
 };

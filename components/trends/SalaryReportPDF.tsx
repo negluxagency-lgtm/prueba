@@ -134,7 +134,7 @@ interface SalaryReportPDFProps {
         barberName: string
         baseSalary: number
         commissionAmount: number
-        extraHoursAmount: number
+        extraHoursAmount: number // Now represents total HOURS (count)
         bonusAmount: number
         totalNeto: number
         totalRevenue: number
@@ -173,7 +173,7 @@ export function SalaryReportPDF({ data }: SalaryReportPDFProps) {
                 <View style={styles.table}>
                     <View style={styles.tableHeader}>
                         <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Concepto</Text>
-                        <Text style={[styles.tableHeaderCell, { flex: 1, textAlign: 'right' }]}>Importe</Text>
+                        <Text style={[styles.tableHeaderCell, { flex: 1, textAlign: 'right' }]}>Información / Importe</Text>
                     </View>
 
                     <View style={styles.tableRow}>
@@ -187,8 +187,8 @@ export function SalaryReportPDF({ data }: SalaryReportPDFProps) {
                     </View>
 
                     <View style={styles.tableRow}>
-                        <Text style={styles.tableCellLabel}>Horas Extra Realizadas</Text>
-                        <Text style={styles.tableCellValue}>{data.extraHoursAmount.toFixed(2)}€</Text>
+                        <Text style={styles.tableCellLabel}>Horas Extra Realizadas (Informativo)</Text>
+                        <Text style={styles.tableCellValue}>{data.extraHoursAmount.toFixed(1)} Horas</Text>
                     </View>
 
                     <View style={styles.tableRow}>
@@ -215,7 +215,7 @@ export function SalaryReportPDF({ data }: SalaryReportPDFProps) {
 
                 {/* Marca de agua / Timestamp */}
                 <Text style={styles.timestamp}>
-                    Documento generado el {data.timestamp} - Sistema de Gestión Nelux
+                    Documento generado el {data.timestamp} - Sistema de Gestión Nelux. Nota: Las horas extra no tienen impacto económico automático.
                 </Text>
             </Page>
         </Document>

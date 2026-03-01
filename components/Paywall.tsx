@@ -43,7 +43,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             price: "75€",
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
-            features: ["Todo lo del plan Básico", "Métricas avanzadas (IA)", "Soporte preferente", "Recordatorio citas WhatsApp", "Filtro Reviews Positivas Google", "Reserva con barbero específico"],
+            features: ["Todo lo del plan Básico", "Métricas avanzadas (IA)", "Soporte preferente", "Recordatorio citas WhatsApp", "Filtro Reviews Positivas Google", "Reserva con barbero específico", "Gestión de Facturas y Salarios"],
             link: "https://buy.stripe.com/bJe3cu8h50dedv18E128801",
             highlight: true,
             icon: Star
@@ -53,7 +53,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             price: "99€",
             period: "/mes",
             description: "Para barberías profesionales.",
-            features: ["Todo lo del plan Profesional", "Mensajes automáticos IA-WhatsApp", "Soporte 24/7", "Consultoría mensual"],
+            features: ["Todo lo del plan Profesional", "Mensajes automáticos IA-WhatsApp", "Soporte 24/7", "Consultoría mensual", "Gestión Contable Total"],
             link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
             highlight: false,
             icon: Shield

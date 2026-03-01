@@ -117,6 +117,18 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                             </div>
                             <input type="number" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Precio (€)" value={formData.Precio || ""} onChange={(e) => setFormData({ ...formData, Precio: e.target.value })} />
 
+                            <select
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                                value={formData.pago || ""}
+                                onChange={(e) => setFormData({ ...formData, pago: e.target.value || undefined })}
+                            >
+                                <option value="">Método de pago (Opcional)</option>
+                                <option value="efectivo">Efectivo</option>
+                                <option value="tarjeta">Tarjeta</option>
+                                <option value="bizum">Bizum</option>
+                                <option value="otra">Otra</option>
+                            </select>
+
                             <button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-black font-black uppercase py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] active:scale-[0.98]">
                                 {isEditing ? "Guardar Cambios" : "Confirmar Cita"}
                             </button>

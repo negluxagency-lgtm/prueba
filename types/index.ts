@@ -11,6 +11,7 @@ export interface Appointment {
     Precio: string | number;
     confirmada?: boolean;
     cancelada?: boolean;
+    pago?: string;
 }
 
 export interface AppointmentFormData {
@@ -23,6 +24,7 @@ export interface AppointmentFormData {
     Telefono: string;
     Precio: string;
     confirmada?: boolean;
+    pago?: string;
 }
 
 export interface MessageRow {

@@ -39,8 +39,8 @@ export default function QuickOvertimeModal({ onClose }: QuickOvertimeModalProps)
                             <Clock className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
                         </div>
                         <div>
-                            <h2 className="font-black text-white text-base md:text-lg tracking-tight uppercase italic">Horas Extra</h2>
-                            <p className="text-zinc-500 text-[10px] md:text-xs font-medium">Gestión rápida por barbero</p>
+                            <h2 className="font-black text-white text-base md:text-lg tracking-tight uppercase italic">Control de Horas</h2>
+                            <p className="text-zinc-500 text-[10px] md:text-xs font-medium">Registro informativo por barbero</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 bg-zinc-800 rounded-full text-zinc-500 hover:text-white transition-colors">
@@ -53,7 +53,7 @@ export default function QuickOvertimeModal({ onClose }: QuickOvertimeModalProps)
                     <div className="flex items-center justify-between bg-zinc-800/50 p-2.5 md:p-3 rounded-xl md:rounded-2xl border border-zinc-700/30">
                         <div className="flex items-center gap-2 md:gap-3">
                             <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-zinc-500" />
-                            <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">Mes de Gestión</span>
+                            <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">Período de Control</span>
                         </div>
                         <input
                             type="month"
@@ -90,9 +90,9 @@ export default function QuickOvertimeModal({ onClose }: QuickOvertimeModalProps)
                                         <span className="text-xs md:text-sm font-bold text-white uppercase">{barber.nombre}</span>
                                     </div>
                                     <div className="flex items-center gap-2 md:gap-3">
-                                        {barber.totalExtraHoursAmount > 0 && (
+                                        {barber.totalExtraHours > 0 && (
                                             <span className="text-[9px] md:text-[10px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                                                +{barber.totalExtraHoursAmount.toFixed(1)}€
+                                                {barber.totalExtraHours.toFixed(1)}h Realizadas
                                             </span>
                                         )}
                                         {expandedBarber === barber.id ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}
@@ -115,7 +115,7 @@ export default function QuickOvertimeModal({ onClose }: QuickOvertimeModalProps)
                 </div>
 
                 <div className="p-4 md:p-6 shrink-0 border-t border-zinc-800 text-center">
-                    <p className="text-[9px] md:text-[10px] text-zinc-600 uppercase font-black tracking-widest">Los cambios se guardan automáticamente</p>
+                    <p className="text-[9px] md:text-[10px] text-zinc-600 uppercase font-black tracking-widest italic">Estas horas son informativas y no afectan a la liquidación económica</p>
                 </div>
             </div>
         </div>

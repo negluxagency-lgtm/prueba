@@ -8,8 +8,8 @@ Implementar una calculadora avanzada de salarios y horas extra para los barberos
 
 ## 2. Restricciones Críticas (Protocolo de Seguridad)
 *   Debe soportar base salarial + porcentaje de comisiones + precio por hora extra.
-*   Las horas extra se guardan en la tabla `horas_extra` para mantener un registro histórico inmutable (el precio por hora extra se guarda en el momento de la inserción).
-*   No romper la vista actual de estadísticas si no hay datos de salario configurados.
+*   Las horas extra se guardan en la tabla `horas_extra` para mantener un registro histórico inmutable.
+*   **RESTRICCIÓN 2026-02-27:** El precio por hora extra es INFORMATIVO. No se suma automáticamente a la liquidación económica en el dashboard Trends.
 
 ## 3. Procedimiento Estándar (SOP)
 1.  Verificar los tipos de Supabase y el esquema de la tabla `horas_extra`.

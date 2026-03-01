@@ -99,7 +99,8 @@ export function useAppointments(selectedDate: string) {
                         Telefono: formData.Telefono,
                         Precio: formData.Precio,
                         confirmada: formData.confirmada,
-                        barbero: formData.barbero || null // Include barber
+                        barbero: formData.barbero || null, // Include barber
+                        pago: formData.pago || null
                     })
                     .eq('id', editingId)
                     .eq('barberia_id', user.id); // 🔒 UUID check
@@ -124,7 +125,8 @@ export function useAppointments(selectedDate: string) {
                         Precio: formData.Precio,
                         confirmada: formData.confirmada ?? false,
                         barbero: formData.barbero || null, // Include barber
-                        barberia_id: user.id // 🔒 UUID requerido por RLS
+                        barberia_id: user.id, // 🔒 UUID requerido por RLS
+                        pago: formData.pago || null
                     }]);
                 error = insertError;
             }
@@ -140,10 +142,10 @@ export function useAppointments(selectedDate: string) {
     // ... (updateAppointmentStatus se mantiene igual por ahora, RLS debe protegerlo, 
     // pero idealmente también debería filtrar. Lo dejamos simple para no romper lógica compleja si la hubiera)
 
-    const updateAppointmentStatus = async (id: number, verifyStatus: AppointmentStatus) => {
+    const updateAppointmentStatus = async (id: number, verifyStatus: AppointmentStatus, pago?: string) => {
         // Mapeo de estados a valores de BD
-        let dbValues = { confirmada: false, cancelada: false };
-        if (verifyStatus === 'confirmada') dbValues = { confirmada: true, cancelada: false };
+        let dbValues: any = { confirmada: false, cancelada: false };
+        if (verifyStatus === 'confirmada') dbValues = { confirmada: true, cancelada: false, ...(pago ? { pago } : {}) };
         if (verifyStatus === 'cancelada') dbValues = { confirmada: false, cancelada: true };
 
         const originalAppointments = [...appointments];
@@ -152,12 +154,7 @@ export function useAppointments(selectedDate: string) {
         ));
 
         try {
-            // Añadimos filtro de barbería implícito obteniendo usuario primero
             const { data: { user } } = await supabase.auth.getUser();
-            // Nota: En update status hacemos un optimistic update rápido. 
-            // Si RLS está bien configurado, fallará si no es su cita.
-            // Para ser consistentes con "360 Audit", confiamos en RLS aquí 
-            // o haríamos un fetch previo. Por rendimiento, dejamos RLS actuar.
 
             const { data, error } = await supabase
                 .from('citas')

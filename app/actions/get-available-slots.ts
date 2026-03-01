@@ -138,7 +138,7 @@ export async function getAvailableSlots({
     // 2. Get Relevant Barbers
     let barbersQuery = supabase
         .from('barberos')
-        .select('id, nombre, horario_semanal')
+        .select('id, nombre, horario_semanal, fechas_cierre')
         .eq('barberia_id', profile.id)
 
     // Filter by specific barber if selected
@@ -195,6 +195,14 @@ export async function getAvailableSlots({
         console.log(`\n🔧 [getAvailableSlots] Processing barber: ${barber.nombre} (${barber.id})`)
 
         const schedule = barber.horario_semanal as WeeklySchedule
+
+        // Skip this barber if they have marked this date as an absence
+        const barberAbsences: string[] = Array.isArray((barber as any).fechas_cierre) ? (barber as any).fechas_cierre : []
+        if (barberAbsences.includes(dateString)) {
+            console.log(`🚫 [getAvailableSlots] Barber ${barber.nombre} is absent on ${dateString}. Skipping.`)
+            return
+        }
+
         if (!schedule || typeof schedule !== 'object') {
             console.warn(`⚠️ [getAvailableSlots] Barber ${barber.nombre} has no schedule or invalid format:`, schedule)
             return

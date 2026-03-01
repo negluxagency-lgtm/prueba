@@ -5,7 +5,7 @@ import DemoRingChart from '@/components/landing/DemoRingChart';
 import DemoGrowthChart from '@/components/landing/DemoGrowthChart';
 import DemoChatPreview from '@/components/landing/DemoChatPreview';
 import DemoProductTable from '@/components/landing/DemoProductTable';
-import DemoBookingPreview from '@/components/landing/DemoBookingPreview';
+import StaticBookingPreview from '@/components/landing/StaticBookingPreview';
 
 export const metadata = {
     title: 'Nelux - Tu Barbería en Piloto Automático',
@@ -174,8 +174,8 @@ export default function InicioPage() {
                 <div className="max-w-7xl mx-auto relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
                         {/* Preview Right (Desktop) / Top (Mobile) */}
-                        <div className="order-2 lg:order-2 flex justify-center">
-                            <DemoBookingPreview />
+                        <div className="order-2 lg:order-2 flex justify-center w-full">
+                            <StaticBookingPreview />
                         </div>
 
                         {/* Text Left (Desktop) / Bottom (Mobile) */}

@@ -8,7 +8,7 @@ import { BarberOvertimeInline } from './BarberOvertimeInline'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import { SalaryReportPDF } from './SalaryReportPDF'
 import { AccountantReportPDF } from './AccountantReportPDF'
-import { FileText, Download, ShieldCheck } from 'lucide-react'
+import { FileText, Download, ShieldCheck, Clock } from 'lucide-react'
 
 interface SalaryRow {
     commission: string
@@ -88,9 +88,9 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
             const base = parseFloat(row.baseSalaryRaw) || 0
             const bonus = parseFloat(row.bonusRaw) || 0
             const commissionAmount = isNaN(pct) || pct < 0 || pct > 100 ? 0 : barber.totalRevenue * (pct / 100)
-            const extra = barber.totalExtraHoursAmount || 0
 
-            const salary = parseFloat((base + commissionAmount + extra + bonus).toFixed(2))
+            // Overtime is EXCLUDED from financial calculation
+            const salary = parseFloat((base + commissionAmount + bonus).toFixed(2))
             updated[barber.nombre] = { ...row, salary }
         }
         setRows(updated)
@@ -112,7 +112,7 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
                         </div>
                         <div>
                             <h2 className="font-black text-white text-base md:text-lg tracking-tight uppercase italic">Liquidación Mensual</h2>
-                            <p className="text-zinc-500 text-[10px] md:text-xs font-medium">Control total de nóminas y horas extra</p>
+                            <p className="text-zinc-500 text-[10px] md:text-xs font-medium">Cálculo de nóminas comerciales</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 bg-zinc-800 rounded-full text-zinc-500 hover:text-white transition-colors">
@@ -152,7 +152,7 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
                     ) : (
                         (stats as any[]).map(barber => {
                             const row = getRow(barber.nombre)
-                            const extraAmount = barber.totalExtraHoursAmount || 0
+                            const extraHoursCount = barber.totalExtraHours || 0
 
                             return (
                                 <div key={barber.nombre} className="bg-zinc-800/30 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 border border-zinc-800 relative overflow-hidden group hover:border-zinc-700/50 transition-all">
@@ -167,17 +167,12 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
                                                 <h3 className="text-sm md:text-base font-black text-white uppercase tracking-tight">{barber.nombre}</h3>
                                                 <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-0.5 md:mt-1">
                                                     <span className="text-[8px] md:text-[9px] font-black text-zinc-500 bg-zinc-900 px-1.5 md:px-2 py-0.5 rounded border border-zinc-800 uppercase tracking-widest">Fact: {barber.totalRevenue.toFixed(0)}€</span>
-                                                    <span className="text-[8px] md:text-[9px] font-black text-zinc-500 bg-zinc-900 px-1.5 md:px-2 py-0.5 rounded border border-zinc-800 uppercase tracking-widest">{barber.totalCuts} Serv.</span>
+                                                    <span className="text-[8px] md:text-[9px] font-black text-zinc-500 bg-zinc-900 px-1.5 md:px-2 py-0.5 rounded border border-zinc-800 uppercase tracking-widest inline-flex items-center gap-1">
+                                                        <Clock className="w-2 h-2 text-amber-500" /> {extraHoursCount.toFixed(1)}h Extra
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {extraAmount > 0 && (
-                                            <div className="bg-amber-500/10 border border-amber-500/20 px-2 md:px-3 py-1 rounded-full flex items-center gap-1 md:gap-1.5 anim-pulse shrink-0">
-                                                <div className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-amber-500" />
-                                                <span className="text-[8px] md:text-[10px] font-black text-amber-500 uppercase tracking-widest">+{extraAmount.toFixed(1)}€</span>
-                                            </div>
-                                        )}
                                     </div>
 
                                     {/* Financial Inputs */}
@@ -235,7 +230,7 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
                                         <div className="mt-5 md:mt-6 pt-4 md:pt-5 border-t-2 border-dashed border-zinc-800 flex items-center justify-between bg-zinc-800/20 -mx-4 md:-mx-6 px-4 md:px-6 pb-2">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white flex items-center justify-center shrink-0"><Info className="w-3.5 h-3.5 md:w-4 md:h-4 text-black" /></div>
-                                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 leading-tight">Sueldo Bruto</span>
+                                                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 leading-tight">Total Neto</span>
                                             </div>
                                             <span className="text-xl md:text-2xl font-black text-white tabular-nums tracking-tighter">
                                                 {row.salary.toFixed(2)}€
@@ -255,7 +250,7 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
                                                             barberName: barber.nombre,
                                                             baseSalary: parseFloat(row.baseSalaryRaw) || 0,
                                                             commissionAmount: barber.totalRevenue * ((parseFloat(row.commission) || 0) / 100),
-                                                            extraHoursAmount: barber.totalExtraHoursAmount || 0,
+                                                            extraHoursAmount: barber.totalExtraHours || 0, // Sending total hours instead of amount
                                                             bonusAmount: parseFloat(row.bonusRaw) || 0,
                                                             totalNeto: row.salary,
                                                             totalRevenue: barber.totalRevenue,
@@ -270,7 +265,7 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
                                                 {({ loading }) => (
                                                     <>
                                                         {loading ? <Download className="w-4 h-4 animate-bounce" /> : <FileText className="w-4 h-4 group-hover/pdf:scale-110 transition-transform" />}
-                                                        <span>{loading ? 'Generando PDF...' : 'Descargar Recibo PDF'}</span>
+                                                        <span>{loading ? 'Generando PDF...' : 'Descargar Recibo'}</span>
                                                     </>
                                                 )}
                                             </PDFDownloadLink>
@@ -287,7 +282,7 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
                     {calculated && totalSalaries > 0 && (
                         <div className="flex items-center justify-between bg-white px-5 md:px-6 py-4 md:py-5 rounded-2xl md:rounded-[2rem] shadow-2xl relative overflow-hidden group">
                             <div className="relative z-10">
-                                <p className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-0.5 md:mb-1">Gasto en Nóminas</p>
+                                <p className="text-[8px] md:text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-0.5 md:mb-1">Carga Salarial Total</p>
                                 <p className="text-2xl md:text-3xl font-black text-black tabular-nums tracking-tighter">{totalSalaries.toFixed(2)}€</p>
                             </div>
                             <div className="absolute right-0 top-0 bottom-0 w-24 md:w-32 bg-amber-500 translate-x-8 -skew-x-12 opacity-10" />
@@ -309,7 +304,7 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
                                                 nombre: b.nombre,
                                                 baseSalary: parseFloat(row.baseSalaryRaw) || 0,
                                                 commission: b.totalRevenue * ((parseFloat(row.commission) || 0) / 100),
-                                                extraHours: b.totalExtraHoursAmount || 0,
+                                                extraHours: b.totalExtraHours || 0, // Passing count instead of money
                                                 bonus: parseFloat(row.bonusRaw) || 0,
                                                 total: row.salary || 0
                                             }
@@ -338,6 +333,9 @@ export default function SalaryCalculatorModal({ onClose }: SalaryCalculatorModal
                     >
                         Ejecutar Liquidación
                     </button>
+                    <p className="text-[10px] font-bold text-zinc-500 text-center uppercase tracking-widest leading-relaxed">
+                        Nota: Las horas extra registradas no impactan económicamente en el cálculo final.
+                    </p>
                 </div>
             </div>
         </div>

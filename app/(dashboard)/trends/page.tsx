@@ -9,14 +9,10 @@ import { useBarberStats } from '@/hooks/useBarberStats';
 import { MetricType } from '@/components/trends/DetailedRevenueChart';
 import { MonthlyTrends } from '@/components/dashboard/MonthlyTrends';
 import BarberRankingCard from '@/components/trends/BarberRankingCard';
-import SalaryCalculatorModal from '@/components/trends/SalaryCalculatorModal';
-import QuickOvertimeModal from '@/components/trends/QuickOvertimeModal';
 
 export default function TrendsPage() {
   const { loading, chartData, metrics, previousMetrics, range, setRange } = useTrends();
   const [activeMetric, setActiveMetric] = React.useState<MetricType>('revenue');
-  const [showSalaryModal, setShowSalaryModal] = useState(false);
-  const [showOvertimeModal, setShowOvertimeModal] = useState(false);
 
   // Barber stats: use current month for the ranking card
   const currentMonth = new Date().toISOString().substring(0, 7);
@@ -28,6 +24,7 @@ export default function TrendsPage() {
     productos: 0
   });
   const [loadingObjectives, setLoadingObjectives] = useState(true);
+  const [isAutonomo, setIsAutonomo] = useState<boolean>(false);
 
   React.useEffect(() => {
     const fetchObjectives = async () => {
@@ -36,7 +33,7 @@ export default function TrendsPage() {
 
       const { data: profile } = await supabase
         .from('perfiles')
-        .select('objetivo_ingresos, objetivo_cortes, objetivo_productos')
+        .select('objetivo_ingresos, objetivo_cortes, objetivo_productos, Autonomo')
         .eq('id', user.id)
         .single();
 
@@ -46,6 +43,7 @@ export default function TrendsPage() {
           cortes: Number(profile.objetivo_cortes) || 0,
           productos: Number(profile.objetivo_productos) || 0
         });
+        setIsAutonomo(!!profile.Autonomo);
       }
       setLoadingObjectives(false);
     };
@@ -120,45 +118,18 @@ export default function TrendsPage() {
         />
       </div>
 
-      {/* Barber Ranking */}
-      <div className="mt-8">
-        <BarberRankingCard
-          stats={barberStats}
-          loading={barberLoading}
-          globalCutsGoal={objectives.cortes}
-        />
-      </div>
-
-      {/* Action Buttons */}
-      <div className="mt-8 flex items-center justify-center md:justify-center gap-3 md:gap-6 flex-wrap">
-        <button
-          onClick={() => setShowOvertimeModal(true)}
-          className="flex items-center gap-2 md:gap-4 px-6 py-4 md:px-10 md:py-6 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] text-zinc-300 hover:text-white font-black text-xs md:text-sm rounded-2xl md:rounded-[2rem] transition-all border border-zinc-800 shadow-xl group"
-        >
-          <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-zinc-900 flex items-center justify-center group-hover:bg-amber-500/10 transition-colors">
-            <Clock className="w-4 h-4 md:w-6 md:h-6 text-zinc-500 group-hover:text-amber-500 transition-colors" />
-          </div>
-          Horas Extra
-        </button>
-
-        <button
-          onClick={() => setShowSalaryModal(true)}
-          className="flex items-center gap-2 md:gap-4 px-6 py-4 md:px-10 md:py-6 bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-black font-black text-xs md:text-sm rounded-2xl md:rounded-[2rem] transition-all shadow-[0_10px_20px_rgba(245,158,11,0.2)] group"
-        >
-          <div className="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-black/10 flex items-center justify-center group-hover:bg-black/20 transition-colors">
-            <Calculator className="w-4 h-4 md:w-6 md:h-6" />
-          </div>
-          Liquidación
-        </button>
-      </div>
-
-      {/* Modals */}
-      {showSalaryModal && (
-        <SalaryCalculatorModal onClose={() => setShowSalaryModal(false)} />
+      {/* Barber Ranking - Hidder for Autonomo users */}
+      {!isAutonomo && (
+        <div className="mt-8">
+          <BarberRankingCard
+            stats={barberStats}
+            loading={barberLoading}
+            globalCutsGoal={objectives.cortes}
+          />
+        </div>
       )}
-      {showOvertimeModal && (
-        <QuickOvertimeModal onClose={() => setShowOvertimeModal(false)} />
-      )}
+
+
     </main>
   );
 }

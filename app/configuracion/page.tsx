@@ -25,7 +25,8 @@ export default function ConfigurationPage() {
         objetivo_ingresos: '',
         objetivo_cortes: '',
         objetivo_productos: '',
-        capacidad_slots: '1'
+        capacidad_slots: '1',
+        Autonomo: false
     });
 
     // Logo State
@@ -196,7 +197,8 @@ export default function ConfigurationPage() {
                     objetivo_ingresos: String(profile.objetivo_ingresos || ''),
                     objetivo_cortes: String(profile.objetivo_cortes || ''),
                     objetivo_productos: String(profile.objetivo_productos || ''),
-                    capacidad_slots: String(profile.capacidad_slots || '1')
+                    capacidad_slots: String(profile.capacidad_slots || '1'),
+                    Autonomo: !!profile.Autonomo
                 });
                 setCurrentAvatarUrl(profile.logo_url || null);
 
@@ -345,7 +347,8 @@ export default function ConfigurationPage() {
                     objetivo_productos: parseInt(formData.objetivo_productos) || 0,
                     capacidad_slots: parseInt(formData.capacidad_slots) || 1,
                     horario_semanal: shopSchedule,  // NEW: Save shop schedule as JSONB
-                    onboarding_completado: true
+                    onboarding_completado: true,
+                    Autonomo: formData.Autonomo
                 }, { onConflict: 'id' });
 
             if (profileError) throw profileError;
@@ -575,6 +578,26 @@ export default function ConfigurationPage() {
                                     className="w-full p-3.5 md:p-4 rounded-xl md:rounded-2xl bg-zinc-800/30 border border-zinc-700/50 text-sm text-white outline-none focus:border-amber-500 transition-all placeholder:text-zinc-600 shadow-inner"
                                 />
                             </div>
+                        </div>
+
+                        {/* Pregunta Autónomo */}
+                        <div className="md:col-span-2 bg-amber-500/5 border border-amber-500/10 p-4 md:p-6 rounded-2xl md:rounded-[24px] flex items-center justify-between gap-4 group hover:bg-amber-500/10 transition-all">
+                            <div className="space-y-1">
+                                <h3 className="text-sm md:text-base font-black uppercase italic italic text-white flex items-center gap-2">
+                                    <User className="w-4 h-4 text-amber-500" />
+                                    ¿Eres un barbero autónomo?
+                                </h3>
+                                <p className="text-[10px] md:text-xs text-zinc-500 font-medium tracking-tight">Marca esta opción si trabajas solo y no tienes empleados a tu cargo.</p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.Autonomo}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, Autonomo: e.target.checked }))}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-14 h-7 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-zinc-400 after:border-zinc-400 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-white peer-checked:after:border-white shadow-lg"></div>
+                            </label>
                         </div>
 
                         {/* Barbers Shift Builder */}
