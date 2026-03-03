@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import LogoutButton from "@/components/LogoutButton";
@@ -25,6 +25,13 @@ export default function DashboardLayoutClient({
 }) {
     const { status: clientStatus, loading, daysRemaining, isProfileComplete } = useSubscription();
     const router = useRouter();
+    const [showClosingModal, setShowClosingModal] = useState(false);
+    const [localCalendarioConfirmed, setLocalCalendarioConfirmed] = useState(calendarioConfirmed);
+
+    // Sincronizar con prop externa por si cambia por navegación
+    useEffect(() => {
+        setLocalCalendarioConfirmed(calendarioConfirmed);
+    }, [calendarioConfirmed]);
 
     // Prioridad: Estado cliente (actualizado) > Estado servidor (inicial)
     const status = clientStatus || serverStatus;
@@ -83,7 +90,7 @@ export default function DashboardLayoutClient({
 
                 <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' ? 'pt-[52px] md:pt-0' : ''}`}>
                     {/* Banner de Confirmación de Calendario (NUEVO) */}
-                    {!isLoading && calendarioConfirmed === false && (
+                    {!isLoading && localCalendarioConfirmed === false && (
                         <div className="bg-amber-500/10 border-b border-amber-500/20 p-3 md:p-4 flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 animate-in slide-in-from-top duration-500">
                             <div className="flex items-center gap-2 text-amber-500">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -91,15 +98,16 @@ export default function DashboardLayoutClient({
                                     Acción Requerida: Planificación mensual pendiente
                                 </p>
                             </div>
-                            <Link
-                                href="/perfil"
+                            <button
+                                onClick={() => setShowClosingModal(true)}
                                 className="flex items-center gap-2 px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-black text-[10px] md:text-xs font-black uppercase rounded-full transition-all hover:scale-105 active:scale-95"
                             >
                                 Gestionar Cierres
                                 <ArrowRight className="w-3 h-3" />
-                            </Link>
+                            </button>
                         </div>
                     )}
+
 
                     <div className="relative flex-1 pt-0 md:pt-0 pb-20 md:pb-0">
                         <LogoutButton />
@@ -108,6 +116,18 @@ export default function DashboardLayoutClient({
                 </div>
             </div>
             <TrialNoticeModal userStatus={status as any} />
+            <MonthlyClosingModal
+                isOpen={showClosingModal}
+                onClose={() => setShowClosingModal(false)}
+                onSuccess={() => {
+                    // Update the state locally to remove the banner immediately
+                    setLocalCalendarioConfirmed(true);
+                    setShowClosingModal(false);
+                    // Force a simple refresh to ensure the background data is consistent
+                    router.refresh();
+                }}
+                currentClosingDates={initialProfile?.fechas_cierre || []}
+            />
         </div>
     );
 }

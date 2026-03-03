@@ -6,6 +6,8 @@ import DemoGrowthChart from '@/components/landing/DemoGrowthChart';
 import DemoChatPreview from '@/components/landing/DemoChatPreview';
 import DemoProductTable from '@/components/landing/DemoProductTable';
 import StaticBookingPreview from '@/components/landing/StaticBookingPreview';
+import DemoStaffVisual from '@/components/landing/DemoStaffVisual';
+import { Users, Clock, Receipt, Banknote } from 'lucide-react';
 
 export const metadata = {
     title: 'Nelux - Tu Barbería en Piloto Automático',
@@ -278,6 +280,64 @@ export default function InicioPage() {
             </section>
 
             {/* ═══════════════════════════════════════════════════════════════════════
+                SECTION B.5: STAFF & SCHEDULE MANAGEMENT
+            ═══════════════════════════════════════════════════════════════════════ */}
+            <section className="relative py-20 md:py-32 px-6">
+                {/* Subtle glow */}
+                <div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none"
+                    style={{
+                        background: 'radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%)',
+                    }}
+                />
+
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                        {/* Text Left */}
+                        <div className="order-1 lg:order-1">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/30">
+                                    <Users className="w-6 h-6 text-indigo-500" />
+                                </div>
+                                <span className="text-indigo-500 text-sm font-bold uppercase tracking-wider">Gestión de Equipo</span>
+                            </div>
+
+                            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
+                                Tu Equipo,{' '}
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-indigo-600">
+                                    Bajo Control
+                                </span>
+                            </h2>
+
+                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
+                                Olvídate de los líos con los horarios y los cálculos de comisiones.
+                                Gestiona la jornada laboral completa de tu equipo, desde el fichaje de entrada hasta la liquidación final del mes. <span className="text-white font-semibold">Transparencia total para ti y tus barberos</span>.
+                            </p>
+
+                            <ul className="space-y-4 mb-8">
+                                {[
+                                    'Control de presencia (Fichajes entry/exit)',
+                                    'Gestión de turnos y horarios de apertura',
+                                    'Cálculo automático de nóminas y comisiones',
+                                    'Auditoría y exportación de jornadas en PDF',
+                                ].map((item, idx) => (
+                                    <li key={idx} className="flex items-center gap-3 text-zinc-300">
+                                        <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Graphic Right */}
+                        <div className="order-2 lg:order-2">
+                            <DemoStaffVisual />
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══════════════════════════════════════════════════════════════════════
                 SECTION C: MANUAL INTERVENTION (WhatsApp Control)
             ═══════════════════════════════════════════════════════════════════════ */}
             <section className="relative py-20 md:py-32 px-6">
@@ -308,7 +368,7 @@ export default function InicioPage() {
                             </h2>
 
                             <p className="text-zinc-400 text-lg leading-relaxed mb-8">
-                                La IA trabaja por ti, pero tú decides cuándo intervenir.
+                                Con el plan Premium, la IA trabaja por ti, pero tú decides cuándo intervenir.
                                 Entra en cualquier conversación de WhatsApp, responde manualmente y vuelve a dejar que el bot continúe. <span className="text-white font-semibold">Sin fricción, sin límites</span>.
                             </p>
 
@@ -431,7 +491,7 @@ export default function InicioPage() {
                                         ACTIVA EL NÚCLEO
                                     </h3>
                                     <p className="text-zinc-400 leading-relaxed">
-                                        Elige tu plan desde 49€/mes. Sin comisiones ni sorpresas. Configura tu perfil, tus horarios y se creará tu nueva Web de Citas Personalizada automáticamente. Tu negocio, digitalizado al instante.
+                                        Suscríbete desde 19€/mes y toma el mando. Sin comisiones ocultas. Configura tu perfil y horarios en un par de clics: tu nueva Web de Citas se genera de forma instantánea y totalmente personalizada. Tu negocio, digitalizado al momento.
                                     </p>
                                 </div>
                             </div>
@@ -458,7 +518,7 @@ export default function InicioPage() {
                                         LA LÍNEA ROJA
                                     </h3>
                                     <p className="text-zinc-400 leading-relaxed">
-                                        Si lo necesitas, con el plan premium, te asignamos un número virtual exclusivo para la IA. Se acabó dar tu número personal o mezclar chats de amigos con clientes. Tu móvil vuelve a ser tuyo; la IA se encarga de la barrera de entrada en WhatsApp.
+                                        Abre las puertas de tu barbería en la web. Un portal conectado a tus servicios y equipo donde tus clientes reservan sin descargar apps ni registros tediosos. Olvídate de interrumpir cortes para contestar llamadas o mensajes.
                                     </p>
                                 </div>
                             </div>
@@ -485,7 +545,7 @@ export default function InicioPage() {
                                         SINCRONIZACIÓN NEURONAL
                                     </h3>
                                     <p className="text-zinc-400 leading-relaxed">
-                                        La magia ocurre aquí: Tu agenda se llena por dos vías. Los clientes reservan en tu Web o chatean con nuestra IA (GPT-5). Ambos sistemas están conectados en tiempo real: si alguien reserva por la web, la IA ya sabe que ese hueco está ocupado. Cero conflictos.
+                                        Deja que la IA trabaje por ti. Tu agenda se llena sola mediante la web o nuestro chat inteligente (GPT-5). Todo se sincroniza en tiempo real: si alguien reserva online, el hueco desaparece al instante. Cero conflictos, máxima ocupación.
                                     </p>
                                 </div>
                             </div>
@@ -512,7 +572,7 @@ export default function InicioPage() {
                                         DESPLIEGUE VISUAL
                                     </h3>
                                     <p className="text-zinc-400 leading-relaxed">
-                                        Recibirás el enlace único de tu web. Coloca el link en tu Bio de Instagram y en Google Maps. Ahora capturas citas automáticamente tanto del tráfico de redes sociales como de los clientes que pasan por delante de tu local.
+                                        Gestiona cada rincón de tu barbería desde un único panel central que va desde tus ingresos y gastos hasta tus turnos, nóminas, facturación legal (Veri*factu obligatorio 2026), horarios y stock de productos. Todo lo que necesitas para que tu negocio funcione en piloto automático.
                                     </p>
                                 </div>
                             </div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { DetailedRevenueChart } from '@/components/trends/DetailedRevenueChart';
-import { TrendingUp, Users, DollarSign, Calendar, Calculator, Clock } from 'lucide-react';
+import { TrendingUp, Users, DollarSign, Calendar, Calculator, Clock, Filter, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useTrends } from '@/hooks/useTrends';
 import { useBarberStats } from '@/hooks/useBarberStats';
@@ -11,12 +11,12 @@ import { MonthlyTrends } from '@/components/dashboard/MonthlyTrends';
 import BarberRankingCard from '@/components/trends/BarberRankingCard';
 
 export default function TrendsPage() {
-  const { loading, chartData, metrics, previousMetrics, range, setRange } = useTrends();
+  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().substring(0, 7));
+  const { loading, chartData, metrics, previousMetrics, range, setRange } = useTrends(selectedMonth);
   const [activeMetric, setActiveMetric] = React.useState<MetricType>('revenue');
 
-  // Barber stats: use current month for the ranking card
-  const currentMonth = new Date().toISOString().substring(0, 7);
-  const { stats: barberStats, loading: barberLoading } = useBarberStats(currentMonth);
+  // Barber stats: use selected month for the ranking card
+  const { stats: barberStats, loading: barberLoading } = useBarberStats(selectedMonth);
 
   const [objectives, setObjectives] = useState({
     ingresos: 0,
@@ -52,11 +52,35 @@ export default function TrendsPage() {
 
   return (
     <main className="flex-1 p-2 md:p-10 max-w-4xl md:max-w-6xl mx-auto w-full pb-24 md:pb-10">
-      <header className="mb-4 md:mb-12">
-        <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-2">
-          Analytics <span className="text-amber-500">Center</span>
-        </h1>
-        <p className="text-zinc-500 font-medium text-sm md:text-base">Análisis de rendimiento real.</p>
+      <header className="mb-8 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-2">
+            Analytics <span className="text-amber-500">Center</span>
+          </h1>
+          <p className="text-zinc-500 font-medium text-sm md:text-base">Análisis de rendimiento real.</p>
+        </div>
+
+        {/* GLOBAL MONTH SELECTOR */}
+        <div className="flex items-center gap-3 self-start md:self-auto">
+          <div className="relative group/filter bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2 flex items-center gap-3 hover:border-amber-500/30 transition-all shadow-xl">
+            <Filter className="w-4 h-4 text-zinc-500 group-hover:text-amber-500 transition-colors" />
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="bg-transparent border-none text-sm font-black text-amber-500 outline-none cursor-pointer focus:ring-0 appearance-none uppercase tracking-widest [&::-webkit-calendar-picker-indicator]:invert"
+            />
+            {selectedMonth && (
+              <button
+                onClick={() => setSelectedMonth('')}
+                className="p-1 hover:bg-zinc-800 rounded-full transition-colors"
+                title="Limpiar filtro"
+              >
+                <X className="w-3.5 h-3.5 text-zinc-600 hover:text-white" />
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
       {/* KPI GRID */}
@@ -118,8 +142,8 @@ export default function TrendsPage() {
         />
       </div>
 
-      {/* Barber Ranking - Hidder for Autonomo users */}
-      {!isAutonomo && (
+      {/* Barber Ranking - Shown if there are multiple barbers */}
+      {(!barberLoading && barberStats.length > 1) && (
         <div className="mt-8">
           <BarberRankingCard
             stats={barberStats}

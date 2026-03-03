@@ -16,7 +16,15 @@ export interface StaffBarber {
 }
 
 interface StaffAppProps {
-    shopData: { id: string, nombre_barberia: string, logo_url?: string }
+    shopData: {
+        id: string
+        nombre_barberia: string
+        logo_url?: string
+        'CIF/NIF'?: string
+        Direccion?: string
+        telefono?: string
+        correo?: string
+    }
     barbers: StaffBarber[]
     slug: string
 }

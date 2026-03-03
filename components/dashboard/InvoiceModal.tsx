@@ -5,6 +5,10 @@ import { X, User, Phone, Mail, CheckCircle2, Download, Loader2, FileText } from 
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import { InvoicePDF } from './InvoicePDF'
 import { cn } from '@/lib/utils'
+import QRCode from 'qrcode'
+import { emitirFacturaVerifactu } from '@/app/actions/verifactu'
+import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
 
 interface InvoiceModalProps {
     isOpen: boolean
@@ -24,20 +28,31 @@ export function InvoiceModal({ isOpen, onClose, appointment, shopData, onUpdateC
     const [clientData, setClientData] = useState({
         name: '',
         phone: '',
-        email: ''
+        email: '',
+        cif: ''
     })
     const [shopCIF, setShopCIF] = useState('')
+    const cifYaConfigurado = !!(shopData.cif && shopData.cif.trim().length > 0)
     const [isConfirmed, setIsConfirmed] = useState(false)
+    const [isGenerating, setIsGenerating] = useState(false)
+    const [invoiceEntity, setInvoiceEntity] = useState<{
+        qrCodeUrl: string
+        huellaHash: string
+        hashAnterior: string
+        numeroFactura: string
+    } | null>(null)
 
     useEffect(() => {
         if (appointment) {
             setClientData({
                 name: appointment.Nombre || '',
                 phone: String(appointment.Telefono || ''),
-                email: ''
+                email: '',
+                cif: ''
             })
             setShopCIF(shopData.cif || '')
             setIsConfirmed(false)
+            setInvoiceEntity(null)
         }
     }, [appointment, isOpen, shopData.cif])
 
@@ -71,7 +86,7 @@ export function InvoiceModal({ isOpen, onClose, appointment, shopData, onUpdateC
 
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Nombre Completo</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">Nombre o Razón Social</label>
                                     <div className="relative group">
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-amber-500 transition-colors" />
                                         <input
@@ -79,7 +94,7 @@ export function InvoiceModal({ isOpen, onClose, appointment, shopData, onUpdateC
                                             value={clientData.name}
                                             onChange={(e) => setClientData(prev => ({ ...prev, name: e.target.value }))}
                                             className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 pl-11 pr-4 text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all font-medium"
-                                            placeholder="Nombre del cliente"
+                                            placeholder="Nombre o Razón Social"
                                         />
                                     </div>
                                 </div>
@@ -114,28 +129,111 @@ export function InvoiceModal({ isOpen, onClose, appointment, shopData, onUpdateC
                             </div>
 
                             <div className="pt-4 border-t border-zinc-800 space-y-4">
+                                {/* CIF del cliente (siempre visible) */}
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-amber-500 ml-1">CIF/NIF de tu Barbería (Se guardará para siempre)</label>
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-1">CIF/NIF del Cliente (Obligatorio)</label>
                                     <input
+                                        required
                                         type="text"
-                                        value={shopCIF}
-                                        onChange={(e) => setShopCIF(e.target.value.toUpperCase())}
-                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 px-4 text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all font-medium"
-                                        placeholder="Ej: B12345678"
+                                        value={clientData.cif}
+                                        onChange={(e) => setClientData(prev => ({ ...prev, cif: e.target.value.toUpperCase() }))}
+                                        className={cn(
+                                            "w-full bg-zinc-950 border rounded-2xl py-3.5 px-4 text-white text-sm focus:outline-none transition-all font-medium",
+                                            !clientData.cif ? "border-red-500/50" : "border-zinc-800 focus:border-amber-500/50"
+                                        )}
+                                        placeholder="Ej: 12345678A"
                                     />
+                                    {!clientData.cif && (
+                                        <p className="text-[9px] text-red-500 font-bold uppercase ml-1">Este campo es necesario para Veri*Factu</p>
+                                    )}
                                 </div>
 
+                                {/* Campo CIF de la barbería solo si no está ya configurado */}
+                                {!cifYaConfigurado && (
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-amber-500 ml-1">CIF/NIF de tu Barbería (Se guardará para siempre)</label>
+                                        <input
+                                            type="text"
+                                            value={shopCIF}
+                                            onChange={(e) => setShopCIF(e.target.value.toUpperCase())}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-3.5 px-4 text-white text-sm focus:outline-none focus:border-amber-500/50 transition-all font-medium"
+                                            placeholder="Ej: B12345678"
+                                        />
+                                    </div>
+                                )}
+
                                 <button
-                                    onClick={() => {
-                                        if (onUpdateCIF && shopCIF !== shopData.cif) {
-                                            onUpdateCIF(shopCIF);
+                                    onClick={async () => {
+                                        if (!clientData.cif) {
+                                            toast.error('El CIF/NIF del cliente es obligatorio')
+                                            return
                                         }
-                                        setIsConfirmed(true);
+                                        if (onUpdateCIF && shopCIF !== shopData.cif) {
+                                            await onUpdateCIF(shopCIF);
+                                        }
+                                        setIsGenerating(true);
+                                        try {
+                                            const { data: { session } } = await supabase.auth.getSession()
+                                            const barberia_id = session?.user?.id
+
+                                            if (!barberia_id) {
+                                                toast.error('Sesión no encontrada')
+                                                return
+                                            }
+
+                                            // Simulación o fecha real
+                                            const factData = {
+                                                barberia_id,
+                                                titulo: `Factura ${appointment.servicio} - ${clientData.name}`,
+                                                tipo: 'servicio_agenda',
+                                                fecha_documento: new Date().toISOString().split('T')[0],
+                                                importe_total: Number(appointment.Precio) || 0,
+                                                cliente_nombre: clientData.name,
+                                                cliente_telefono: clientData.phone,
+                                                cliente_email: clientData.email,
+                                                cliente_cif: clientData.cif,
+                                                nombre_servicio: appointment.servicio
+                                            }
+
+                                            const res = await emitirFacturaVerifactu(factData)
+                                            if (res.success && res.factura) {
+                                                const rawDate = res.factura.fecha_documento || factData.fecha_documento;
+                                                const [year, month, day] = rawDate.split('-');
+                                                const formattedDate = `${day}-${month}-${year}`;
+                                                const totalStr = Number(factData.importe_total).toFixed(2);
+
+                                                const qrString = `https://www2.agenciatributaria.gob.es/wlpl/VERI-FACTU/ConsultaPublica?nif=${shopCIF}&numSerie=${res.factura.numero_factura}&fecha=${formattedDate}&importe=${totalStr}&huella=${res.factura.huella_hash}`;
+                                                const qrCodeUrl = await QRCode.toDataURL(qrString, {
+                                                    margin: 4,
+                                                    scale: 6,
+                                                    errorCorrectionLevel: 'M',
+                                                    type: 'image/png'
+                                                });
+                                                setInvoiceEntity({
+                                                    qrCodeUrl,
+                                                    huellaHash: res.factura.huella_hash,
+                                                    hashAnterior: res.factura.hash_anterior || '',
+                                                    numeroFactura: res.factura.numero_factura
+                                                })
+                                                setIsConfirmed(true);
+                                            } else {
+                                                toast.error(res.error || 'Error VERI*FACTU')
+                                            }
+                                        } catch (e: any) {
+                                            console.error("Error confirmando", e)
+                                            toast.error('Error de conexión o generación')
+                                        } finally {
+                                            setIsGenerating(false);
+                                        }
                                     }}
-                                    className="w-full bg-white text-black font-black uppercase text-xs tracking-[0.15em] py-4 rounded-2xl hover:bg-amber-500 transition-all active:scale-95 shadow-xl flex items-center justify-center gap-2 group"
+                                    disabled={isGenerating}
+                                    className="w-full bg-white text-black font-black uppercase text-xs tracking-[0.15em] py-4 rounded-2xl hover:bg-amber-500 transition-all active:scale-95 shadow-xl flex items-center justify-center gap-2 group disabled:opacity-50"
                                 >
-                                    <span>Los datos son correctos</span>
-                                    <CheckCircle2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                    {isGenerating ? (
+                                        <><span>Conectando con AEAT...</span><Loader2 className="w-4 h-4 animate-spin" /></>
+                                    ) : (
+                                        <><span>Los datos son correctos</span><CheckCircle2 className="w-4 h-4 group-hover:scale-110 transition-transform" /></>
+                                    )}
                                 </button>
                             </div>
                         </>
@@ -150,40 +248,46 @@ export function InvoiceModal({ isOpen, onClose, appointment, shopData, onUpdateC
                             </div>
 
                             <div className="space-y-3">
-                                <PDFDownloadLink
-                                    document={
-                                        <InvoicePDF
-                                            data={{
-                                                shopName: shopData.name,
-                                                shopAddress: shopData.address,
-                                                shopPhone: shopData.phone,
-                                                shopEmail: shopData.email,
-                                                shopCIF: shopCIF,
-                                                invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
-                                                date: appointment.Dia.split('-').reverse().join('/'),
-                                                clientName: clientData.name,
-                                                clientPhone: clientData.phone,
-                                                clientEmail: clientData.email,
-                                                serviceName: appointment.servicio,
-                                                price: Number(appointment.Precio) || 0,
-                                                timestamp: new Date().toLocaleString('es-ES'),
-                                                creationTime: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                                            }}
-                                        />
-                                    }
-                                    fileName={`Factura_${clientData.name.replace(/\s+/g, '_')}_${appointment.Dia}.pdf`}
-                                    className={cn(
-                                        "w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all",
-                                        "bg-amber-500 text-black hover:bg-amber-400 active:scale-95 shadow-lg shadow-amber-500/20"
-                                    )}
-                                >
-                                    {({ loading }) => (
-                                        <>
-                                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                                            <span>{loading ? 'Preparando...' : 'Descargar Factura PDF'}</span>
-                                        </>
-                                    )}
-                                </PDFDownloadLink>
+                                {invoiceEntity && (
+                                    <PDFDownloadLink
+                                        document={
+                                            <InvoicePDF
+                                                data={{
+                                                    shopName: shopData.name,
+                                                    shopAddress: shopData.address,
+                                                    shopPhone: shopData.phone,
+                                                    shopEmail: shopData.email,
+                                                    shopCIF: shopCIF,
+                                                    invoiceNumber: invoiceEntity.numeroFactura,
+                                                    date: appointment.Dia.split('-').reverse().join('/'),
+                                                    clientName: clientData.name,
+                                                    clientPhone: clientData.phone,
+                                                    clientEmail: clientData.email,
+                                                    clientCIF: clientData.cif,
+                                                    serviceName: appointment.servicio,
+                                                    price: Number(appointment.Precio) || 0,
+                                                    timestamp: new Date().toLocaleString('es-ES'),
+                                                    creationTime: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                                                    qrCodeUrl: invoiceEntity.qrCodeUrl,
+                                                    huellaHash: invoiceEntity.huellaHash,
+                                                    hashAnterior: invoiceEntity.hashAnterior
+                                                }}
+                                            />
+                                        }
+                                        fileName={`Factura_${clientData.name.replace(/\s+/g, '_')}_${invoiceEntity.numeroFactura}.pdf`}
+                                        className={cn(
+                                            "w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all",
+                                            "bg-amber-500 text-black hover:bg-amber-400 active:scale-95 shadow-lg shadow-amber-500/20"
+                                        )}
+                                    >
+                                        {({ loading }) => (
+                                            <>
+                                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                                                <span>{loading ? 'Preparando...' : 'Descargar Factura PDF'}</span>
+                                            </>
+                                        )}
+                                    </PDFDownloadLink>
+                                )}
 
                                 <button
                                     onClick={() => setIsConfirmed(false)}

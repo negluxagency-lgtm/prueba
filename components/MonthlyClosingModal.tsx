@@ -85,9 +85,9 @@ export default function MonthlyClosingModal({ isOpen, onClose, onSuccess, curren
                 </h2>
 
                 <p className="text-zinc-400 text-sm md:text-base text-center mb-6 px-4">
-                    Para que la IA gestione correctamente tus citas de <span className="text-white font-bold capitalize">{format(targetMonth, 'MMMM', { locale: es })}</span>,
+                    Para gestionar correctamente tus citas de <span className="text-white font-bold capitalize">{format(targetMonth, 'MMMM', { locale: es })}</span>,
                     necesitamos saber qué días <span className="text-amber-500 font-medium font-bold">cerrarás</span>.
-                    (Marca también los festivos o domingos si no abres).
+                    (Por seguridad, marca también los festivos o domingos si no abres).
                 </p>
 
                 {/* CONTENEDOR DEL CALENDARIO */}

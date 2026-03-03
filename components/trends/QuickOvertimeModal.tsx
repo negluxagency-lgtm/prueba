@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Clock, Calendar, ChevronDown, ChevronRight } from 'lucide-react'
+import { X, Clock, Calendar, ChevronDown, ChevronRight, Zap } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useBarberStats } from '@/hooks/useBarberStats'
 import { BarberOvertimeInline } from './BarberOvertimeInline'
+import { getAllBarbersOvertimeFromSchedule, type BarberOvertimeResult } from '@/app/actions/overtime'
 
 interface QuickOvertimeModalProps {
     onClose: () => void
@@ -17,6 +18,8 @@ export default function QuickOvertimeModal({ onClose }: QuickOvertimeModalProps)
     const { stats, loading, refresh } = useBarberStats(selectedMonth) as any
     const [shopId, setShopId] = useState<string | null>(null)
     const [expandedBarber, setExpandedBarber] = useState<string | null>(null)
+    const [autoOvertimeMap, setAutoOvertimeMap] = useState<Record<string | number, number>>({})
+    const [loadingAuto, setLoadingAuto] = useState(false)
 
     useEffect(() => {
         const fetchShopId = async () => {
@@ -27,6 +30,27 @@ export default function QuickOvertimeModal({ onClose }: QuickOvertimeModalProps)
         }
         fetchShopId()
     }, [])
+
+    // Cargar horas extra auto-calculadas cuando hay shopId o cambia el mes
+    useEffect(() => {
+        if (!shopId) return
+        const fetchAutoOvertime = async () => {
+            setLoadingAuto(true)
+            try {
+                const results = await getAllBarbersOvertimeFromSchedule(shopId, selectedMonth)
+                const map: Record<string | number, number> = {}
+                for (const r of results) {
+                    map[r.barberoId] = r.totalHoras
+                }
+                setAutoOvertimeMap(map)
+            } catch (e) {
+                console.error('Error fetching auto overtime:', e)
+            } finally {
+                setLoadingAuto(false)
+            }
+        }
+        fetchAutoOvertime()
+    }, [shopId, selectedMonth])
 
     return (
         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
@@ -90,9 +114,11 @@ export default function QuickOvertimeModal({ onClose }: QuickOvertimeModalProps)
                                         <span className="text-xs md:text-sm font-bold text-white uppercase">{barber.nombre}</span>
                                     </div>
                                     <div className="flex items-center gap-2 md:gap-3">
-                                        {barber.totalExtraHours > 0 && (
-                                            <span className="text-[9px] md:text-[10px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                                                {barber.totalExtraHours.toFixed(1)}h Realizadas
+                                        {/* Badge de horas extra automáticas (desde fichajes) */}
+                                        {autoOvertimeMap[barber.id] > 0 && (
+                                            <span className="text-[9px] md:text-[10px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                <Zap className="w-2.5 h-2.5" />
+                                                {autoOvertimeMap[barber.id].toFixed(1)}h auto
                                             </span>
                                         )}
                                         {expandedBarber === barber.id ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}

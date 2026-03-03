@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 
 const styles = StyleSheet.create({
     page: {
@@ -116,10 +116,45 @@ const styles = StyleSheet.create({
         right: 50,
         textAlign: 'center',
         borderTop: 1,
-        borderTopColor: '#E4E4E7',
         paddingTop: 10,
         fontSize: 8,
         color: '#A1A1AA',
+    },
+    qrSection: {
+        marginTop: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 15,
+        borderTop: 1,
+        borderTopColor: '#E4E4E7',
+        paddingTop: 15,
+    },
+    qrImage: {
+        width: 80,
+        height: 80,
+    },
+    hashText: {
+        fontSize: 6,
+        color: '#71717A',
+        fontFamily: 'Courier',
+        width: '70%',
+    },
+    legalText: {
+        fontSize: 7,
+        fontWeight: 'bold',
+        color: '#18181B',
+        textAlign: 'center',
+        marginTop: 10,
+    },
+    avisoLegal: {
+        fontSize: 6,
+        color: '#71717A',
+        fontStyle: 'italic',
+        textAlign: 'center',
+        marginTop: 10,
+        lineHeight: 1.6,
+        paddingHorizontal: 10,
     }
 })
 
@@ -135,10 +170,14 @@ interface InvoicePDFProps {
         clientName: string
         clientPhone: string
         clientEmail?: string
+        clientCIF?: string
         serviceName: string
         price: number
         timestamp: string
         creationTime: string
+        qrCodeUrl?: string
+        huellaHash?: string
+        hashAnterior?: string
     }
 }
 
@@ -174,6 +213,7 @@ export function InvoicePDF({ data }: InvoicePDFProps) {
                 <View style={styles.section}>
                     <Text style={styles.sectionHeader}>Cliente</Text>
                     <Text style={[styles.clientInfo, { fontWeight: 'bold' }]}>{data.clientName}</Text>
+                    {data.clientCIF && <Text style={styles.clientInfo}>CIF/NIF: {data.clientCIF}</Text>}
                     {data.clientPhone && <Text style={styles.clientInfo}>Tel: {data.clientPhone}</Text>}
                     {data.clientEmail && <Text style={styles.clientInfo}>{data.clientEmail}</Text>}
                 </View>
@@ -205,6 +245,22 @@ export function InvoicePDF({ data }: InvoicePDFProps) {
                         </View>
                     </View>
                 </View>
+
+                {data.qrCodeUrl && data.huellaHash && (
+                    <>
+                        <View style={styles.qrSection}>
+                            <Image src={data.qrCodeUrl} style={styles.qrImage} />
+                            <View>
+                                <Text style={styles.hashText}>Huella Hash: {data.huellaHash}</Text>
+                                {data.hashAnterior && <Text style={styles.hashText}>Hash Anterior: {data.hashAnterior}</Text>}
+                                <Text style={styles.legalText}>Factura generada por software de facturación que cumple con la normativa VERI*FACTU</Text>
+                            </View>
+                        </View>
+                        <Text style={styles.avisoLegal}>
+                            Aviso Legal: Este código QR contiene la huella digital de la factura conforme a la Ley 11/2021. La verificación en la sede de la AEAT será efectiva una vez el dueño de la barbería realice la remisión de la factura mediante su certificado digital personal o a través de su gestoría autorizada. Hasta ese momento el QR no mostrará la información, sin embargo, esto no quiere decir que sea una factura inválida o esté fuera de la ley, el código QR es solo un indicativo.
+                        </Text>
+                    </>
+                )}
 
                 <View style={styles.footer}>
                     <Text>Gracias por confiar en {data.shopName}.</Text>

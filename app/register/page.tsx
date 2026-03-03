@@ -16,7 +16,9 @@ export default function RegisterPage() {
     // Form fields
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [barberiaNombre, setBarberiaNombre] = useState('');
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
 
@@ -27,6 +29,18 @@ export default function RegisterPage() {
 
         if (!barberiaNombre.trim()) {
             setErrorMsg("El nombre de la barbería es obligatorio.");
+            setLoading(false);
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setErrorMsg("Las contraseñas no coinciden.");
+            setLoading(false);
+            return;
+        }
+
+        if (!acceptedTerms) {
+            setErrorMsg("Debes aceptar los Términos de Servicio y la Política de Privacidad.");
             setLoading(false);
             return;
         }
@@ -148,6 +162,42 @@ export default function RegisterPage() {
                                         minLength={6}
                                     />
                                 </div>
+
+                                <div>
+                                    <label className="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">
+                                        Confirmar Contraseña
+                                    </label>
+                                    <input
+                                        type="password"
+                                        placeholder="********"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full p-4 rounded-xl bg-zinc-800/50 border border-zinc-700 text-sm text-white outline-none focus:border-amber-500 transition-all"
+                                        required
+                                        minLength={6}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3 mt-2 px-1">
+                                <div className="relative flex items-center">
+                                    <input
+                                        id="terms"
+                                        type="checkbox"
+                                        checked={acceptedTerms}
+                                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                        className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-zinc-700 bg-zinc-800/50 transition-all checked:bg-amber-500 checked:border-amber-500 focus:outline-none"
+                                        required
+                                    />
+                                    <span className="absolute text-black opacity-0 peer-checked:opacity-100 pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" stroke="currentColor" strokeWidth="1">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                                <label htmlFor="terms" className="text-[11px] text-zinc-400 leading-tight cursor-pointer select-none">
+                                    Acepto los <Link href="http://nelux.es/terminos-y-condiciones" target="_blank" className="text-amber-500 hover:underline">Términos de Servicio</Link> y la <Link href="https://nelux.es/politica-de-privacidad" target="_blank" className="text-amber-500 hover:underline">Política de Privacidad</Link>, incluyendo el Anexo de Encargado de Tratamiento conforme al RGPD.
+                                </label>
                             </div>
 
                             {errorMsg && (

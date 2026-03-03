@@ -588,7 +588,7 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                                                         <th className="py-2 px-4 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Día</th>
                                                         <th className="py-2 px-4 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Hora</th>
                                                         <th className="py-2 px-4 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Movimiento</th>
-                                                        <th className="py-2 px-4 text-[10px] text-zinc-500 font-bold uppercase tracking-widest text-right">Total</th>
+                                                        <th className="py-2 px-4 text-[10px] text-zinc-500 font-bold uppercase tracking-widest hidden md:table-cell text-right">Total</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-zinc-800/30">
@@ -626,7 +626,7 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                                                                         {log.tipo.replace('_', ' ')}
                                                                     </span>
                                                                 </td>
-                                                                <td className="py-3 px-4 text-right text-xs font-bold text-zinc-300 tabular-nums">
+                                                                <td className="py-3 px-4 text-right text-xs font-bold text-zinc-300 tabular-nums hidden md:table-cell">
                                                                     {elapsed || '--'}
                                                                 </td>
                                                             </tr>

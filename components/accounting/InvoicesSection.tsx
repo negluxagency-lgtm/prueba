@@ -7,10 +7,11 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
 interface Factura {
-    id: number
+    id: string | number
     titulo: string
+    tipo?: string
     fecha_documento: string
-    archivo_url: string
+    archivo_url?: string
     created_at: string
 }
 
@@ -23,8 +24,10 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
     const [loading, setLoading] = useState(true)
     const [showAdd, setShowAdd] = useState(false)
     const [selectedMonth, setSelectedMonth] = useState<string>(initialMonth || '')
+    const [selectedType, setSelectedType] = useState<string>('')
     const [newFactura, setNewFactura] = useState({
         titulo: '',
+        tipo: 'otros',
         fecha_documento: new Date().toISOString().split('T')[0]
     })
     const [file, setFile] = useState<File | null>(null)
@@ -40,35 +43,39 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
 
     useEffect(() => {
         fetchFacturas()
-    }, [selectedMonth])
+    }, [selectedMonth, selectedType])
 
     const fetchFacturas = async () => {
         setLoading(true)
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
+        // Solo consultar facturas externas (tabla 'facturas')
         let query = supabase
             .from('facturas')
             .select('*')
             .eq('user_id', user.id)
-            .order('fecha_documento', { ascending: false })
 
         if (selectedMonth) {
-            const [year, month] = selectedMonth.split('-').map(Number)
             const startDate = `${selectedMonth}-01`
+            const [year, month] = selectedMonth.split('-').map(Number)
             const nextMonthDate = new Date(year, month, 1)
             const endDate = nextMonthDate.toISOString().split('T')[0]
 
             query = query.gte('fecha_documento', startDate).lt('fecha_documento', endDate)
         }
 
-        const { data, error } = await query
+        if (selectedType) {
+            query = query.eq('tipo', selectedType)
+        }
+
+        const { data, error } = await query.order('fecha_documento', { ascending: false })
 
         if (error) {
             toast.error('Error al cargar facturas')
-        } else {
-            setFacturas(data || [])
         }
+
+        setFacturas(data || [])
         setLoading(false)
     }
 
@@ -115,6 +122,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
             const { error: dbError } = await supabase.from('facturas').insert({
                 user_id: user.id,
                 titulo: newFactura.titulo,
+                tipo: newFactura.tipo,
                 fecha_documento: newFactura.fecha_documento,
                 archivo_url: publicUrl
             })
@@ -122,7 +130,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
             if (dbError) throw dbError
 
             toast.success('Factura archivada correctamente')
-            setNewFactura({ titulo: '', fecha_documento: new Date().toISOString().split('T')[0] })
+            setNewFactura({ titulo: '', tipo: 'otros', fecha_documento: new Date().toISOString().split('T')[0] })
             setFile(null)
             setShowAdd(false)
             fetchFacturas()
@@ -134,27 +142,30 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
         }
     }
 
-    const handleDelete = async (id: number, url: string) => {
+    const handleDelete = async (id: string | number, url?: string) => {
         const { error } = await supabase.from('facturas').delete().eq('id', id)
         if (error) {
             toast.error('Error al eliminar registro')
             return
         }
 
-        try {
-            const urlObj = new URL(url)
-            const pathParts = urlObj.pathname.split('/facturas/')
-            if (pathParts.length > 1) {
-                const storagePath = pathParts[1]
-                await supabase.storage.from('facturas').remove([storagePath])
+        if (url) {
+            try {
+                const urlObj = new URL(url)
+                const pathParts = urlObj.pathname.split('/facturas/')
+                if (pathParts.length > 1) {
+                    const storagePath = pathParts[1]
+                    await supabase.storage.from('facturas').remove([storagePath])
+                }
+            } catch (e) {
+                console.warn('Could not delete file from storage:', e)
             }
-        } catch (e) {
-            console.warn('Could not delete file from storage:', e)
         }
 
         setFacturas(facturas.filter(f => f.id !== id))
         toast.success('Factura eliminada')
     }
+
 
     return (
         <div className="space-y-6">
@@ -183,6 +194,24 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                                 <X className="w-3 h-3 text-zinc-600 hover:text-white" />
                             </button>
                         )}
+                    </div>
+
+                    <div className="relative group/filter bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-1.5 flex items-center gap-2 hover:border-zinc-700 transition-all">
+                        <select
+                            value={selectedType}
+                            onChange={(e) => setSelectedType(e.target.value)}
+                            className="bg-transparent border-none text-[10px] md:text-sm font-black text-amber-500 outline-none cursor-pointer focus:ring-0 appearance-none uppercase tracking-widest [&>option]:bg-zinc-950"
+                        >
+                            <option value="">Todo</option>
+                            <option value="local">Local</option>
+                            <option value="agua">Agua</option>
+                            <option value="luz">Luz</option>
+                            <option value="herramientas">Herramientas</option>
+                            <option value="seguros">Seguros</option>
+                            <option value="publicidad">Publicidad</option>
+                            <option value="gestorías">Gestorías</option>
+                            <option value="otros">Otros</option>
+                        </select>
                     </div>
 
                     <button
@@ -215,8 +244,26 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                                 type="date"
                                 value={newFactura.fecha_documento}
                                 onChange={e => setNewFactura({ ...newFactura, fecha_documento: e.target.value })}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-amber-500/50 transition-all"
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
                             />
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Tipo de Factura</label>
+                            <select
+                                required
+                                value={newFactura.tipo}
+                                onChange={e => setNewFactura({ ...newFactura, tipo: e.target.value })}
+                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold appearance-none cursor-pointer"
+                            >
+                                <option value="local">Local</option>
+                                <option value="agua">Agua</option>
+                                <option value="luz">Luz</option>
+                                <option value="herramientas">Herramientas</option>
+                                <option value="seguros">Seguros</option>
+                                <option value="publicidad">Publicidad</option>
+                                <option value="gestorías">Gestorías</option>
+                                <option value="otros">Otros</option>
+                            </select>
                         </div>
                         <div className="md:col-span-2">
                             <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 block mb-2">Archivo PDF</label>
@@ -279,8 +326,18 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                                         <FileText className="w-6 h-6 text-zinc-500 group-hover:text-amber-500" />
                                     </div>
                                     <div className="overflow-hidden">
-                                        <h4 className="text-sm font-black text-white truncate uppercase tracking-tight">{f.titulo}</h4>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                        <div className="flex items-center gap-2 mb-0.5">
+                                            <h4 className="text-sm font-black text-white truncate uppercase tracking-tight">
+                                                {f.titulo}
+                                            </h4>
+                                            {f.tipo && (
+                                                <span className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 text-[8px] font-black text-amber-500 uppercase rounded-full tracking-widest">
+                                                    {f.tipo}
+                                                </span>
+                                            )}
+
+                                        </div>
+                                        <div className="flex items-center gap-1.5">
                                             <CalendarIcon className="w-3 h-3 text-zinc-600" />
                                             <p className="text-[10px] font-bold text-zinc-500">{new Date(f.fecha_documento).toLocaleDateString()}</p>
                                         </div>
@@ -289,15 +346,23 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <a
-                                    href={f.archivo_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-zinc-700/50 shadow-lg active:scale-95"
-                                >
-                                    <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
-                                    Abrir PDF
-                                </a>
+                                {f.archivo_url ? (
+                                    <a
+                                        href={f.archivo_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-zinc-700/50 shadow-lg active:scale-95"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
+                                        Abrir PDF
+                                    </a>
+                                ) : (
+                                    <span className="flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-900 border border-zinc-800 text-zinc-500 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                                        <FileText className="w-3.5 h-3.5 opacity-50" />
+                                        PDF no disponible
+                                    </span>
+                                )}
+
                                 <button
                                     onClick={() => handleDelete(f.id, f.archivo_url)}
                                     className="p-3 bg-zinc-950 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-zinc-800 active:scale-95"
@@ -305,6 +370,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                             </div>
+
 
                             <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-500 to-transparent opacity-[0.03] -translate-y-8 translate-x-8 rounded-full" />
                         </div>

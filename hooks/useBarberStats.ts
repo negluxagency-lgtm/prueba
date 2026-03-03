@@ -10,6 +10,7 @@ export interface BarberStat {
     porcentaje_comision?: number
     totalExtraHoursAmount?: number
     totalExtraHours?: number
+    isOwner?: boolean
 }
 
 /**
@@ -49,7 +50,7 @@ export function useBarberStats(mes?: string) {
             // 1. Fetch barberos - Filter by UUID
             let { data: barberosData, error: barberosError } = await supabase
                 .from('barberos')
-                .select('id, nombre, salario_base, porcentaje_comision')
+                .select(`id, nombre, salario_base, porcentaje_comision, "jefe/dueño"`)
                 .eq('barberia_id', barberiaUUID)
 
             if (barberosError) {
@@ -63,7 +64,8 @@ export function useBarberStats(mes?: string) {
                 barberosData = (basicBarberos || []).map(b => ({
                     ...b,
                     salario_base: 0,
-                    porcentaje_comision: 0
+                    porcentaje_comision: 0,
+                    'jefe/dueño': false
                 })) as any
             }
 
@@ -107,7 +109,8 @@ export function useBarberStats(mes?: string) {
                     salario_base: (b as any).salario_base || 0,
                     porcentaje_comision: (b as any).porcentaje_comision || 0,
                     totalExtraHoursAmount: 0,
-                    totalExtraHours: 0
+                    totalExtraHours: 0,
+                    isOwner: !!(b as any)['jefe/dueño']
                 }
             }
 

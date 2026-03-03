@@ -19,6 +19,7 @@ interface Barber {
     horario_semanal: BarberDaySchedule[];
     salario_base?: number | null;
     porcentaje_comision?: number | null;
+    'jefe/dueño'?: boolean;
 }
 
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -90,7 +91,8 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                     .update({
                         horario_semanal: barber.horario_semanal,
                         salario_base: barber.salario_base,
-                        porcentaje_comision: barber.porcentaje_comision
+                        porcentaje_comision: barber.porcentaje_comision,
+                        'jefe/dueño': !!barber['jefe/dueño']
                     })
                     .eq('id', barberId);
 
@@ -177,15 +179,30 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
         }
     };
 
-    const updateBarberField = (barberId: string, field: 'salario_base' | 'porcentaje_comision', value: number) => {
-        setBarbers(prev => prev.map(b => {
-            if (b.id !== barberId) return b;
-            return { ...b, [field]: value };
-        }));
+    const updateBarberField = (barberId: string, field: 'salario_base' | 'porcentaje_comision' | 'jefe/dueño', value: any) => {
+        setBarbers(prev => {
+            let updated = prev.map(b => {
+                if (b.id !== barberId) return b;
+                return { ...b, [field]: value };
+            });
 
-        if (!barbersWithChanges.includes(barberId)) {
-            setBarbersWithChanges(prev => [...prev, barberId]);
-        }
+            // Si estamos marcando a alguien como dueño, desmarcar a todos los demás
+            if (field === 'jefe/dueño' && value === true) {
+                updated = updated.map(b => (b.id === barberId ? b : { ...b, 'jefe/dueño': false }));
+
+                // También necesitamos marcar a los demás barberos para que se guarden (desmarquen en DB)
+                const others = updated.filter(b => b.id !== barberId && !barbersWithChanges.includes(b.id));
+                setBarbersWithChanges(prevChanges => [
+                    ...prevChanges,
+                    barberId,
+                    ...others.map(o => o.id)
+                ].filter((v, i, a) => a.indexOf(v) === i));
+            } else if (!barbersWithChanges.includes(barberId)) {
+                setBarbersWithChanges(prevChanges => [...prevChanges, barberId]);
+            }
+
+            return updated;
+        });
     };
 
     const updateBarberTurn = (barberId: string, dayIndex: number, turnIndex: number, field: 'inicio' | 'fin', value: string) => {
@@ -259,7 +276,12 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                                         <User className="w-5 h-5 text-zinc-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-white font-bold text-sm">{barber.nombre}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-white font-bold text-sm">{barber.nombre}</h3>
+                                            {barber['jefe/dueño'] && (
+                                                <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm">Dueño</span>
+                                            )}
+                                        </div>
                                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
                                             {barber.horario_semanal.filter(d => d.activo).length} días activos
                                         </p>
@@ -298,29 +320,31 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                                         </div>
                                     </div>
 
-                                    {/* Ajustes de Salario */}
-                                    <div className="grid grid-cols-2 gap-3 mb-4">
-                                        <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
-                                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5">Salario Base (€)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={barber.salario_base || 0}
-                                                onChange={(e) => updateBarberField(barber.id, 'salario_base', parseFloat(e.target.value) || 0)}
-                                                className="w-full bg-zinc-900 border border-zinc-700 rounded text-sm px-2 py-1 text-white outline-none focus:border-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                            />
+                                    {/* Ajustes de Salario removidos */}
+
+                                    {/* Designación de Dueño */}
+                                    <div className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800/80 mb-2 flex items-center justify-between group/dueno hover:border-amber-500/30 transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <div className={cn(
+                                                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                                                barber['jefe/dueño'] ? "bg-amber-500/20 text-amber-500" : "bg-zinc-900 text-zinc-600"
+                                            )}>
+                                                <User className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-[10px] font-black uppercase text-white tracking-widest leading-none">Dueño / Jefe de Barbería</h4>
+                                                <p className="text-[9px] text-zinc-500 font-bold mt-1 uppercase">Solo puede haber uno designado</p>
+                                            </div>
                                         </div>
-                                        <div className="bg-zinc-950/50 p-3 rounded-lg border border-zinc-800/50">
-                                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1.5">% Comisión</label>
+                                        <label className="relative inline-flex items-center cursor-pointer">
                                             <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                value={barber.porcentaje_comision || 0}
-                                                onChange={(e) => updateBarberField(barber.id, 'porcentaje_comision', parseFloat(e.target.value) || 0)}
-                                                className="w-full bg-zinc-900 border border-zinc-700 rounded text-sm px-2 py-1 text-white outline-none focus:border-amber-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                type="checkbox"
+                                                checked={!!barber['jefe/dueño']}
+                                                onChange={(e) => updateBarberField(barber.id, 'jefe/dueño', e.target.checked)}
+                                                className="sr-only peer"
                                             />
-                                        </div>
+                                            <div className="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-zinc-500 after:border-zinc-500 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500 peer-checked:after:bg-white peer-checked:after:border-white shadow-lg"></div>
+                                        </label>
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-1">

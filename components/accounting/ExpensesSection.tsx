@@ -222,8 +222,9 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                 </form>
             )}
 
-            <div className="bg-zinc-900 shadow-2xl border border-zinc-800/50 rounded-[2.5rem] overflow-hidden">
-                <div className="overflow-x-auto">
+            <div className="bg-zinc-900 shadow-2xl border border-zinc-800/50 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden">
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-zinc-800/50 bg-zinc-950/30">
@@ -290,26 +291,74 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                                 ))
                             )}
                         </tbody>
-                        <tfoot className="bg-zinc-950/50">
-                            <tr>
-                                <td colSpan={2} className="px-6 py-6">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Impacto Fiscal ({targetMonth})</span>
-                                        <span className="text-xs font-bold text-green-500/70">Deducible: {totalDeducible.toFixed(2)}€</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-6 text-right">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Gasto Total</span>
-                                        <span className="text-2xl font-black text-white tabular-nums drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-                                            {totalGastos.toFixed(2)}€
-                                        </span>
-                                    </div>
-                                </td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
                     </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-zinc-800/50">
+                    {loading ? (
+                        [1, 2, 3].map(i => (
+                            <div key={i} className="p-4 animate-pulse">
+                                <div className="h-16 bg-zinc-800 rounded-xl w-full" />
+                            </div>
+                        ))
+                    ) : gastos.length === 0 ? (
+                        <div className="px-6 py-16 text-center">
+                            <div className="flex flex-col items-center gap-3">
+                                <DollarSign className="w-10 h-10 text-zinc-800" />
+                                <p className="text-zinc-600 text-sm font-medium">No hay gastos para {targetMonth}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        gastos.map((g) => (
+                            <div key={g.id} className="p-4 flex flex-col gap-3 group bg-zinc-950/20">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-bold text-white uppercase tracking-tight">{g.concepto}</span>
+                                            {g.deducible && (
+                                                <span className="text-[7px] bg-green-500/10 text-green-500 border border-green-500/20 px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">IVA</span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[8px] text-zinc-500 uppercase font-black tracking-widest">{g.categoria}</span>
+                                            <span className="w-1 h-1 rounded-full bg-zinc-700" />
+                                            <span className="text-[8px] text-zinc-400 font-bold">{new Date(g.fecha).toLocaleDateString('es-ES')}</span>
+                                        </div>
+                                    </div>
+                                    <span className="text-lg font-black text-white tabular-nums tracking-tighter">
+                                        {g.monto.toFixed(2)}€
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[8px] font-black text-zinc-400 uppercase tracking-widest">
+                                        <Wallet className="w-2.5 h-2.5" />
+                                        {g.metodo_pago}
+                                    </span>
+                                    <button
+                                        onClick={() => handleDelete(g.id)}
+                                        className="p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-zinc-800"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Shared Footer (Totals) */}
+                <div className="px-6 py-6 bg-zinc-950/50 border-t border-zinc-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1">
+                        <span className="text-[9px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest">Impacto Fiscal ({targetMonth})</span>
+                        <span className="text-xs font-bold text-green-500/70">Deducible: {totalDeducible.toFixed(2)}€</span>
+                    </div>
+                    <div className="flex flex-col md:items-end">
+                        <span className="text-[9px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest">Gasto Total</span>
+                        <span className="text-xl md:text-2xl font-black text-white tabular-nums">
+                            {totalGastos.toFixed(2)}€
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>

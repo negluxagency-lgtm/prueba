@@ -22,7 +22,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
     }, []);
 
     const getLink = (baseUrl: string) => {
-        if (!user) return baseUrl;
+        if (!user) return '/register';
         // client_reference_id usa el UUID de Supabase Auth que coincide con perfiles.id
         return `${baseUrl}?client_reference_id=${user.id}&prefilled_email=${user.email}`;
     };
@@ -30,30 +30,30 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
     const ALL_PLANS = [
         {
             name: "Básico",
-            price: "49€",
+            price: "19€",
             period: "/mes",
             description: "Para barberos independientes que están empezando.",
-            features: ["Agenda ilimitada", "Página de citas personalizada", "Gestión de salarios y horas extra", "Caja e ingresos", "Gestión de clientes", "Reportes básicos", "Gestión de productos"],
+            features: ["Agenda ilimitada", "Página de citas personalizada", "Gestión de gastos e ingresos", "Gestión de clientes", "Reportes básicos", "Gestión de productos"],
             link: "https://buy.stripe.com/7sY4gy54TaRS9eL6vT28800",
             highlight: false,
             icon: Shield
         },
         {
             name: "Profesional",
-            price: "75€",
+            price: "39€",
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
-            features: ["Todo lo del plan Básico", "Métricas avanzadas (IA)", "Soporte preferente", "Recordatorio citas WhatsApp", "Filtro Reviews Positivas Google", "Reserva con barbero específico", "Gestión de Facturas y Salarios"],
+            features: ["Todo lo del plan Básico", "Métricas avanzadas", "Gestión de equipo", "Portal personalizdo para tus barberos", "Recordatorio citas WhatsApp", "Filtro Reviews Positivas Google", "Gestión de Facturas y Salarios"],
             link: "https://buy.stripe.com/bJe3cu8h50dedv18E128801",
             highlight: true,
             icon: Star
         },
         {
             name: "Premium",
-            price: "99€",
+            price: "49€",
             period: "/mes",
             description: "Para barberías profesionales.",
-            features: ["Todo lo del plan Profesional", "Mensajes automáticos IA-WhatsApp", "Soporte 24/7", "Consultoría mensual", "Gestión Contable Total"],
+            features: ["Todo lo del plan Profesional", "Apartado de mensajes con clientes", "Tu IA personalizada responde WhatsApp y agenda citas", "Soporte 24/7", "Consultoría mensual", "Gestión Contable Total"],
             link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
             highlight: false,
             icon: Shield
@@ -166,14 +166,14 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                 <a
                                     href={getLink(plan.link)}
                                     className={`
-                                        block w-full py-3 md:py-4 rounded-xl font-black text-center text-xs md:text-sm uppercase tracking-wide transition-all
-                                        ${plan.highlight
+                                            block w-full py-3 md:py-4 rounded-xl font-black text-center text-xs md:text-sm uppercase tracking-wide transition-all
+                                            ${plan.highlight
                                             ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20'
                                             : 'bg-zinc-800 text-white hover:bg-zinc-700'
                                         }
-                                    `}
+                                        `}
                                 >
-                                    Seleccionar Plan
+                                    {user ? 'Seleccionar Plan' : 'Registrarse para empezar'}
                                 </a>
                             )}
                         </div>
