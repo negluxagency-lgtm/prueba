@@ -264,13 +264,9 @@ export default function PerfilPage() {
                                     <ExternalLink className="w-4 h-4" />
                                     Link para agendar en tu barbería
                                 </label>
-                                <input
-                                    type="text"
-                                    value={`app.nelux.es/${perfil.slug || '(sin-slug)'}`}
-                                    disabled
-                                    className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
-                                         rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                                />
+                                <div className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-white text-xs md:text-sm break-all font-mono min-h-[42px] flex items-center">
+                                    {`app.nelux.es/${perfil.slug || '(sin-slug)'}`}
+                                </div>
                             </div>
 
                             {/* Link portal de barberos (Solo para planes no Básicos) */}
@@ -280,13 +276,9 @@ export default function PerfilPage() {
                                         <User className="w-4 h-4 text-amber-500" />
                                         Link portal de barberos
                                     </label>
-                                    <input
-                                        type="text"
-                                        value={`app.nelux.es/${perfil.slug || '(sin-slug)'}/staff`}
-                                        disabled
-                                        className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
-                                             rounded-lg text-amber-500/80 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-                                    />
+                                    <div className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-amber-500/80 text-xs md:text-sm font-mono break-all min-h-[42px] flex items-center">
+                                        {`app.nelux.es/${perfil.slug || '(sin-slug)'}/staff`}
+                                    </div>
                                 </div>
                             )}
 

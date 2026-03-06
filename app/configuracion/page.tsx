@@ -377,7 +377,7 @@ export default function ConfigurationPage() {
     // ─── Render ───────────────────────────────────────────────────────────────
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-4 md:p-8">
+        <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center pt-10 p-4 md:p-8">
             <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}

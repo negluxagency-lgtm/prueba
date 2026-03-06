@@ -113,22 +113,22 @@ export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onE
                 <table className="w-full text-left border-collapse">
                     <thead className="text-zinc-500 text-[8px] md:text-xs uppercase tracking-[0.2em] bg-black/40">
                         <tr>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Nombre</th>
+                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Nombre</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Cantidad</th>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-amber-500/80">Precio</th>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold">Hora</th>
-                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-right">Acciones</th>
+                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-amber-500/80 text-center">Precio</th>
+                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Hora</th>
+                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/40">
                         {loading ? (
                             Array.from({ length: 2 }).map((_, i) => (
                                 <tr key={i}>
-                                    <td className="px-6 py-4"><Skeleton className="h-5 w-32" /></td>
+                                    <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-32 mx-auto" /></td>
                                     <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-8 mx-auto" /></td>
-                                    <td className="px-6 py-4"><Skeleton className="h-5 w-12" /></td>
-                                    <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
-                                    <td className="px-6 py-4"><div className="flex justify-end"><Skeleton className="h-7 w-7 rounded-lg" /></div></td>
+                                    <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-12 mx-auto" /></td>
+                                    <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-16 mx-auto" /></td>
+                                    <td className="px-6 py-4 text-center"><div className="flex justify-center"><Skeleton className="h-7 w-7 rounded-lg" /></div></td>
                                 </tr>
                             ))
                         ) : (
@@ -143,20 +143,20 @@ export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onE
                                             transition={{ duration: 0.2, delay: index * 0.05 }}
                                             className="hover:bg-amber-500/[0.03] transition-all group"
                                         >
-                                            <td className="px-3 py-1 md:px-8 md:py-6 font-bold text-zinc-100 text-[11px] md:text-lg">
+                                            <td className="px-3 py-1 md:px-8 md:py-6 font-bold text-zinc-100 text-[11px] md:text-lg text-center">
                                                 {sale.Nombre}
                                             </td>
                                             <td className="px-3 py-1 md:px-8 md:py-6 text-center text-zinc-400 text-[11px] md:text-lg">
                                                 {sale.Telefono}
                                             </td>
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-xs md:text-xl font-black text-amber-500/90 italic">
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-xs md:text-xl font-black text-amber-500/90 italic text-center">
                                                 {sale.Precio}€
                                             </td>
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-zinc-500 text-[10px] md:text-base">
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-zinc-500 text-[10px] md:text-base text-center">
                                                 {sale.Hora ? sale.Hora.slice(0, 5) : "--:--"}
                                             </td>
-                                            <td className="px-3 py-1 md:px-8 md:py-6 text-right">
-                                                <div className="flex justify-end">
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-center">
+                                                <div className="flex justify-center">
                                                     <ActionsDropdown
                                                         sale={sale}
                                                         onEdit={onEdit}

@@ -109,7 +109,7 @@ export default function DashboardLayoutClient({
                     )}
 
 
-                    <div className="relative flex-1 pt-0 md:pt-0 pb-20 md:pb-0">
+                    <div className="relative flex-1 pt-6 md:pt-0 pb-20 md:pb-0">
                         <LogoutButton />
                         {children}
                     </div>

@@ -165,10 +165,6 @@ export default function AccountingPage() {
                                 hideActions
                             />
                             <div>
-                                <h2 className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <DollarSign className="w-3.5 h-3.5 text-amber-500" />
-                                    Gastos Operativos
-                                </h2>
                                 <ExpensesSection selectedMonth={selectedMonth} />
                             </div>
 

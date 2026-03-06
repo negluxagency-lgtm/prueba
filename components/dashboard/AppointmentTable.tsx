@@ -88,17 +88,17 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                 <table className="w-full text-left border-collapse">
                     <thead className="text-zinc-500 text-[8px] md:text-xs uppercase tracking-[0.2em] bg-black/40">
                         <tr>
-                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Cliente</th>
-                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Servicio</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">Cliente</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">Servicio</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">Hora</th>
                             {(userPlan === 'Premium' || userPlan === 'Profesional') && (
-                                <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Barbero</th>
+                                <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">Barbero</th>
                             )}
-                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">WhatsApp</th>
                             <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">Estado</th>
-                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Hora</th>
-                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-amber-500/80">Precio</th>
-                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-zinc-400/80">Pago</th>
-                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-right">Acciones</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-amber-500/80 text-center">Precio</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">WhatsApp</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-zinc-400/80 text-center">Pago</th>
+                            <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/40">
@@ -106,14 +106,17 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                             // LOADING SKELETONS
                             Array.from({ length: 5 }).map((_, i) => (
                                 <tr key={i}>
-                                    <td className="px-6 py-4"><Skeleton className="h-5 w-32" /></td>
-                                    <td className="px-6 py-4"><Skeleton className="h-5 w-24" /></td>
-                                    <td className="px-6 py-4 text-center"><Skeleton className="h-7 w-24 mx-auto" /></td>
-                                    <td className="px-6 py-4 text-center"><Skeleton className="h-7 w-20 mx-auto" /></td>
-                                    <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
-                                    <td className="px-6 py-4"><Skeleton className="h-5 w-12" /></td>
-                                    <td className="px-6 py-4"><Skeleton className="h-5 w-16" /></td>
-                                    <td className="px-6 py-4"><div className="flex justify-end gap-2"><Skeleton className="h-7 w-7 rounded-lg" /><Skeleton className="h-7 w-7 rounded-lg" /></div></td>
+                                    <td className="px-2 py-4 md:px-4 md:py-3 text-center"><Skeleton className="h-5 w-24 md:w-32 mx-auto" /></td>
+                                    <td className="px-2 py-4 md:px-4 md:py-3 text-center"><Skeleton className="h-4 w-16 md:w-24 mx-auto" /></td>
+                                    <td className="px-2 py-4 md:px-4 md:py-3 text-center"><Skeleton className="h-5 w-12 md:w-16 mx-auto" /></td>
+                                    {(userPlan === 'Premium' || userPlan === 'Profesional') && (
+                                        <td className="px-2 py-4 md:px-4 md:py-3 text-center"><Skeleton className="h-4 w-16 md:w-24 mx-auto" /></td>
+                                    )}
+                                    <td className="px-2 py-4 md:px-4 md:py-3 text-center"><Skeleton className="h-7 w-20 md:w-24 mx-auto rounded-lg" /></td>
+                                    <td className="px-2 py-4 md:px-4 md:py-3 text-center"><Skeleton className="h-5 w-8 md:w-12 mx-auto" /></td>
+                                    <td className="px-2 py-4 md:px-4 md:py-3 text-center"><Skeleton className="h-7 w-16 md:w-20 mx-auto rounded-lg" /></td>
+                                    <td className="px-2 py-4 md:px-4 md:py-3 text-center"><Skeleton className="h-6 w-12 md:w-16 mx-auto rounded-lg" /></td>
+                                    <td className="px-2 py-4 md:px-4 md:py-3 text-center"><div className="flex justify-center"><Skeleton className="h-7 w-7 rounded-lg" /></div></td>
                                 </tr>
                             ))
                         ) : (
@@ -128,14 +131,17 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             transition={{ duration: 0.2, delay: index * 0.05 }}
                                             className="hover:bg-amber-500/[0.03] transition-all group"
                                         >
-                                            <td className="px-2 py-1 md:px-4 md:py-3 font-bold text-zinc-100 text-[11px] md:text-sm group-hover:text-amber-500 transition-colors">
+                                            <td className="px-2 py-1 md:px-4 md:py-3 font-bold text-zinc-100 text-[11px] md:text-sm group-hover:text-amber-500 transition-colors text-center">
                                                 {cita.Nombre}
                                             </td>
-                                            <td className="px-2 py-1 md:px-4 md:py-3 text-zinc-300 text-[10px] md:text-xs font-medium">
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-zinc-300 text-[10px] md:text-xs font-medium text-center">
                                                 {cita.servicio || <span className="text-zinc-600 italic">--</span>}
                                             </td>
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-amber-500 text-[11px] md:text-sm font-bold text-center">
+                                                {cita.Hora ? cita.Hora.slice(0, 5) : "--:--"}
+                                            </td>
                                             {(userPlan === 'Premium' || userPlan === 'Profesional') && (
-                                                <td className="px-2 py-1 md:px-4 md:py-3 text-zinc-300 text-[10px] md:text-xs font-medium">
+                                                <td className="px-2 py-1 md:px-4 md:py-3 text-zinc-300 text-[10px] md:text-xs font-medium text-center">
                                                     {(() => {
                                                         if (!cita.barbero) return <span className="text-zinc-600 italic">Sin asignar</span>;
                                                         const barberObj = barbers.find(b => b.id === cita.barbero);
@@ -143,6 +149,24 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                                     })()}
                                                 </td>
                                             )}
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-center">
+                                                <div className="relative inline-block">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handleOpenMenu(e, cita.id, 'status')}
+                                                        className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-lg text-[7px] md:text-[10px] font-black transition-all border ${cita.cancelada
+                                                            ? 'bg-red-500/20 text-red-500 border-red-500/50 hover:bg-red-500/30'
+                                                            : cita.confirmada
+                                                                ? 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
+                                                                : 'bg-amber-500/20 text-amber-500 border-amber-500/50 hover:bg-amber-500/30'
+                                                            }`}
+                                                    >
+                                                        <Check className={`w-2 h-2 md:w-3 md:h-3 opacity-100`} strokeWidth={4} />
+                                                        {cita.cancelada ? 'CANCELADA' : cita.confirmada ? 'CONFIRMADA' : 'PENDIENTE'}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-xs md:text-base font-black text-amber-500/90 text-center">{cita.Precio || 0}€</td>
                                             <td className="px-2 py-1 md:px-4 md:py-3 text-center">
                                                 {cita.Telefono ? (
                                                     (userPlan === 'Premium' || userPlan === 'Profesional') ? (
@@ -166,29 +190,6 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                                 )}
                                             </td>
                                             <td className="px-2 py-1 md:px-4 md:py-3 text-center">
-                                                <div className="relative inline-block">
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => handleOpenMenu(e, cita.id, 'status')}
-                                                        className={`inline-flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-lg text-[7px] md:text-[10px] font-black transition-all border ${cita.cancelada
-                                                            ? 'bg-red-500/20 text-red-500 border-red-500/50 hover:bg-red-500/30'
-                                                            : cita.confirmada
-                                                                ? 'bg-green-500/20 text-green-500 border-green-500/50 hover:bg-green-500/30'
-                                                                : 'bg-amber-500/20 text-amber-500 border-amber-500/50 hover:bg-amber-500/30'
-                                                            }`}
-                                                    >
-                                                        <Check className={`w-2 h-2 md:w-3 md:h-3 opacity-100`} strokeWidth={4} />
-                                                        {cita.cancelada ? 'CANCELADA' : cita.confirmada ? 'CONFIRMADA' : 'PENDIENTE'}
-                                                    </button>
-                                                </div>
-                                            </td>
-
-                                            <td className="px-2 py-1 md:px-4 md:py-3 text-amber-500 text-[11px] md:text-sm font-bold">
-                                                {cita.Hora ? cita.Hora.slice(0, 5) : "--:--"}
-                                            </td>
-                                            <td className="px-2 py-1 md:px-4 md:py-3 text-xs md:text-base font-black text-amber-500/90">{cita.Precio || 0}€</td>
-
-                                            <td className="px-2 py-1 md:px-4 md:py-3">
                                                 {cita.pago ? (
                                                     <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded-lg border text-[7px] md:text-[10px] font-black uppercase tracking-widest ${PAGO_COLORS[cita.pago] || PAGO_COLORS.otra}`}>
                                                         {PAGO_ICONS[cita.pago]}
@@ -198,8 +199,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                                     <span className="text-zinc-700 text-[7px] md:text-xs italic">--</span>
                                                 )}
                                             </td>
-
-                                            <td className="px-2 py-1 md:px-4 md:py-3 text-right">
+                                            <td className="px-2 py-1 md:px-4 md:py-3 text-center">
                                                 <button
                                                     type="button"
                                                     onClick={(e) => handleOpenMenu(e, cita.id, 'actions')}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Calculator, Info, Calendar } from 'lucide-react'
+import { X, Calculator, Info, Calendar, ChevronRight } from 'lucide-react'
 import { useBarberStats } from '@/hooks/useBarberStats'
 import { supabase } from '@/lib/supabase'
 import { BarberOvertimeInline } from './BarberOvertimeInline'
@@ -9,6 +9,8 @@ import { PDFDownloadLink } from '@react-pdf/renderer'
 import { SalaryReportPDF } from './SalaryReportPDF'
 import { AccountantReportPDF } from './AccountantReportPDF'
 import { FileText, Download, ShieldCheck, Clock } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface SalaryRow {
     commission: string
@@ -33,6 +35,11 @@ export default function SalaryCalculatorModal({ onClose, inline }: SalaryCalcula
     const [calculated, setCalculated] = useState(false)
     const [shopId, setShopId] = useState<string | null>(null)
     const [shopName, setShopName] = useState('Mi Barbería')
+    const [expandedBarbers, setExpandedBarbers] = useState<Record<string, boolean>>({})
+
+    const toggleBarber = (nombre: string) => {
+        setExpandedBarbers(prev => ({ ...prev, [nombre]: !prev[nombre] }))
+    }
 
     useEffect(() => {
         const fetchShopId = async () => {
@@ -137,15 +144,6 @@ export default function SalaryCalculatorModal({ onClose, inline }: SalaryCalcula
                         className="bg-zinc-800 border border-zinc-700 rounded-lg md:rounded-xl px-2.5 md:px-4 py-1.5 md:py-2.5 text-xs md:text-sm font-black text-white outline-none focus:border-amber-500 transition-all uppercase tracking-widest [&::-webkit-calendar-picker-indicator]:invert w-28 md:w-auto"
                     />
                 </div>
-                <button
-                    onClick={handleCalculate}
-                    disabled={loading || stats.length === 0}
-                    className="bg-white text-black px-4 md:px-8 py-2 md:py-3 rounded-lg md:rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-[0.2em] md:tracking-[0.3em] hover:bg-amber-500 transition-all shadow-xl disabled:opacity-40 active:scale-95 flex items-center gap-2 shrink-0"
-                >
-                    {loading ? <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Calculator className="w-3.5 h-3.5" />}
-                    <span className="hidden xs:inline">{calculated ? 'Recalcular Todo' : 'Calcular Equipo'}</span>
-                    <span className="xs:hidden">{calculated ? 'Rec.' : 'Calc.'}</span>
-                </button>
             </div>
 
             {/* Scrollable Content */}
@@ -169,12 +167,20 @@ export default function SalaryCalculatorModal({ onClose, inline }: SalaryCalcula
                         return (
                             <div key={barber.nombre} className="bg-zinc-900 border border-zinc-800 rounded-[1.5rem] md:rounded-[3rem] p-4 md:p-10 relative overflow-hidden group/card shadow-2xl transition-all hover:border-zinc-700">
                                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 md:gap-8 mb-6 md:mb-10 relative z-10">
-                                    <div className="flex items-center gap-3 md:gap-5">
+                                    <div className="flex items-center gap-3 md:gap-5 flex-1">
                                         <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-3xl bg-amber-500 flex items-center justify-center text-xl md:text-2xl font-black text-black shadow-lg shrink-0">
                                             {barber.nombre.charAt(0).toUpperCase()}
                                         </div>
-                                        <div>
-                                            <h3 className="text-lg md:text-3xl font-black text-white italic tracking-tighter uppercase leading-none">{barber.nombre}</h3>
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between">
+                                                <h3 className="text-lg md:text-3xl font-black text-white italic tracking-tighter uppercase leading-none">{barber.nombre}</h3>
+                                                <button
+                                                    onClick={() => toggleBarber(barber.nombre)}
+                                                    className="md:hidden p-2 hover:bg-white/10 rounded-full transition-all border border-white/5"
+                                                >
+                                                    <ChevronRight className={cn("w-5 h-5 text-amber-500 transition-transform duration-300", expandedBarbers[barber.nombre] && "rotate-90")} />
+                                                </button>
+                                            </div>
                                             <div className="flex flex-wrap items-center gap-1.5 md:gap-3 mt-1.5 md:mt-2">
                                                 <span className="text-[8px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700">Fact: {barber.totalRevenue.toFixed(0)}€</span>
                                                 <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700 inline-flex items-center gap-1">
@@ -185,53 +191,119 @@ export default function SalaryCalculatorModal({ onClose, inline }: SalaryCalcula
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 relative z-10">
-                                    <div className="space-y-1.5 md:space-y-2">
-                                        <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Sueldo Base</label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                value={row.baseSalaryRaw}
-                                                onChange={e => updateRow(barber.nombre, 'baseSalaryRaw', e.target.value)}
-                                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-white text-xs md:text-sm font-bold outline-none focus:border-amber-500/50 transition-all font-mono"
-                                            />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] md:text-xs font-bold">€</span>
+                                <div className="hidden md:block">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 relative z-10">
+                                        <div className="space-y-1.5 md:space-y-2">
+                                            <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Sueldo Base</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    value={row.baseSalaryRaw}
+                                                    onChange={e => updateRow(barber.nombre, 'baseSalaryRaw', e.target.value)}
+                                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-white text-xs md:text-sm font-bold outline-none focus:border-amber-500/50 transition-all font-mono"
+                                                />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] md:text-xs font-bold">€</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5 md:space-y-2">
+                                            <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Comisión</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    value={row.commission || ''}
+                                                    onChange={e => updateRow(barber.nombre, 'commission', e.target.value)}
+                                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-white text-xs md:text-sm font-bold outline-none focus:border-amber-500/50 transition-all font-mono"
+                                                />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] md:text-xs font-bold">%</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5 md:space-y-2 col-span-2 md:col-span-1">
+                                            <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Horas Extra / Bonus</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="number"
+                                                    value={row.bonusRaw}
+                                                    onChange={e => updateRow(barber.nombre, 'bonusRaw', e.target.value)}
+                                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-white text-xs md:text-sm font-bold outline-none focus:border-amber-500/50 transition-all font-mono"
+                                                />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] md:text-xs font-bold">€</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-1.5 md:space-y-2">
-                                        <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Comisión</label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                value={row.commission || ''}
-                                                onChange={e => updateRow(barber.nombre, 'commission', e.target.value)}
-                                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-white text-xs md:text-sm font-bold outline-none focus:border-amber-500/50 transition-all font-mono"
-                                            />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] md:text-xs font-bold">%</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5 md:space-y-2 col-span-2 md:col-span-1">
-                                        <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Horas Extra / Bonus</label>
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                value={row.bonusRaw}
-                                                onChange={e => updateRow(barber.nombre, 'bonusRaw', e.target.value)}
-                                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg md:rounded-xl px-3 md:px-4 py-2.5 md:py-3 text-white text-xs md:text-sm font-bold outline-none focus:border-amber-500/50 transition-all font-mono"
-                                            />
-                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] md:text-xs font-bold">€</span>
-                                        </div>
-                                    </div>
+
+                                    {shopId && (
+                                        <BarberOvertimeInline
+                                            barberId={barber.id}
+                                            barberiaId={shopId}
+                                            month={selectedMonth}
+                                            onChanged={() => refresh && refresh()}
+                                        />
+                                    )}
                                 </div>
 
-                                {shopId && (
-                                    <BarberOvertimeInline
-                                        barberId={barber.id}
-                                        barberiaId={shopId}
-                                        month={selectedMonth}
-                                        onChanged={() => refresh && refresh()}
-                                    />
-                                )}
+                                <div className="md:hidden">
+                                    <AnimatePresence initial={false}>
+                                        {expandedBarbers[barber.nombre] && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="pt-4 space-y-4">
+                                                    <div className="grid grid-cols-2 gap-3 relative z-10">
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Sueldo Base</label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="number"
+                                                                    value={row.baseSalaryRaw}
+                                                                    onChange={e => updateRow(barber.nombre, 'baseSalaryRaw', e.target.value)}
+                                                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-amber-500/50 transition-all font-mono"
+                                                                />
+                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] font-bold">€</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Comisión</label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="number"
+                                                                    value={row.commission || ''}
+                                                                    onChange={e => updateRow(barber.nombre, 'commission', e.target.value)}
+                                                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-amber-500/50 transition-all font-mono"
+                                                                />
+                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] font-bold">%</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1.5 col-span-2">
+                                                            <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Horas Extra / Bonus</label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="number"
+                                                                    value={row.bonusRaw}
+                                                                    onChange={e => updateRow(barber.nombre, 'bonusRaw', e.target.value)}
+                                                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-amber-500/50 transition-all font-mono"
+                                                                />
+                                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px] font-bold">€</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {shopId && (
+                                                        <BarberOvertimeInline
+                                                            barberId={barber.id}
+                                                            barberiaId={shopId}
+                                                            month={selectedMonth}
+                                                            onChanged={() => refresh && refresh()}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
 
                                 {calculated && row.salary !== null && (
                                     <div className="mt-5 md:mt-8 pt-4 md:pt-6 border-t-2 border-dashed border-zinc-800 flex items-center justify-between bg-zinc-950/50 -mx-4 md:-mx-10 px-4 md:px-10 pb-2">

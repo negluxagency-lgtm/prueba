@@ -120,17 +120,17 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                        <DollarSign className="w-5 h-5 text-red-500" />
+                    <h3 className="text-sm md:text-xl font-black text-white flex items-center gap-2 uppercase tracking-tighter italic">
+                        <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
                         Gastos Operativos
                     </h3>
                     <p className="text-zinc-500 text-xs font-medium">Controla tus egresos en {targetMonth}</p>
                 </div>
                 <button
                     onClick={() => setShowAdd(!showAdd)}
-                    className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full transition-all"
+                    className="p-1.5 md:p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full transition-all"
                 >
-                    <Plus className={cn("w-5 h-5 transition-transform", showAdd && "rotate-45")} />
+                    <Plus className={cn("w-4 h-4 md:w-5 md:h-5 transition-transform", showAdd && "rotate-45")} />
                 </button>
             </div>
 
@@ -303,43 +303,43 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                             </div>
                         ))
                     ) : gastos.length === 0 ? (
-                        <div className="px-6 py-16 text-center">
-                            <div className="flex flex-col items-center gap-3">
-                                <DollarSign className="w-10 h-10 text-zinc-800" />
-                                <p className="text-zinc-600 text-sm font-medium">No hay gastos para {targetMonth}</p>
+                        <div className="px-6 py-10 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                                <DollarSign className="w-8 h-8 text-zinc-800" />
+                                <p className="text-zinc-600 text-xs font-medium">No hay gastos para {targetMonth}</p>
                             </div>
                         </div>
                     ) : (
                         gastos.map((g) => (
-                            <div key={g.id} className="p-4 flex flex-col gap-3 group bg-zinc-950/20">
+                            <div key={g.id} className="p-3 flex flex-col gap-2 group bg-zinc-950/20">
                                 <div className="flex items-start justify-between">
                                     <div className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm font-bold text-white uppercase tracking-tight">{g.concepto}</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-xs font-bold text-white uppercase tracking-tight">{g.concepto}</span>
                                             {g.deducible && (
-                                                <span className="text-[7px] bg-green-500/10 text-green-500 border border-green-500/20 px-1.5 py-0.5 rounded-full font-black uppercase tracking-widest">IVA</span>
+                                                <span className="text-[6px] bg-green-500/10 text-green-500 border border-green-500/20 px-1 py-0.5 rounded-full font-black uppercase tracking-widest">IVA</span>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[8px] text-zinc-500 uppercase font-black tracking-widest">{g.categoria}</span>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[7px] text-zinc-500 uppercase font-black tracking-widest">{g.categoria}</span>
                                             <span className="w-1 h-1 rounded-full bg-zinc-700" />
-                                            <span className="text-[8px] text-zinc-400 font-bold">{new Date(g.fecha).toLocaleDateString('es-ES')}</span>
+                                            <span className="text-[7px] text-zinc-400 font-bold">{new Date(g.fecha).toLocaleDateString('es-ES')}</span>
                                         </div>
                                     </div>
-                                    <span className="text-lg font-black text-white tabular-nums tracking-tighter">
+                                    <span className="text-sm font-black text-white tabular-nums tracking-tighter">
                                         {g.monto.toFixed(2)}€
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[8px] font-black text-zinc-400 uppercase tracking-widest">
-                                        <Wallet className="w-2.5 h-2.5" />
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[8px] font-black text-zinc-400 uppercase tracking-widest">
+                                        <Wallet className="w-2 h-2" />
                                         {g.metodo_pago}
                                     </span>
                                     <button
                                         onClick={() => handleDelete(g.id)}
-                                        className="p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-zinc-800"
+                                        className="p-1.5 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-zinc-800"
                                     >
-                                        <Trash2 className="w-3.5 h-3.5" />
+                                        <Trash2 className="w-3 h-3" />
                                     </button>
                                 </div>
                             </div>
@@ -348,14 +348,14 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                 </div>
 
                 {/* Shared Footer (Totals) */}
-                <div className="px-6 py-6 bg-zinc-950/50 border-t border-zinc-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex flex-col gap-1">
-                        <span className="text-[9px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest">Impacto Fiscal ({targetMonth})</span>
-                        <span className="text-xs font-bold text-green-500/70">Deducible: {totalDeducible.toFixed(2)}€</span>
+                <div className="px-4 py-4 md:px-6 md:py-6 bg-zinc-950/50 border-t border-zinc-800/50 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-[8px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest">Impacto Fiscal</span>
+                        <span className="text-[10px] md:text-xs font-bold text-green-500/70">Deducible: {totalDeducible.toFixed(2)}€</span>
                     </div>
                     <div className="flex flex-col md:items-end">
-                        <span className="text-[9px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest">Gasto Total</span>
-                        <span className="text-xl md:text-2xl font-black text-white tabular-nums">
+                        <span className="text-[8px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Total</span>
+                        <span className="text-lg md:text-2xl font-black text-white tabular-nums">
                             {totalGastos.toFixed(2)}€
                         </span>
                     </div>
