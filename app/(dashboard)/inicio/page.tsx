@@ -281,6 +281,19 @@ export default function Dashboard() {
         setIsInvoiceModalOpen(true);
     };
 
+    const handleGenerateProductInvoice = (sale: Appointment) => {
+        // Map product sale fields so InvoiceModal can render them correctly
+        const saleAsAppointment = {
+            ...sale,
+            servicio: sale.Nombre,       // product name shows as service description
+            Nombre: '',                  // client name starts blank for the user to fill
+            Telefono: '',                // phone starts blank
+            Dia: sale.Dia || new Date().toISOString().split('T')[0],
+        };
+        setInvoiceAppointment(saleAsAppointment as any);
+        setIsInvoiceModalOpen(true);
+    };
+
     return (
         <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full pb-24 md:pb-10">
             <DashboardHeader
@@ -343,8 +356,10 @@ export default function Dashboard() {
                     sales={productSales}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onGenerateInvoice={handleGenerateProductInvoice}
                     loading={appointmentsLoading}
                 />
+
             </div>
 
             <AppointmentModal

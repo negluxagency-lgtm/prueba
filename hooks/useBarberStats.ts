@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getAllBarbersOvertimeFromSchedule } from '@/app/actions/overtime'
 
 export interface BarberStat {
     id?: string
@@ -15,7 +16,8 @@ export interface BarberStat {
 
 /**
  * Fetches revenue and cut stats grouped by barber for a given month (YYYY-MM).
- * If no month is provided, defaults to the current month.
+ * OPTIMIZED: all independent queries run in parallel with Promise.all.
+ * Auto hours fetched via server action (admin client, bypasses RLS).
  */
 export function useBarberStats(mes?: string) {
     const [stats, setStats] = useState<BarberStat[]>([])
@@ -31,15 +33,13 @@ export function useBarberStats(mes?: string) {
 
             const { data: profile } = await supabase
                 .from('perfiles')
-                .select('id, nombre_barberia') // We need both: ID (UUID) and Name (Text)
+                .select('id, nombre_barberia')
                 .eq('id', user.id)
                 .single()
 
             if (!profile) return
 
-            // UUID for barberos and horas_extra
             const barberiaUUID = profile.id
-            // Text branding for citas table
             const barberiaName = profile.nombre_barberia
 
             const [year, m] = targetMonth.split('-').map(Number)
@@ -47,7 +47,7 @@ export function useBarberStats(mes?: string) {
             const startDate = `${targetMonth}-01`
             const endDate = `${targetMonth}-${String(lastDay).padStart(2, '0')}`
 
-            // 1. Fetch barberos - Filter by UUID
+            // 1. Fetch barberos first (needed for IDs used in subsequent queries)
             let { data: barberosData, error: barberosError } = await supabase
                 .from('barberos')
                 .select(`id, nombre, salario_base, porcentaje_comision, "jefe/dueño"`)
@@ -69,35 +69,57 @@ export function useBarberStats(mes?: string) {
                 })) as any
             }
 
-            // 2. Fetch citas - Filter by Text Name (legacy schema)
-            const { data: citas, error: citasError } = await supabase
-                .from('citas')
-                .select('barbero, Precio, confirmada')
-                .eq('barberia', barberiaName)
-                .gte('Dia', startDate)
-                .lte('Dia', endDate)
-
-            if (citasError) throw citasError
-
-            // 3. Fetch horas_extra - Filter by UUID if applicable, or by barber list
-            let horasExtraData: any[] = []
             const barberIds = (barberosData || []).map(b => b.id)
 
-            if (barberIds.length > 0) {
-                const { data: hData, error: hError } = await supabase
-                    .from('horas_extra')
-                    .select('barbero_id, cantidad_horas, precio_hora_extra')
-                    .in('barbero_id', barberIds)
-                    .gte('fecha', startDate)
-                    .lte('fecha', endDate)
+            // 2. Run all remaining queries IN PARALLEL
+            const [
+                citasResult,
+                manualHorasResult,
+                autoResults
+            ] = await Promise.all([
+                // Citas (appointments)
+                supabase
+                    .from('citas')
+                    .select('barbero, Precio, confirmada')
+                    .eq('barberia', barberiaName)
+                    .gte('Dia', startDate)
+                    .lte('Dia', endDate),
 
-                if (hError) {
-                    console.warn('[useBarberStats] Could not fetch horas_extra:', hError.message)
-                } else {
-                    horasExtraData = hData || []
-                }
+                // Manual extra hours (client SDK, RLS applied, cantidad_horas > 0)
+                barberIds.length > 0
+                    ? supabase
+                        .from('horas_extra')
+                        .select('barbero_id, cantidad_horas, precio_hora_extra')
+                        .in('barbero_id', barberIds)
+                        .gte('fecha', startDate)
+                        .lte('fecha', endDate)
+                        .gt('cantidad_horas', 0)
+                    : Promise.resolve({ data: [], error: null }),
+
+                // Automatic overtime via server action (admin client, bypasses RLS)
+                barberIds.length > 0
+                    ? getAllBarbersOvertimeFromSchedule(barberiaUUID, targetMonth).catch(e => {
+                        console.warn('[useBarberStats] Could not fetch auto overtime:', e)
+                        return []
+                    })
+                    : Promise.resolve([])
+            ])
+
+            if (citasResult.error) throw citasResult.error
+            if (manualHorasResult.error) {
+                console.warn('[useBarberStats] Could not fetch manual horas_extra:', manualHorasResult.error.message)
             }
 
+            const citas = citasResult.data || []
+            const manualHorasData = manualHorasResult.data || []
+
+            // Build auto overtime lookup: barberoId -> totalHoras
+            const autoOvertimeMap: Record<string, number> = {}
+            for (const result of autoResults) {
+                autoOvertimeMap[String(result.barberoId)] = result.totalHoras
+            }
+
+            // 3. Build stats map
             const map: Record<string, BarberStat> = {}
 
             for (const b of (barberosData || [])) {
@@ -109,12 +131,12 @@ export function useBarberStats(mes?: string) {
                     salario_base: (b as any).salario_base || 0,
                     porcentaje_comision: (b as any).porcentaje_comision || 0,
                     totalExtraHoursAmount: 0,
-                    totalExtraHours: 0,
+                    totalExtraHours: autoOvertimeMap[String(b.id)] || 0, // seed with auto hours
                     isOwner: !!(b as any)['jefe/dueño']
                 }
             }
 
-            for (const cita of (citas || [])) {
+            for (const cita of citas) {
                 if (!cita.confirmada) continue
                 const name = (cita.barbero as string)?.trim() || 'Sin asignar'
                 if (!map[name]) {
@@ -132,15 +154,16 @@ export function useBarberStats(mes?: string) {
                 map[name].totalCuts += 1
             }
 
-            for (const h of horasExtraData) {
+            // 4. Accumulate manual extra hours on top of auto hours
+            for (const h of manualHorasData) {
                 const bMatch = barberosData?.find(b => b.id === h.barbero_id)
                 if (bMatch) {
                     const name = bMatch.nombre.trim()
                     if (map[name]) {
-                        const amount = Number(h.cantidad_horas) * Number(h.precio_hora_extra)
-                        const hours = Number(h.cantidad_horas)
+                        const manualHours = Number(h.cantidad_horas) || 0
+                        const amount = manualHours * Number(h.precio_hora_extra || 0)
                         map[name].totalExtraHoursAmount = (map[name].totalExtraHoursAmount || 0) + amount
-                        map[name].totalExtraHours = (map[name].totalExtraHours || 0) + hours
+                        map[name].totalExtraHours = (map[name].totalExtraHours || 0) + manualHours
                     }
                 }
             }

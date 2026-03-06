@@ -211,7 +211,7 @@ export default function SalaryCalculatorModal({ onClose, inline }: SalaryCalcula
                                         </div>
                                     </div>
                                     <div className="space-y-1.5 md:space-y-2 col-span-2 md:col-span-1">
-                                        <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Bonus / Incentivo</label>
+                                        <label className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.2em] px-1">Horas Extra / Bonus</label>
                                         <div className="relative">
                                             <input
                                                 type="number"
@@ -256,7 +256,8 @@ export default function SalaryCalculatorModal({ onClose, inline }: SalaryCalcula
                                                         barberName: barber.nombre,
                                                         baseSalary: parseFloat(row.baseSalaryRaw) || 0,
                                                         commissionAmount: barber.totalRevenue * ((parseFloat(row.commission) || 0) / 100),
-                                                        extraHoursAmount: barber.totalExtraHours || 0,
+                                                        extraHoursCount: barber.totalExtraHours || 0,
+                                                        extraHoursAmount: barber.totalExtraHoursAmount || 0,
                                                         bonusAmount: parseFloat(row.bonusRaw) || 0,
                                                         totalNeto: row.salary,
                                                         totalRevenue: barber.totalRevenue,
@@ -311,6 +312,7 @@ export default function SalaryCalculatorModal({ onClose, inline }: SalaryCalcula
                                                 baseSalary: parseFloat(row.baseSalaryRaw) || 0,
                                                 commission: b.totalRevenue * ((parseFloat(row.commission) || 0) / 100),
                                                 extraHours: b.totalExtraHours || 0,
+                                                extraHoursAmount: b.totalExtraHoursAmount || 0,
                                                 bonus: parseFloat(row.bonusRaw) || 0,
                                                 total: row.salary || 0
                                             }

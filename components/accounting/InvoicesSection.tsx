@@ -219,7 +219,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                         className="p-2.5 bg-amber-500 hover:bg-amber-400 text-black rounded-xl transition-all shadow-lg shadow-amber-500/10 active:scale-95 flex items-center gap-2 group"
                     >
                         <Plus className={cn("w-5 h-5 transition-transform", showAdd && "rotate-45")} />
-                        <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">Nueva Factura</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">Subir Factura</span>
                     </button>
                 </div>
             </div>

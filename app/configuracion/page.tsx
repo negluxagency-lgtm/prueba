@@ -1116,7 +1116,6 @@ function Step6({ formData, handleChange, setFormData }: any) {
                         <User className="w-4 h-4 text-amber-500" />
                         ¿Eres un barbero autónomo?
                     </h3>
-                    <p className="text-[10px] md:text-xs text-zinc-500 font-medium">Marca esta opción si trabajas solo y no tienes empleados a tu cargo.</p>
                 </div>
                 <Toggle
                     checked={formData.Autonomo}

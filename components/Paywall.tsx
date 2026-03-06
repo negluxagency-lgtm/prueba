@@ -43,7 +43,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             price: "39€",
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
-            features: ["Todo lo del plan Básico", "Métricas avanzadas", "Gestión de equipo", "Portal personalizdo para tus barberos", "Recordatorio citas WhatsApp", "Filtro Reviews Positivas Google", "Gestión de Facturas y Salarios"],
+            features: ["Todo lo del plan Básico", "Métricas avanzadas", "Gestión de equipo y fichajes", "Portal personalizdo para tus barberos", "Recordatorio citas WhatsApp", "Filtro Reviews Positivas Google", "Gestión de Facturas y Salarios"],
             link: "https://buy.stripe.com/bJe3cu8h50dedv18E128801",
             highlight: true,
             icon: Star
@@ -207,9 +207,9 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                 <div className="inline-flex p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 mb-6 group-hover:scale-110 transition-transform">
                                     <Zap className="w-8 h-8 text-amber-500" />
                                 </div>
-                                <h4 className="text-white font-bold uppercase tracking-wide mb-3">Automatización IA</h4>
+                                <h4 className="text-white font-bold uppercase tracking-wide mb-3">Citas Automáticas</h4>
                                 <p className="text-zinc-400 text-sm leading-relaxed">
-                                    Libera 10+ horas semanales delegando la gestión de citas a nuestra inteligencia artificial.
+                                    Libera 10+ horas semanales delegando la gestión de citas con nuestros sistemas automáticos.
                                 </p>
                             </div>
 

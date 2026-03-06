@@ -37,6 +37,7 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
     const [autoOvertime, setAutoOvertime] = useState<BarberOvertimeResult | null>(null)
     const [loadingOvertime, setLoadingOvertime] = useState(false)
     const [activeView, setActiveView] = useState<'day' | 'month' | 'overtime'>('month')
+    const [showAllDays, setShowAllDays] = useState(false)
 
     // Audit State
     const [isAuditing, setIsAuditing] = useState(false)
@@ -363,31 +364,47 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                                 <div className="space-y-2">
                                     {dailySummaries.length === 0 ? (
                                         <div className="text-center py-12 text-zinc-600 bg-zinc-900/50 rounded-2xl border border-dashed border-zinc-800"><Clock className="w-8 h-8 mx-auto mb-3 opacity-50" /><p className="text-xs font-bold uppercase tracking-widest">Sin registros este mes</p></div>
-                                    ) : dailySummaries.map(([date, d]) => {
-                                        const dayOt = autoOvertime?.dias.find(od => od.fecha === date)
+                                    ) : (() => {
+                                        const toShow = showAllDays ? dailySummaries : dailySummaries.slice(-3)
                                         return (
-                                            <div key={date} onClick={() => { setAttendanceDate(date); setActiveView('day') }} className="group flex items-center justify-between bg-zinc-900 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-4 cursor-pointer transition-all">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-xl bg-zinc-800 group-hover:bg-zinc-700 flex flex-col items-center justify-center transition-colors shrink-0">
-                                                        <span className="text-[9px] font-black text-zinc-500 uppercase">{format(parseISO(date), 'EEE', { locale: es })}</span>
-                                                        <span className="text-lg font-black text-white leading-none">{format(parseISO(date), 'dd')}</span>
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="text-[9px] font-black text-emerald-500 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded-md">{d.firstIn || '--:--'}</span>
-                                                            <span className="text-zinc-700 text-xs">→</span>
-                                                            <span className="text-[9px] font-black text-red-500 uppercase bg-red-500/10 px-1.5 py-0.5 rounded-md">{d.lastOut || '--:--'}</span>
+                                            <>
+                                                {toShow.map(([date, d]) => {
+                                                    const dayOt = autoOvertime?.dias.find(od => od.fecha === date)
+                                                    return (
+                                                        <div key={date} onClick={() => { setAttendanceDate(date); setActiveView('day') }} className="group flex items-center justify-between bg-zinc-900 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-4 cursor-pointer transition-all">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="w-12 h-12 rounded-xl bg-zinc-800 group-hover:bg-zinc-700 flex flex-col items-center justify-center transition-colors shrink-0">
+                                                                    <span className="text-[9px] font-black text-zinc-500 uppercase">{format(parseISO(date), 'EEE', { locale: es })}</span>
+                                                                    <span className="text-lg font-black text-white leading-none">{format(parseISO(date), 'dd')}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="text-[9px] font-black text-emerald-500 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded-md">{d.firstIn || '--:--'}</span>
+                                                                        <span className="text-zinc-700 text-xs">→</span>
+                                                                        <span className="text-[9px] font-black text-red-500 uppercase bg-red-500/10 px-1.5 py-0.5 rounded-md">{d.lastOut || '--:--'}</span>
+                                                                    </div>
+                                                                    <p className="text-[9px] text-zinc-500 font-medium">{d.events.length} movimientos</p>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                {dayOt && dayOt.minutos_extra > 0 && <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">+{(dayOt.minutos_extra / 60).toFixed(1)}h extra</span>}
+                                                                <div className="text-right"><p className="text-sm font-black text-white tabular-nums">{formatHours(d.totalSeconds)}</p><p className="text-[9px] text-zinc-600 font-medium">efectivas</p></div>
+                                                            </div>
                                                         </div>
-                                                        <p className="text-[9px] text-zinc-500 font-medium">{d.events.length} movimientos</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    {dayOt && dayOt.minutos_extra > 0 && <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">+{(dayOt.minutos_extra / 60).toFixed(1)}h extra</span>}
-                                                    <div className="text-right"><p className="text-sm font-black text-white tabular-nums">{formatHours(d.totalSeconds)}</p><p className="text-[9px] text-zinc-600 font-medium">efectivas</p></div>
-                                                </div>
-                                            </div>
+                                                    )
+                                                })}
+                                                {dailySummaries.length > 3 && (
+                                                    <button
+                                                        onClick={() => setShowAllDays(v => !v)}
+                                                        className="w-full flex items-center justify-center gap-2 py-3 text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all border border-dashed border-zinc-800 hover:border-zinc-600 rounded-2xl"
+                                                    >
+                                                        <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', showAllDays && 'rotate-180')} />
+                                                        {showAllDays ? 'Ocultar' : `Mostrar todos (${dailySummaries.length} días)`}
+                                                    </button>
+                                                )}
+                                            </>
                                         )
-                                    })}
+                                    })()}
                                 </div>
                             )}
                             {activeView === 'day' && (
@@ -631,42 +648,58 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                                                 <Clock className="w-8 h-8 mx-auto mb-3 opacity-50" />
                                                 <p className="text-xs font-bold uppercase tracking-widest">Sin registros este mes</p>
                                             </div>
-                                        ) : dailySummaries.map(([date, d]) => {
-                                            const dayOt = autoOvertime?.dias.find(od => od.fecha === date)
+                                        ) : (() => {
+                                            const toShow = showAllDays ? dailySummaries : dailySummaries.slice(-3)
                                             return (
-                                                <div
-                                                    key={date}
-                                                    onClick={() => { setAttendanceDate(date); setActiveView('day') }}
-                                                    className="group flex items-center justify-between bg-zinc-900 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-4 cursor-pointer transition-all"
-                                                >
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-xl bg-zinc-800 group-hover:bg-zinc-700 flex flex-col items-center justify-center transition-colors shrink-0">
-                                                            <span className="text-[9px] font-black text-zinc-500 uppercase">{format(parseISO(date), 'EEE', { locale: es })}</span>
-                                                            <span className="text-lg font-black text-white leading-none">{format(parseISO(date), 'dd')}</span>
-                                                        </div>
-                                                        <div>
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-[9px] font-black text-emerald-500 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded-md">{d.firstIn || '--:--'}</span>
-                                                                <span className="text-zinc-700 text-xs">→</span>
-                                                                <span className="text-[9px] font-black text-red-500 uppercase bg-red-500/10 px-1.5 py-0.5 rounded-md">{d.lastOut || '--:--'}</span>
+                                                <>
+                                                    {toShow.map(([date, d]) => {
+                                                        const dayOt = autoOvertime?.dias.find(od => od.fecha === date)
+                                                        return (
+                                                            <div
+                                                                key={date}
+                                                                onClick={() => { setAttendanceDate(date); setActiveView('day') }}
+                                                                className="group flex items-center justify-between bg-zinc-900 hover:bg-zinc-800/80 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-4 cursor-pointer transition-all"
+                                                            >
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="w-12 h-12 rounded-xl bg-zinc-800 group-hover:bg-zinc-700 flex flex-col items-center justify-center transition-colors shrink-0">
+                                                                        <span className="text-[9px] font-black text-zinc-500 uppercase">{format(parseISO(date), 'EEE', { locale: es })}</span>
+                                                                        <span className="text-lg font-black text-white leading-none">{format(parseISO(date), 'dd')}</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <span className="text-[9px] font-black text-emerald-500 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded-md">{d.firstIn || '--:--'}</span>
+                                                                            <span className="text-zinc-700 text-xs">→</span>
+                                                                            <span className="text-[9px] font-black text-red-500 uppercase bg-red-500/10 px-1.5 py-0.5 rounded-md">{d.lastOut || '--:--'}</span>
+                                                                        </div>
+                                                                        <p className="text-[9px] text-zinc-500 font-medium">{d.events.length} movimientos</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    {dayOt && dayOt.minutos_extra > 0 && (
+                                                                        <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">
+                                                                            +{(dayOt.minutos_extra / 60).toFixed(1)}h extra
+                                                                        </span>
+                                                                    )}
+                                                                    <div className="text-right">
+                                                                        <p className="text-sm font-black text-white tabular-nums">{formatHours(d.totalSeconds)}</p>
+                                                                        <p className="text-[9px] text-zinc-600 font-medium">efectivas</p>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <p className="text-[9px] text-zinc-500 font-medium">{d.events.length} movimientos</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        {dayOt && dayOt.minutos_extra > 0 && (
-                                                            <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">
-                                                                +{(dayOt.minutos_extra / 60).toFixed(1)}h extra
-                                                            </span>
-                                                        )}
-                                                        <div className="text-right">
-                                                            <p className="text-sm font-black text-white tabular-nums">{formatHours(d.totalSeconds)}</p>
-                                                            <p className="text-[9px] text-zinc-600 font-medium">efectivas</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                        )
+                                                    })}
+                                                    {dailySummaries.length > 3 && (
+                                                        <button
+                                                            onClick={() => setShowAllDays(v => !v)}
+                                                            className="w-full flex items-center justify-center gap-2 py-3 text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all border border-dashed border-zinc-800 hover:border-zinc-600 rounded-2xl"
+                                                        >
+                                                            <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', showAllDays && 'rotate-180')} />
+                                                            {showAllDays ? 'Ocultar' : `Mostrar todos (${dailySummaries.length} días)`}
+                                                        </button>
+                                                    )}
+                                                </>
                                             )
-                                        })}
+                                        })()}
                                     </div>
                                 )}
 

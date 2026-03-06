@@ -68,24 +68,63 @@ export async function getBarberOvertimeFromSchedule(
 
 /**
  * Lee las horas extra de TODOS los barberos de una barbería para un mes dado.
+ * OPTIMIZED: Single batch query instead of N+1 per barber.
  */
 export async function getAllBarbersOvertimeFromSchedule(
     barberiaId: string,
     month: string
 ): Promise<BarberOvertimeResult[]> {
     try {
-        const { data: barberos, error } = await supabaseAdmin
+        const [year, m] = month.split('-').map(Number)
+        const startDate = `${month}-01`
+        const endDate = new Date(year, m, 0).toISOString().split('T')[0]
+
+        // Step 1: Get all barber IDs for this shop
+        const { data: barberos, error: barbError } = await supabaseAdmin
             .from('barberos')
-            .select('id, nombre')
+            .select('id')
             .eq('barberia_id', barberiaId)
 
-        if (error || !barberos) return []
+        if (barbError || !barberos || barberos.length === 0) return []
 
-        const results = await Promise.all(
-            barberos.map(b => getBarberOvertimeFromSchedule(b.id, month))
-        )
+        const barberIds = barberos.map(b => b.id)
 
-        return results.filter(Boolean) as BarberOvertimeResult[]
+        // Step 2: Single batch query for ALL barbers instead of N+1
+        const { data, error } = await supabaseAdmin
+            .from('horas_extra')
+            .select('*')
+            .in('barbero_id', barberIds)
+            .gte('fecha', startDate)
+            .lte('fecha', endDate)
+            .gt('minutos_extra', 0)
+            .order('barbero_id')
+            .order('fecha', { ascending: true })
+
+        if (error) {
+            console.error('[getAllBarbersOvertimeFromSchedule]', error)
+            return []
+        }
+
+        // Step 3: Group rows by barbero_id in-memory
+        const grouped: Record<string, HorasExtraRow[]> = {}
+        for (const row of (data || []) as HorasExtraRow[]) {
+            const key = String(row.barbero_id)
+            if (!grouped[key]) grouped[key] = []
+            grouped[key].push(row)
+        }
+
+        // Step 4: Build result per barber
+        return barberIds.map(id => {
+            const key = String(id)
+            const rows = grouped[key] || []
+            const totalMinutos = rows.reduce((acc, r) => acc + (r.minutos_extra || 0), 0)
+            return {
+                barberoId: id,
+                totalMinutos,
+                totalHoras: Math.round((totalMinutos / 60) * 100) / 100,
+                dias: rows
+            }
+        })
     } catch (err) {
         console.error('[getAllBarbersOvertimeFromSchedule] Error:', err)
         return []

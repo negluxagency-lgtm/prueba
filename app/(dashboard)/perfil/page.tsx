@@ -271,8 +271,24 @@ export default function PerfilPage() {
                                     className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
                                          rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
                                 />
-
                             </div>
+
+                            {/* Link portal de barberos (Solo para planes no Básicos) */}
+                            {perfil.plan !== 'Básico' && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+                                        <User className="w-4 h-4 text-amber-500" />
+                                        Link portal de barberos
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={`app.nelux.es/${perfil.slug || '(sin-slug)'}/staff`}
+                                        disabled
+                                        className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
+                                             rounded-lg text-amber-500/80 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+                            )}
 
                             {/* Email */}
                             <div className="space-y-2">
@@ -316,11 +332,16 @@ export default function PerfilPage() {
                 </div>
 
                 {/* Sección de Gestión Operativa (NUEVO) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className={cn(
+                    "grid grid-cols-1 gap-6",
+                    perfil.plan === 'Básico' ? "md:grid-cols-2" : "md:grid-cols-3"
+                )}>
                     {/* Tarjeta: Gestión de Equipo */}
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit">
-                        <BarberManager perfilId={userId} />
-                    </div>
+                    {perfil.plan !== 'Básico' && (
+                        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit">
+                            <BarberManager perfilId={userId} />
+                        </div>
+                    )}
 
                     {/* Tarjeta: Horario de Apertura */}
                     <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit text-sm">
@@ -350,9 +371,20 @@ export default function PerfilPage() {
                         </div>
 
                         <p className="text-xs text-zinc-400">
-                            Define qué días cerrarás el próximo mes para que la IA no agende citas.
-                            Confirmar tu planificación mensual es obligatorio para asegurar el servicio.
+                            Define qué días cerrarás el próximo mes para que esos días los clientes no puedan agendar citas.
+                            La APP te hará confirmar las fechas de cierre del próximo mes una semana antes de su comienzo automáticamente.
                         </p>
+
+                        {/* Preview de fechas seleccionadas */}
+                        {perfil.fechas_cierre && perfil.fechas_cierre.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-2">
+                                {perfil.fechas_cierre.sort().map((fecha: string) => (
+                                    <span key={fecha} className="px-2 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-md text-[10px] font-bold">
+                                        {fecha.split('-').reverse().slice(0, 2).join('/')}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
 
                         <button
                             onClick={() => setShowClosingModal(true)}

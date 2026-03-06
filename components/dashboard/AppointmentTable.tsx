@@ -59,9 +59,10 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
             id,
             type,
             x: rect.left + (rect.width / 2),
-            y: rect.bottom + 5
+            y: window.innerHeight - rect.top + 5
         });
     };
+
 
     const handleConfirmClick = (id: number) => {
         setMenuState(null);
@@ -89,7 +90,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                         <tr>
                             <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Cliente</th>
                             <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Servicio</th>
-                            {userPlan === 'Premium' && (
+                            {(userPlan === 'Premium' || userPlan === 'Profesional') && (
                                 <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold">Barbero</th>
                             )}
                             <th className="px-2 py-1.5 md:px-4 md:py-3 font-bold text-center">WhatsApp</th>
@@ -133,7 +134,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             <td className="px-2 py-1 md:px-4 md:py-3 text-zinc-300 text-[10px] md:text-xs font-medium">
                                                 {cita.servicio || <span className="text-zinc-600 italic">--</span>}
                                             </td>
-                                            {userPlan === 'Premium' && (
+                                            {(userPlan === 'Premium' || userPlan === 'Profesional') && (
                                                 <td className="px-2 py-1 md:px-4 md:py-3 text-zinc-300 text-[10px] md:text-xs font-medium">
                                                     {(() => {
                                                         if (!cita.barbero) return <span className="text-zinc-600 italic">Sin asignar</span>;
@@ -144,7 +145,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             )}
                                             <td className="px-2 py-1 md:px-4 md:py-3 text-center">
                                                 {cita.Telefono ? (
-                                                    userPlan === 'Premium' ? (
+                                                    (userPlan === 'Premium' || userPlan === 'Profesional') ? (
                                                         <Link
                                                             href={`/mensajes?tlf=${String(cita.Telefono).replace(/\+/g, '')}`}
                                                             className="inline-flex items-center gap-1 md:gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-green-500 px-1.5 py-0.5 md:px-3 md:py-1.5 rounded-sm md:rounded-lg text-[7px] md:text-xs transition-all border border-zinc-700/50"
@@ -211,7 +212,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={userPlan === 'Premium' ? 9 : 8} className="px-8 py-10 text-center text-zinc-600 italic uppercase tracking-widest text-[9px] md:text-xs">
+                                        <td colSpan={(userPlan === 'Premium' || userPlan === 'Profesional') ? 9 : 8} className="px-8 py-10 text-center text-zinc-600 italic uppercase tracking-widest text-[9px] md:text-xs">
                                             Sin citas hoy
                                         </td>
                                     </tr>
@@ -231,13 +232,14 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                     />
 
                     <div
-                        className="fixed z-[9999] w-36 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/50 animate-in fade-in zoom-in-95 duration-100"
+                        className="fixed z-[9999] w-36 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/50 animate-in fade-in slide-in-from-bottom-2 duration-100"
                         style={{
                             left: `${menuState.x}px`,
-                            top: `${menuState.y}px`,
+                            bottom: `${menuState.y}px`,
                             transform: 'translateX(-50%)'
                         }}
                     >
+
                         {menuState.type === 'status' ? (
                             <div className="bg-zinc-950">
                                 <button

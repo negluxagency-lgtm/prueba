@@ -115,6 +115,7 @@ export function DetailedRevenueChart({ data, activeMetric, loading, range, setRa
                             fontSize={12}
                             tickLine={false}
                             axisLine={false}
+                            width={40}
                             tickFormatter={(value) => `${value}${suffix}`}
                         />
                         <Tooltip

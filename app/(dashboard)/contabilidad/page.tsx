@@ -14,8 +14,9 @@ import AttendanceReportModal from '@/components/accounting/AttendanceReportModal
 import SalaryCalculatorModal from '@/components/trends/SalaryCalculatorModal'
 import { PaymentReportModal } from '@/components/accounting/PaymentReportModal'
 import { AccountingDetailPDF } from '@/components/accounting/AccountingDetailPDF'
+import AutonomoGuide from '@/components/accounting/AutonomoGuide'
 import { PDFDownloadLink } from '@react-pdf/renderer'
-import { Loader2, Download, Receipt, Calculator } from 'lucide-react'
+import { Loader2, Download, Receipt, Calculator, BookOpen } from 'lucide-react'
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 const TABS = [
@@ -32,8 +33,10 @@ export default function AccountingPage() {
 
     const [isAutonomo, setIsAutonomo] = useState(false)
     const [barberCount, setBarberCount] = useState(0)
+    const [plan, setPlan] = useState<string>('')
     const [netIncome, setNetIncome] = useState(0)
     const [shopName, setShopName] = useState('Mi Barbería')
+
     const [reportEntries, setReportEntries] = useState<any[]>([])
     const [totalIncome, setTotalIncome] = useState(0)
     const [totalExpenses, setTotalExpenses] = useState(0)
@@ -47,14 +50,16 @@ export default function AccountingPage() {
 
             const { data: profile } = await supabase
                 .from('perfiles')
-                .select('Autonomo, nombre_barberia')
+                .select('Autonomo, nombre_barberia, plan')
                 .eq('id', user.id)
                 .single()
 
             if (profile) {
                 setIsAutonomo(!!profile.Autonomo)
                 setShopName(profile.nombre_barberia || 'Mi Barbería')
+                setPlan(profile.plan || '')
             }
+
 
             const { count } = await supabase
                 .from('barberos')
@@ -65,6 +70,15 @@ export default function AccountingPage() {
         }
         fetchUserData()
     }, [])
+
+    // Ensure we don't stay on 'jornadas' if it's hidden
+    useEffect(() => {
+        const isJornadasHidden = barberCount <= 1 || plan === 'Básico'
+        if (isJornadasHidden && activeTab === 'jornadas') {
+            setActiveTab('financiera')
+        }
+    }, [barberCount, plan, activeTab])
+
 
     return (
         <main className="flex-1 p-2 md:p-10 max-w-4xl md:max-w-6xl mx-auto w-full pb-24 md:pb-10">
@@ -98,7 +112,13 @@ export default function AccountingPage() {
 
             {/* ── Tab Selector ──────────────────────────────────────────────── */}
             <div className="flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 p-1 rounded-2xl mb-6 w-full">
-                {TABS.map(tab => {
+                {TABS.filter(tab => {
+                    if (tab.id === 'jornadas') {
+                        return barberCount > 1 && plan !== 'Básico'
+                    }
+                    return true
+                }).map(tab => {
+
                     const Icon = tab.icon
                     const isActive = activeTab === tab.id
                     const shortLabel = tab.id === 'financiera' ? 'Finanzas' : tab.id === 'jornadas' ? 'Jornadas' : 'Facturas'
@@ -133,6 +153,8 @@ export default function AccountingPage() {
                     {/* ── TAB 1: Gestión Financiera ─────────────────────── */}
                     {activeTab === 'financiera' && (
                         <div className="space-y-8">
+                            {isAutonomo && <AutonomoGuide />}
+                            
                             <AccountingSummary
                                 selectedMonth={selectedMonth}
                                 onNetIncomeCalculated={setNetIncome}
@@ -158,35 +180,35 @@ export default function AccountingPage() {
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                     {/* Informe Gastos/Ingresos */}
-                                    <div className="flex flex-col justify-between gap-6 bg-zinc-900 border border-zinc-800 p-6 rounded-[2.5rem] hover:border-zinc-700 transition-all shadow-xl">
+                                    <div className="flex flex-col justify-between gap-4 md:gap-6 bg-zinc-900 border border-zinc-800 p-4 md:p-6 rounded-3xl md:rounded-[2.5rem] hover:border-zinc-700 transition-all shadow-xl">
                                         <div>
-                                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 mb-4">
-                                                <FileText className="w-6 h-6 text-amber-500" />
+                                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 mb-3 md:mb-4">
+                                                <FileText className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
                                             </div>
-                                            <h3 className="text-white font-black uppercase italic tracking-tight text-lg leading-tight">
+                                            <h3 className="text-white font-black uppercase italic tracking-tight text-sm md:text-lg leading-tight">
                                                 Informe Gastos / Ingresos
                                             </h3>
-                                            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Libro diario del período · {selectedMonth || 'Todos'}</p>
+                                            <p className="text-zinc-500 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-1.5 md:mt-2">Libro diario del período · {selectedMonth || 'Todos'}</p>
                                         </div>
                                         <ReportDownloadButton selectedMonth={selectedMonth} shopName={shopName} />
                                     </div>
 
                                     {/* Informe por Pagos */}
-                                    <div className="flex flex-col justify-between gap-6 bg-zinc-900 border border-zinc-800 p-6 rounded-[2.5rem] hover:border-zinc-700 transition-all shadow-xl">
+                                    <div className="flex flex-col justify-between gap-4 md:gap-6 bg-zinc-900 border border-zinc-800 p-4 md:p-6 rounded-3xl md:rounded-[2.5rem] hover:border-zinc-700 transition-all shadow-xl">
                                         <div>
-                                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 mb-4">
-                                                <Receipt className="w-6 h-6 text-emerald-500" />
+                                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 mb-3 md:mb-4">
+                                                <Receipt className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
                                             </div>
-                                            <h3 className="text-white font-black uppercase italic tracking-tight text-lg leading-tight">
+                                            <h3 className="text-white font-black uppercase italic tracking-tight text-sm md:text-lg leading-tight">
                                                 Informe Por Pagos
                                             </h3>
-                                            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mt-2">Filtrado por método de pago y mes</p>
+                                            <p className="text-zinc-500 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mt-1.5 md:mt-2">Filtrado por método de pago y mes</p>
                                         </div>
                                         <button
                                             onClick={() => setIsPaymentModalOpen(true)}
-                                            className="flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all w-full bg-zinc-800 text-white hover:bg-zinc-700 hover:text-amber-500 active:scale-95 border border-zinc-700 hover:border-amber-500/30 shadow-xl"
+                                            className="flex items-center justify-center gap-2 md:gap-3 px-6 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all w-full bg-zinc-800 text-white hover:bg-zinc-700 hover:text-amber-500 active:scale-95 border border-zinc-700 hover:border-amber-500/30 shadow-xl"
                                         >
-                                            <Calculator className="w-4 h-4 text-amber-500" />
+                                            <Calculator className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
                                             Configurar y Descargar
                                         </button>
                                     </div>
@@ -310,7 +332,7 @@ function ReportDownloadButton({ selectedMonth, shopName }: { selectedMonth: stri
             <button
                 onClick={prepareData}
                 disabled={loadingData}
-                className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all w-full bg-zinc-800 text-white hover:bg-zinc-700 active:scale-95 border border-zinc-700"
+                className="flex items-center justify-center gap-2 px-6 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all w-full bg-zinc-800 text-white hover:bg-zinc-700 active:scale-95 border border-zinc-700"
             >
                 {loadingData ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 {loadingData ? 'Preparando...' : 'Generar Informe'}
@@ -334,7 +356,7 @@ function ReportDownloadButton({ selectedMonth, shopName }: { selectedMonth: stri
                 />
             }
             fileName={`Informe_Contabilidad_${selectedMonth}.pdf`}
-            className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all w-full bg-amber-500 text-black hover:bg-amber-400 active:scale-95 shadow-lg shadow-amber-500/10"
+            className="flex items-center justify-center gap-2 px-6 py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all w-full bg-amber-500 text-black hover:bg-amber-400 active:scale-95 shadow-lg shadow-amber-500/10"
         >
             {({ loading }) => (
                 <>

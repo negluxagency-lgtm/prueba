@@ -134,7 +134,8 @@ interface SalaryReportPDFProps {
         barberName: string
         baseSalary: number
         commissionAmount: number
-        extraHoursAmount: number // Now represents total HOURS (count)
+        extraHoursCount: number
+        extraHoursAmount: number
         bonusAmount: number
         totalNeto: number
         totalRevenue: number
@@ -188,12 +189,12 @@ export function SalaryReportPDF({ data }: SalaryReportPDFProps) {
 
                     <View style={styles.tableRow}>
                         <Text style={styles.tableCellLabel}>Horas Extra Realizadas (Informativo)</Text>
-                        <Text style={styles.tableCellValue}>{data.extraHoursAmount.toFixed(1)} Horas</Text>
+                        <Text style={styles.tableCellValue}>{data.extraHoursCount.toFixed(1)} Horas</Text>
                     </View>
 
                     <View style={styles.tableRow}>
-                        <Text style={styles.tableCellLabel}>Bonus / Incentivos Directos</Text>
-                        <Text style={styles.tableCellValue}>{data.bonusAmount.toFixed(2)}€</Text>
+                        <Text style={styles.tableCellLabel}>Horas Extra / Bonus</Text>
+                        <Text style={styles.tableCellValue}>{(data.bonusAmount + data.extraHoursAmount).toFixed(2)}€</Text>
                     </View>
                 </View>
 

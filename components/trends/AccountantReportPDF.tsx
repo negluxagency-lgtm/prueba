@@ -107,7 +107,8 @@ interface AccountantReportPDFProps {
             nombre: string
             baseSalary: number
             commission: number
-            extraHours: number // Now represents total HOURS (count)
+            extraHours: number
+            extraHoursAmount: number
             bonus: number
             total: number
         }>
@@ -132,7 +133,7 @@ export function AccountantReportPDF({ data }: AccountantReportPDFProps) {
                         <Text style={[styles.headerCell, styles.cellAmount]}>Sueldo Base</Text>
                         <Text style={[styles.headerCell, styles.cellAmount]}>Comisiones</Text>
                         <Text style={[styles.headerCell, styles.cellAmount]}>H. Extra (Horas)</Text>
-                        <Text style={[styles.headerCell, styles.cellAmount]}>Bonus/Inc.</Text>
+                        <Text style={[styles.headerCell, styles.cellAmount]}>H. Extra / Bonus</Text>
                         <Text style={[styles.headerCell, styles.cellAmount, { borderRightWidth: 0 }]}>Total Neto</Text>
                     </View>
 
@@ -142,7 +143,7 @@ export function AccountantReportPDF({ data }: AccountantReportPDFProps) {
                             <Text style={[styles.cell, styles.cellAmount]}>{b.baseSalary.toFixed(2)}€</Text>
                             <Text style={[styles.cell, styles.cellAmount]}>{b.commission.toFixed(2)}€</Text>
                             <Text style={[styles.cell, styles.cellAmount]}>{b.extraHours.toFixed(1)}h</Text>
-                            <Text style={[styles.cell, styles.cellAmount]}>{b.bonus.toFixed(2)}€</Text>
+                            <Text style={[styles.cell, styles.cellAmount]}>{(b.bonus + b.extraHoursAmount).toFixed(2)}€</Text>
                             <Text style={[styles.cell, styles.cellAmount, { borderRightWidth: 0, fontWeight: 'bold' }]}>{b.total.toFixed(2)}€</Text>
                         </View>
                     ))}
