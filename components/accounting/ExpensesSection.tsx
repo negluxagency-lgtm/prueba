@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Search, Filter, Loader2, DollarSign, Wallet, CheckCircle2, XCircle } from 'lucide-react'
+import { Plus, Trash2, Search, Filter, Loader2, DollarSign, Wallet, CheckCircle2, XCircle, Upload, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,8 @@ interface Gasto {
     categoria: string
     metodo_pago: string
     deducible: boolean
+    factura_id?: string | number // NEW: para saber si tiene factura vinculada
+    factura_uuid?: string // NEW: para redirigir de forma segura sin exponer el ID
 }
 
 interface ExpensesSectionProps {
@@ -28,10 +30,11 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
         concepto: '',
         monto: '',
         fecha: new Date().toISOString().split('T')[0],
-        categoria: 'General',
+        categoria: 'Otros',
         metodo_pago: 'Efectivo',
         deducible: true
     })
+    const [file, setFile] = useState<File | null>(null)
     const [saving, setSaving] = useState(false)
 
     const targetMonth = selectedMonth || new Date().toISOString().substring(0, 7)
@@ -59,14 +62,71 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
             query = query.gte('fecha', startDate).lt('fecha', endDate)
         }
 
-        const { data, error } = await query
+        const { data: gastosData, error: gastosError } = await query
 
-        if (error) {
+        if (gastosError) {
             toast.error('Error al cargar gastos')
-        } else {
-            setGastos(data || [])
+            setLoading(false)
+            return
         }
+
+        // Fetch facturas del mismo mes para cruzar datos
+        let facturasQuery = supabase
+            .from('facturas')
+            .select('id, titulo, fecha_documento, archivo_url')
+            .eq('user_id', user.id)
+
+        if (targetMonth) {
+            const [year, month] = targetMonth.split('-').map(Number)
+            const startDate = `${targetMonth}-01`
+            const nextMonthDate = new Date(year, month, 1)
+            const endDate = nextMonthDate.toISOString().split('T')[0]
+            facturasQuery = facturasQuery.gte('fecha_documento', startDate).lt('fecha_documento', endDate)
+        }
+
+        const { data: facturasData } = await facturasQuery
+
+        // Unir datos virtualmente basados en concepto y fecha
+        const gastosConFactura = (gastosData || []).map(g => {
+            const facturaVinculada = facturasData?.find(f => f.titulo === g.concepto && f.fecha_documento === g.fecha)
+            let parsedUuid = undefined;
+
+            if (facturaVinculada?.archivo_url) {
+                try {
+                    const urlObj = new URL(facturaVinculada.archivo_url);
+                    const pathParts = urlObj.pathname.split('/facturas/');
+                    if (pathParts.length > 1) {
+                        parsedUuid = encodeURIComponent(pathParts[1]);
+                    }
+                } catch (e) {
+                    console.warn('Could not parse file UUID:', e);
+                }
+            }
+
+            return {
+                ...g,
+                factura_id: facturaVinculada?.id,
+                factura_uuid: parsedUuid
+            }
+        })
+
+        setGastos(gastosConFactura)
         setLoading(false)
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const selectedFile = e.target.files[0]
+            if (selectedFile.type !== 'application/pdf') {
+                toast.error('Solo se permiten archivos PDF')
+                return
+            }
+            if (selectedFile.size > 5 * 1024 * 1024) { // 5MB limit
+                toast.error('El archivo es demasiado grande (máx 5MB)')
+                return
+            }
+            setFile(selectedFile)
+        }
     }
 
     const handleAddGasto = async (e: React.FormEvent) => {
@@ -75,32 +135,68 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
-        const { error } = await supabase.from('gastos').insert({
-            user_id: user.id,
-            concepto: newGasto.concepto,
-            monto: parseFloat(newGasto.monto),
-            fecha: newGasto.fecha,
-            categoria: newGasto.categoria,
-            metodo_pago: newGasto.metodo_pago,
-            deducible: newGasto.deducible
-        })
+        try {
+            let facturaUrl = null
 
-        if (error) {
-            toast.error('Error al guardar el gasto')
-        } else {
-            toast.success('Gasto guardado correctamente')
+            // Si hay un archivo, lo subimos a facturas y creamos el registro en la tabla facturas
+            if (file) {
+                const fileExt = file.name.split('.').pop()
+                const fileName = `${user.id}/${Date.now()}_${newGasto.concepto.replace(/[^a-zA-Z0-9]/g, '_')}.${fileExt}`
+
+                const { error: uploadError } = await supabase.storage
+                    .from('facturas')
+                    .upload(fileName, file)
+
+                if (uploadError) throw uploadError
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('facturas')
+                    .getPublicUrl(fileName)
+                
+                facturaUrl = publicUrl
+
+                const { error: dbFacturaError } = await supabase.from('facturas').insert({
+                    user_id: user.id,
+                    titulo: newGasto.concepto,
+                    tipo: newGasto.categoria.toLowerCase(),
+                    fecha_documento: newGasto.fecha,
+                    archivo_url: publicUrl
+                })
+
+                if (dbFacturaError) throw dbFacturaError
+            }
+
+            const { error: dbGastoError } = await supabase.from('gastos').insert({
+                user_id: user.id,
+                concepto: newGasto.concepto,
+                monto: parseFloat(newGasto.monto),
+                fecha: newGasto.fecha,
+                categoria: newGasto.categoria,
+                metodo_pago: newGasto.metodo_pago,
+                deducible: newGasto.deducible
+            })
+            
+            if (dbGastoError) throw dbGastoError
+
+            toast.success('Gasto guardado correctamente' + (facturaUrl ? ' con factura vinculada' : ''))
             setNewGasto({
                 concepto: '',
                 monto: '',
                 fecha: new Date().toISOString().split('T')[0],
-                categoria: 'General',
+                categoria: 'Otros',
                 metodo_pago: 'Efectivo',
                 deducible: true
             })
+            setFile(null)
             setShowAdd(false)
             fetchGastos()
+
+        } catch (error: any) {
+            console.error('Error procesando gasto/factura:', error)
+            toast.error('Error al guardar el gasto')
+        } finally {
+            setSaving(false)
         }
-        setSaving(false)
     }
 
     const handleDelete = async (id: number) => {
@@ -189,17 +285,39 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                                 onChange={e => setNewGasto({ ...newGasto, categoria: e.target.value })}
                                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 appearance-none transition-all cursor-pointer font-bold"
                             >
-                                <option value="General">General</option>
-                                <option value="Dietas">Dietas</option>
-                                <option value="Limpieza">Limpieza</option>
-                                <option value="Mantenimiento">Mantenimiento</option>
-                                <option value="Suministros">Suministros</option>
                                 <option value="Alquiler">Alquiler</option>
-                                <option value="Marketing">Marketing</option>
-                                <option value="Material">Material</option>
+                                <option value="Suministros">Suministros</option>
+                                <option value="Material y Productos">Material y Productos</option>
+                                <option value="Herramientas">Herramientas</option>
+                                <option value="Limpieza y Mantenimiento">Limpieza y Mantenimiento</option>
+                                <option value="Marketing y Publicidad">Marketing y Publicidad</option>
+                                <option value="Gestoría y Seguros">Gestoría y Seguros</option>
+                                <option value="Dietas">Dietas</option>
+                                <option value="Otros">Otros</option>
                             </select>
                         </div>
-                        <div className="flex items-center gap-3 bg-zinc-950/50 border border-zinc-800 p-3 rounded-2xl md:mt-5">
+                        <div className="md:col-span-2">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 block mb-2">Adjuntar Factura (Opcional)</label>
+                            <div className="relative group/upload">
+                                <input
+                                    type="file"
+                                    accept=".pdf"
+                                    onChange={handleFileChange}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                />
+                                <div className={cn(
+                                    "border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center transition-all",
+                                    file ? "border-amber-500/50 bg-amber-500/5" : "border-zinc-800 bg-zinc-950 group-hover/upload:border-zinc-700"
+                                )}>
+                                    <Upload className={cn("w-6 h-6 mb-2 transition-colors", file ? "text-amber-500" : "text-zinc-600")} />
+                                    <p className="text-xs font-bold text-zinc-400 text-center px-4">
+                                        {file ? file.name : "Selecciona o arrastra el PDF de la factura asociada a este gasto"}
+                                    </p>
+                                    <p className="text-[9px] text-zinc-600 mt-1 uppercase font-black">Máximo 5MB</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 bg-zinc-950/50 border border-zinc-800 p-3 rounded-2xl md:col-span-2">
                             <input
                                 type="checkbox"
                                 id="deducible"
@@ -269,10 +387,23 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-center">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-zinc-950 border border-zinc-800 text-[9px] font-black text-zinc-400 uppercase tracking-widest">
-                                                <Wallet className="w-3 h-3" />
-                                                {g.metodo_pago}
-                                            </span>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-zinc-950 border border-zinc-800 text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                                                    <Wallet className="w-3 h-3" />
+                                                    {g.metodo_pago}
+                                                </span>
+                                                {g.factura_uuid && (
+                                                    <a 
+                                                        href={`/f/${g.factura_uuid}`} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-500 uppercase tracking-widest hover:bg-emerald-500/20 transition-colors"
+                                                    >
+                                                        <FileText className="w-3 h-3" />
+                                                        Factura
+                                                    </a>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-5 text-right">
                                             <span className="text-base font-black text-white tabular-nums tracking-tight">
@@ -331,10 +462,23 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[8px] font-black text-zinc-400 uppercase tracking-widest">
-                                        <Wallet className="w-2 h-2" />
-                                        {g.metodo_pago}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-zinc-900 border border-zinc-800 text-[8px] font-black text-zinc-400 uppercase tracking-widest">
+                                            <Wallet className="w-2 h-2" />
+                                            {g.metodo_pago}
+                                        </span>
+                                        {g.factura_uuid && (
+                                            <a 
+                                                href={`/f/${g.factura_uuid}`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black text-emerald-500 uppercase tracking-widest active:scale-95 transition-transform"
+                                            >
+                                                <FileText className="w-2 h-2" />
+                                                Factura
+                                            </a>
+                                        )}
+                                    </div>
                                     <button
                                         onClick={() => handleDelete(g.id)}
                                         className="p-1.5 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all border border-zinc-800"

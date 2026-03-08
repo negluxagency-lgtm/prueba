@@ -102,25 +102,52 @@ export function useBarberStats(mes?: string) {
                         console.warn('[useBarberStats] Could not fetch auto overtime:', e)
                         return []
                     })
-                    : Promise.resolve([])
+                    : Promise.resolve([]),
+
+                // Product sales (ventas_productos)
+                supabase
+                    .from('ventas_productos')
+                    .select('precio, cantidad')
+                    .eq('barberia_id', barberiaUUID)
+                    .gte('created_at', `${startDate} 00:00:00`)
+                    .lte('created_at', `${endDate} 23:59:59`)
             ])
 
             if (citasResult.error) throw citasResult.error
             if (manualHorasResult.error) {
                 console.warn('[useBarberStats] Could not fetch manual horas_extra:', manualHorasResult.error.message)
             }
+            const productSalesResult = autoResults.pop() as any; 
+            const realAutoResults = autoResults; 
 
             const citas = citasResult.data || []
             const manualHorasData = manualHorasResult.data || []
+            const productSalesData = productSalesResult?.data || []
 
             // Build auto overtime lookup: barberoId -> totalHoras
             const autoOvertimeMap: Record<string, number> = {}
-            for (const result of autoResults) {
+            for (const result of realAutoResults) {
                 autoOvertimeMap[String(result.barberoId)] = result.totalHoras
             }
 
             // 3. Build stats map
             const map: Record<string, BarberStat> = {}
+
+            // Add a virtual barber for product sales to track separately in stats
+            if (productSalesData.length > 0) {
+                map['Ventas de Productos'] = {
+                    nombre: 'Ventas de Productos',
+                    totalRevenue: 0,
+                    totalCuts: 0,
+                    salario_base: 0,
+                    porcentaje_comision: 0,
+                    totalExtraHoursAmount: 0,
+                    totalExtraHours: 0
+                }
+                for (const sale of productSalesData) {
+                    map['Ventas de Productos'].totalRevenue += Number(sale.precio)
+                }
+            }
 
             for (const b of (barberosData || [])) {
                 map[b.nombre.trim()] = {

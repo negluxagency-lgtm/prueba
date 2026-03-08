@@ -9,6 +9,7 @@ interface SellProductData {
     nombreProducto: string
     precioVenta: number
     cantidad: number
+    metodoPago: string
 }
 
 interface ActionResponse {
@@ -17,7 +18,7 @@ interface ActionResponse {
 }
 
 export async function registerProductSale(data: SellProductData): Promise<ActionResponse> {
-    const { productoId, nombreProducto, precioVenta, cantidad } = data
+    const { productoId, nombreProducto, precioVenta, cantidad, metodoPago } = data
 
     try {
         // Get session via cookies
@@ -54,7 +55,8 @@ export async function registerProductSale(data: SellProductData): Promise<Action
                 barberia_id: user.id,
                 nombre_producto: nombreProducto,
                 precio: precioVenta,
-                cantidad: cantidad
+                cantidad: cantidad,
+                metodo_pago: metodoPago
             })
 
         if (insertError) {

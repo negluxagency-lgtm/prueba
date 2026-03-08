@@ -11,7 +11,7 @@ import { Users, Clock, Receipt, Banknote } from 'lucide-react';
 
 export const metadata = {
     title: 'Nelux - Tu Barbería en Piloto Automático',
-    description: 'Deja que la IA gestione tus citas, reduzca los no-shows y organice tu imperio mientras tú solo te preocupas de cortar.',
+    description: 'Corta más, gestiona menos. La evolución digital de tu barbería. Todo lo que necesitas en un mismo lugar.',
 };
 
 export default function InicioPage() {
@@ -74,7 +74,7 @@ export default function InicioPage() {
 
                 {/* Subheadline */}
                 <p className="relative z-10 text-zinc-400 text-lg md:text-xl text-center max-w-2xl mt-6 leading-relaxed">
-                    Deja que la IA gestione tus citas, reduzca los no-shows y organice tu imperio mientras tú solo te preocupas de cortar.
+                    Corta más, gestiona menos. La evolución digital de tu barbería. Todo lo que necesitas en un mismo lugar.
                 </p>
 
                 {/* CTA Buttons */}
@@ -87,10 +87,10 @@ export default function InicioPage() {
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Link>
                     <Link
-                        href="#features"
+                        href="https://app.nelux.es/demo"
                         className="flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-8 py-4 rounded-2xl text-lg transition-all border border-zinc-700"
                     >
-                        Ver Funciones
+                        Ver Demo
                     </Link>
                 </div>
 
@@ -112,57 +112,68 @@ export default function InicioPage() {
             </section>
 
             {/* ═══════════════════════════════════════════════════════════════════════
-                SECTION A: THE BRAIN (AI & Automation)
+                SECTION: VENTAJAS Y BENEFICIOS
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section id="features" className="relative py-12 md:pt-4 md:pb-32 px-6">
+            <section className="relative py-16 md:py-24 px-6 bg-zinc-900/20 border-y border-zinc-800/50">
                 <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
-                        {/* Text Left */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                        {/* Detalles / Párrafo Explicativo (Izquierda) */}
                         <div>
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
-                                    <Bot className="w-6 h-6 text-amber-500" />
+                                    <TrendingUp className="w-6 h-6 text-amber-500" />
                                 </div>
-                                <span className="text-amber-500 text-sm font-bold uppercase tracking-wider">IA Integrada</span>
+                                <span className="text-amber-500 text-sm font-bold uppercase tracking-wider">La Evolución Digital</span>
                             </div>
 
                             <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
-                                El Cerebro que{' '}
+                                Transforma tu Negocio en una{' '}
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">
-                                    Nunca Duerme
+                                    Máquina Exacta
                                 </span>
                             </h2>
 
-                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
-                                Desde <span className="text-white font-semibold">&quot;Hola&quot;</span> hasta{' '}
-                                <span className="text-white font-semibold">&quot;Cita Confirmada&quot;</span> sin que toques el móvil.
-                                Nuestro bot impulsado por GPT convierte interesados en clientes reales <span className="text-amber-500 font-bold">24/7</span>.
+                            <p className="text-zinc-400 text-lg leading-relaxed mix-blend-lighten">
+                                Nelux no es solo una agenda, es la estructura operativa completa para escalar tu barbería sin perder la cabeza.
+                                Centralizamos tus reservas, tu facturación, las nóminas de tus barberos y el stock de tus productos en un único
+                                panel de control inteligente.
+                                Con nosotros, recuperas el tiempo necesario para centrarte en lo importante: <strong className="text-white font-semibold">cortar pelo y hacer crecer tu marca</strong>.
                             </p>
+                        </div>
 
-                            <ul className="space-y-4 mb-8">
+                        {/* Lista de Ventajas (Derecha) */}
+                        <div className="bg-zinc-950 border border-zinc-800/80 rounded-3xl p-8 md:p-10 shadow-xl shadow-black/50">
+                            <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
+                                <CheckCircle2 className="w-5 h-5 text-amber-500" />
+                                ¿Qué ganas usando Nelux?
+                            </h3>
+                            <ul className="space-y-6">
                                 {[
-                                    'Respuestas instantáneas por WhatsApp',
-                                    'Confirmaciones y recordatorios automáticos',
-                                    'Reducción de no-shows hasta un 70%',
+                                    { title: 'Panel Personalizado', desc: 'Landing exclusiva de reservas para tus clientes sin que tengan que descargar ninguna app ni registrarse.' },
+                                    { title: 'Ahorro de Tiempo Masivo', desc: 'Las citas se agendan solas, olvidte de contestar llamadas y mensajes todo el día.' },
+                                    { title: 'Adiós a los No-Shows', desc: 'Recordatorios automáticos por WhatsApp antes de la cita.' },
+                                    { title: 'Control Total de Barberos', desc: 'Gestión de barberos, fichajes (entrada/salida) y facturación individual.' },
+                                    { title: 'Ingresos y Contabilidad Centralizada', desc: 'Gráficas en tiempo real, facturas Veri*Factu (obligatorio 2026) y exportación legal.' },
+                                    { title: 'Bot WhatsApp con IA', desc: 'Olvídate de contestar WhatsApps, el bot agenda citas automáticamente y responde preguntas sobre tu barbería.' }
                                 ].map((item, idx) => (
-                                    <li key={idx} className="flex items-center gap-3 text-zinc-300">
-                                        <div className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-                                        {item}
+                                    <li key={idx} className="flex items-start gap-4">
+                                        <div className="mt-1 w-8 h-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0">
+                                            <span className="text-amber-500 text-sm font-bold">{idx + 1}</span>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-white font-bold mb-1">{item.title}</h4>
+                                            <p className="text-zinc-500 text-sm leading-relaxed">{item.desc}</p>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
-                        </div>
-
-                        {/* Graphic Right */}
-                        <div className="order-2 lg:order-1">
-                            <DemoAppointmentTable />
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* ═══════════════════════════════════════════════════════════════════════
-                SECTION A.5: PUBLIC BOOKING PAGE
+                SECTION A: PUBLIC BOOKING PAGE
             ═══════════════════════════════════════════════════════════════════════ */}
             <section className="relative py-20 md:py-32 px-6 bg-transparent md:bg-zinc-900/30">
                 {/* Subtle glow */}
@@ -215,6 +226,56 @@ export default function InicioPage() {
                                     </li>
                                 ))}
                             </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══════════════════════════════════════════════════════════════════════
+                SECTION A.5: THE BRAIN (AI & Automation)
+            ═══════════════════════════════════════════════════════════════════════ */}
+            <section id="features" className="relative py-20 md:py-32 px-6">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
+                        {/* Text Left */}
+                        <div>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30">
+                                    <Bot className="w-6 h-6 text-amber-500" />
+                                </div>
+                                <span className="text-amber-500 text-sm font-bold uppercase tracking-wider">Citas Automáticas</span>
+                            </div>
+
+                            <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
+                                El Cerebro que{' '}
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">
+                                    Nunca Duerme
+                                </span>
+                            </h2>
+
+                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
+                                Desde <span className="text-white font-semibold">&quot;Hola&quot;</span> hasta{' '}
+                                <span className="text-white font-semibold">&quot;Cita Confirmada&quot;</span> sin que toques el móvil.
+                                Nuestro bot impulsado por GPT convierte interesados en clientes reales <span className="text-amber-500 font-bold">24/7</span>.
+                            </p>
+
+                            <ul className="space-y-4 mb-8">
+                                {[
+                                    'Respuestas instantáneas por WhatsApp',
+                                    'Confirmaciones y recordatorios automáticos',
+                                    'Reducción de no-shows hasta un 70%',
+                                ].map((item, idx) => (
+                                    <li key={idx} className="flex items-center gap-3 text-zinc-300">
+                                        <div className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Graphic Right */}
+                        <div className="order-2 lg:order-1">
+                            <DemoAppointmentTable />
                         </div>
                     </div>
                 </div>
@@ -599,7 +660,7 @@ export default function InicioPage() {
                     </h2>
 
                     <p className="text-zinc-400 text-lg md:text-xl leading-relaxed mb-10">
-                        Únete a las barberías que ya operan en piloto automático. Prueba gratuita de 7 días, sin compromiso (no incluye funciones IA WhatsApp). El plan de pago mensual incluye una comisión del 1% sobre la facturación agendada por IA.
+                        Únete a las barberías que ya operan en piloto automático. Prueba gratuita de 7 días, sin compromiso. ¿Estás listo para que tu barbería pase al siguiente nivel?
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

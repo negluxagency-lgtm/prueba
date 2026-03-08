@@ -31,6 +31,7 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
 
     // Honeypot — must always be empty. Bots fill it, humans never see it.
     const [honeypot, setHoneypot] = useState('')
+    const [phoneError, setPhoneError] = useState<string | null>(null)
 
     const formatDateLocal = (date: Date) => {
         const year = date.getFullYear()
@@ -39,8 +40,21 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
         return `${year}-${month}-${day}`
     }
 
+    const isValidPhone = (phone: string) => {
+        if (!phone) return false;
+        // Solo España móvil: empieza por 6 o 7, y tiene 9 dígitos exactos
+        return /^[67]\d{8}$/.test(phone);
+    };
+
     const handleBook = async () => {
+        setPhoneError(null)
+
         if (!selectedService || !selectedDate || !selectedTime || !guestName || !guestPhone) return
+
+        if (!isValidPhone(guestPhone)) {
+            setPhoneError(guestPhone.length < 9 ? 'Faltan números (son 9 dígitos)' : 'El número es inválido')
+            return
+        }
 
         setIsSubmitting(true)
 
@@ -155,10 +169,20 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
                         onChange={(e) => {
                             const val = e.target.value.replace(/\D/g, '').slice(0, 9)
                             setGuestPhone(val)
+                            setPhoneError(null) // Reset error on typing
                         }}
                         placeholder="Ej: 600000000"
-                        className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-700"
+                        className={`w-full bg-black border rounded-xl p-4 text-white focus:ring-1 outline-none transition-all placeholder:text-zinc-700 ${
+                            phoneError 
+                                ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500' 
+                                : 'border-zinc-800 focus:border-amber-500 focus:ring-amber-500'
+                        }`}
                     />
+                    {phoneError && (
+                        <p className="text-xs text-red-400 pl-1">
+                            {phoneError}
+                        </p>
+                    )}
                 </div>
             </div>
 

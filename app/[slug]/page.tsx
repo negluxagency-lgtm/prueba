@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js' // Use direct client for pu
 import { notFound } from 'next/navigation'
 import BookingFlow from '@/components/public-booking/BookingFlow'
 import { MapPin, Phone } from 'lucide-react'
+import { getProxiedUrl } from '@/utils/url-helper'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +21,7 @@ export default async function PublicBookingPage(props: PageProps) {
     // 1. Fetch Profile (Shop) by Slug with Schedule
     const { data: profile, error: profileError } = await supabase
         .from('perfiles')
-        .select('*') // Removed legacy relation
+        .select('*')
         .eq('slug', params.slug)
         .single()
 
@@ -47,56 +48,87 @@ export default async function PublicBookingPage(props: PageProps) {
         .select('*')
         .eq('barberia_id', profile.id)
 
-
     return (
         <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-amber-500/30">
 
             {/* HERO SECTION */}
             <header className="relative w-full">
-                {/* Background Gradient */}
-                <div className="absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-rose-900/20 via-zinc-900/0 to-transparent pointer-events-none" />
-                <div className="absolute inset-x-0 -top-20 h-64 bg-amber-500/10 blur-[100px] pointer-events-none rounded-full" />
+                {/* Contenedor con max-width en desktop para evitar que el banner se estire */}
+                <div className="max-w-5xl mx-auto md:px-8 lg:px-12">
 
-                <div className="container mx-auto px-4 pt-12 pb-8 flex flex-col items-center justify-center text-center relative z-10">
-
-                    {/* Avatar / Logo */}
-                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-zinc-900 border-4 border-zinc-950 shadow-2xl flex items-center justify-center mb-6 relative overflow-hidden group">
-
-                        {profile.logo_url ? (
+                    {/* ── Banner Image ── */}
+                    <div className="relative w-full h-56 md:h-72 overflow-hidden md:rounded-2xl">
+                        {profile.banner_url ? (
                             <img
-                                src={profile.logo_url}
-                                alt={profile.nombre_barberia || 'Logo'}
+                                src={getProxiedUrl(profile.banner_url)}
+                                alt="Banner barbería"
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <>
-                                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-rose-600 opacity-20 group-hover:opacity-30 transition-opacity" />
-                                <span className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-amber-400 to-rose-500">
-                                    {profile.nombre_barberia?.charAt(0) || profile.nombre_negocio?.charAt(0) || 'B'}
-                                </span>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Shop Name & Details */}
-                    <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white mb-4">
-                        {profile.nombre_barberia || profile.nombre_negocio || 'Barbería'}
-                    </h1>
-
-                    <div className="flex flex-wrap justify-center gap-3">
-                        {profile.Direccion && (
-                            <div className="px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center gap-2 text-xs md:text-sm text-zinc-400 backdrop-blur-sm">
-                                <MapPin size={12} className="text-amber-500" />
-                                <span>{profile.Direccion}</span>
+                            /* Fallback gradient banner */
+                            <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900">
+                                <div className="absolute -top-20 -left-20 w-80 h-80 bg-amber-500/10 rounded-full blur-[100px]" />
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-rose-900/15 rounded-full blur-[80px]" />
                             </div>
                         )}
-                        {profile.telefono && (
-                            <div className="px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center gap-2 text-xs md:text-sm text-zinc-400 backdrop-blur-sm">
-                                <Phone size={12} className="text-amber-500" />
-                                <span>{profile.telefono}</span>
-                            </div>
-                        )}
+                        {/* Bottom fade to black */}
+                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
                     </div>
+
+                    {/* ── Profile photo + Shop info ── */}
+                    <div className="relative px-5 md:px-4 pb-6">
+
+                        {/* Profile photo — overlapping the banner bottom */}
+                        <div className="absolute -top-12 md:-top-14 left-5 md:left-4">
+                            <div className="
+                                w-24 h-24 md:w-28 md:h-28
+                                rounded-full
+                                ring-4 ring-black
+                                overflow-hidden
+                                shadow-[0_0_0_3px_rgba(245,158,11,0.7),0_0_28px_rgba(245,158,11,0.45)]
+                                bg-zinc-900
+                                flex items-center justify-center
+                            ">
+                                {profile.logo_url ? (
+                                    <img
+                                        src={getProxiedUrl(profile.logo_url)}
+                                        alt={profile.nombre_barberia || 'Logo'}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <>
+                                        <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-rose-600 opacity-20" />
+                                        <span className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-amber-400 to-rose-500">
+                                            {profile.nombre_barberia?.charAt(0) || profile.nombre_negocio?.charAt(0) || 'B'}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Text: pushed down to clear the photo */}
+                        <div className="pt-16 md:pt-20">
+                            <h1 className="text-2xl md:text-4xl font-black tracking-tighter text-white mb-3">
+                                {profile.nombre_barberia || profile.nombre_negocio || 'Barbería'}
+                            </h1>
+
+                            <div className="flex flex-wrap gap-2">
+                                {profile.Direccion && (
+                                    <div className="px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center gap-2 text-xs text-zinc-400 backdrop-blur-sm">
+                                        <MapPin size={11} className="text-amber-500 shrink-0" />
+                                        <span>{profile.Direccion}</span>
+                                    </div>
+                                )}
+                                {profile.telefono && (
+                                    <div className="px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center gap-2 text-xs text-zinc-400 backdrop-blur-sm">
+                                        <Phone size={11} className="text-amber-500 shrink-0" />
+                                        <span>{profile.telefono}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </header>
 
@@ -109,7 +141,7 @@ export default async function PublicBookingPage(props: PageProps) {
                     closingDates={(profile.fechas_cierre as string[]) || []}
                     profileId={profile.id}
                     barbers={barbers || []}
-                    plan={profile.plan} // Passed plan for conditional logic
+                    plan={profile.plan}
                 />
             </main>
 

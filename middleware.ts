@@ -38,7 +38,7 @@ export const config = {
          * - api/webhooks (Stripe doesn't need Supabase cookies)
          * Feel free to modify this pattern to include more paths.
          */
-        '/((?!_next/static|_next/image|favicon.ico|api/webhooks|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|api/webhooks|i/|f/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 }
 

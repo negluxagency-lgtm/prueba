@@ -13,6 +13,7 @@ import ManageSubscriptionButton from '@/components/ManageSubscriptionButton'
 import { ShopScheduleManager } from '@/components/management/ShopScheduleManager'
 import { BarberManager } from '@/components/management/BarberManager'
 import { AvatarUpload } from '@/components/AvatarUpload'
+import { BannerUpload } from '@/components/BannerUpload'
 import { Save, Loader2, Calendar as CalendarIcon, ChevronRight } from 'lucide-react'
 import MonthlyClosingModal from '@/components/MonthlyClosingModal'
 import { cn } from '@/lib/utils'
@@ -63,6 +64,8 @@ export default function PerfilPage() {
     const [userId, setUserId] = useState('')
     const [avatarFile, setAvatarFile] = useState<File | null>(null)
     const [uploadingLogo, setUploadingLogo] = useState(false)
+    const [bannerFile, setBannerFile] = useState<File | null>(null)
+    const [uploadingBanner, setUploadingBanner] = useState(false)
     const [showClosingModal, setShowClosingModal] = useState(false)
 
     const cargarPerfil = useCallback(async () => {
@@ -174,6 +177,44 @@ export default function PerfilPage() {
         }
     };
 
+    const handleUploadBanner = async () => {
+        if (!bannerFile || !userId) return;
+
+        setUploadingBanner(true);
+        try {
+            const fileExt = bannerFile.name.split('.').pop();
+            const fileName = `${userId}/banner_${Date.now()}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('banner')
+                .upload(fileName, bannerFile, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            const { data: urlData } = supabase.storage
+                .from('banner')
+                .getPublicUrl(fileName);
+
+            const finalBannerUrl = urlData.publicUrl;
+
+            const { error: profileError } = await supabase
+                .from('perfiles')
+                .update({ banner_url: finalBannerUrl })
+                .eq('id', userId);
+
+            if (profileError) throw profileError;
+
+            setPerfil((prev: any) => ({ ...prev, banner_url: finalBannerUrl }));
+            setBannerFile(null);
+            toast.success('Banner actualizado correctamente');
+        } catch (error: any) {
+            console.error('Error:', error);
+            toast.error('Error al subir el banner: ' + (error.message || 'Error desconocido'));
+        } finally {
+            setUploadingBanner(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
@@ -223,23 +264,48 @@ export default function PerfilPage() {
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-8 items-start">
-                        {/* Selector de Foto de Perfil */}
-                        <div className="flex flex-col items-center gap-4 w-full md:w-auto">
-                            <AvatarUpload
-                                currentImageUrl={perfil?.logo_url}
-                                onFileSelect={setAvatarFile}
-                                loading={uploadingLogo}
-                            />
-                            {avatarFile && (
-                                <button
-                                    onClick={handleUploadLogo}
-                                    disabled={uploadingLogo}
-                                    className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                                >
-                                    {uploadingLogo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                    Guardar Nueva Foto
-                                </button>
-                            )}
+                        {/* Columna Izquierda: Logo y Banner */}
+                        <div className="flex flex-col gap-8 w-full md:w-64 shrink-0">
+                            {/* Selector de Foto de Perfil */}
+                            <div className="flex flex-col items-center gap-4 w-full">
+                                <AvatarUpload
+                                    currentImageUrl={perfil?.logo_url}
+                                    onFileSelect={setAvatarFile}
+                                    loading={uploadingLogo}
+                                />
+                                {avatarFile && (
+                                    <button
+                                        onClick={handleUploadLogo}
+                                        disabled={uploadingLogo}
+                                        className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                                    >
+                                        {uploadingLogo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                        Guardar Nueva Foto
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Selector de Banner */}
+                            <div className="flex flex-col gap-3 w-full">
+                                <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest text-center">
+                                    Banner de la Barbería
+                                </span>
+                                <BannerUpload
+                                    currentImageUrl={perfil?.banner_url}
+                                    onFileSelect={setBannerFile}
+                                    loading={uploadingBanner}
+                                />
+                                {bannerFile && (
+                                    <button
+                                        onClick={handleUploadBanner}
+                                        disabled={uploadingBanner}
+                                        className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                                    >
+                                        {uploadingBanner ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                        Guardar Banner
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="space-y-4 flex-1 w-full">

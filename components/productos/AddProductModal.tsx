@@ -1,27 +1,43 @@
 "use client";
 
 import React, { useState } from 'react';
-import { X, Package, DollarSign, Plus } from 'lucide-react';
+import { X, Package, DollarSign, Plus, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface AddProductModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (nombre: string, precio: number, stock: number) => void;
+    onConfirm: (nombre: string, precio: number, stock: number, file: File | null) => void;
 }
 
 export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onConfirm }) => {
     const [nombre, setNombre] = useState('');
     const [precio, setPrecio] = useState('');
     const [stock, setStock] = useState('0');
+    const [file, setFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const selectedFile = e.target.files[0];
+            setFile(selectedFile);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result as string);
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (nombre && precio) {
-            onConfirm(nombre, Number(precio), Number(stock));
+            onConfirm(nombre, Number(precio), Number(stock), file);
             setNombre('');
             setPrecio('');
             setStock('0');
+            setFile(null);
+            setPreviewUrl(null);
             onClose();
         }
     };
@@ -59,6 +75,31 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="flex flex-col items-center gap-4 mb-6">
+                                <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 w-full ml-1">Foto del Producto</label>
+                                <div className="relative group w-40 h-40">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
+                                    <div className="w-full h-full bg-black/40 border-2 border-dashed border-zinc-800 rounded-[2rem] flex flex-col items-center justify-center overflow-hidden group-hover:border-amber-500 transition-all">
+                                        {previewUrl ? (
+                                            <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <>
+                                                <ImageIcon className="w-8 h-8 text-zinc-600 mb-2" />
+                                                <span className="text-[9px] font-black uppercase text-zinc-500">Subir Imagen</span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 bg-amber-500 text-black p-2 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                                        <Plus size={16} strokeWidth={3} />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 ml-1">Nombre del Producto</label>
                                 <div className="relative group">

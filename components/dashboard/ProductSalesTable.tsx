@@ -24,10 +24,16 @@ function ActionsDropdown({ sale, onEdit, onDelete, onGenerateInvoice }: {
     const [open, setOpen] = useState(false)
     const [coords, setCoords] = useState({ bottom: 0, right: 0 })
     const triggerRef = useRef<HTMLButtonElement>(null)
+    const menuRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
+            if (
+                triggerRef.current && 
+                !triggerRef.current.contains(e.target as Node) &&
+                menuRef.current &&
+                !menuRef.current.contains(e.target as Node)
+            ) {
                 setOpen(false)
             }
         }
@@ -52,6 +58,7 @@ function ActionsDropdown({ sale, onEdit, onDelete, onGenerateInvoice }: {
     const menu = open ? (
         <AnimatePresence>
             <motion.div
+                ref={menuRef}
                 initial={{ opacity: 0, scale: 0.92, y: 4 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.92, y: 4 }}
@@ -116,6 +123,7 @@ export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onE
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Nombre</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Cantidad</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-amber-500/80 text-center">Precio</th>
+                            <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Pago</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Hora</th>
                             <th className="px-3 py-1.5 md:px-8 md:py-5 font-bold text-center">Acciones</th>
                         </tr>
@@ -126,6 +134,7 @@ export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onE
                                 <tr key={i}>
                                     <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-32 mx-auto" /></td>
                                     <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-8 mx-auto" /></td>
+                                    <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-12 mx-auto" /></td>
                                     <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-12 mx-auto" /></td>
                                     <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-16 mx-auto" /></td>
                                     <td className="px-6 py-4 text-center"><div className="flex justify-center"><Skeleton className="h-7 w-7 rounded-lg" /></div></td>
@@ -152,6 +161,11 @@ export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onE
                                             <td className="px-3 py-1 md:px-8 md:py-6 text-xs md:text-xl font-black text-amber-500/90 italic text-center">
                                                 {sale.Precio}€
                                             </td>
+                                            <td className="px-3 py-1 md:px-8 md:py-6 text-center">
+                                                <span className="px-2 py-1 rounded-lg bg-zinc-800 text-zinc-400 text-[10px] md:text-xs font-bold uppercase border border-zinc-700">
+                                                    {(sale as any).pago || '---'}
+                                                </span>
+                                            </td>
                                             <td className="px-3 py-1 md:px-8 md:py-6 text-zinc-500 text-[10px] md:text-base text-center">
                                                 {sale.Hora ? sale.Hora.slice(0, 5) : "--:--"}
                                             </td>
@@ -169,7 +183,7 @@ export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onE
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={5} className="px-8 py-10 text-center text-zinc-600 italic uppercase tracking-widest text-[9px] md:text-xs">
+                                        <td colSpan={6} className="px-8 py-10 text-center text-zinc-600 italic uppercase tracking-widest text-[9px] md:text-xs">
                                             Sin ventas hoy
                                         </td>
                                     </tr>

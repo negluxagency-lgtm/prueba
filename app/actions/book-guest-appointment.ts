@@ -33,6 +33,15 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
 
     const { slug, serviceId, date, time, guestName, guestPhone, barberId } = parsed.data
 
+    // 0. Interceptar reservas para el perfil Demo
+    if (slug.toLowerCase() === 'demo') {
+        console.log('🤖 [Demo Mode] Interceptando reserva para el perfil demo. Simulando carga...');
+        // Simulamos un tiempo de carga realista para la UX
+        await new Promise(resolve => setTimeout(resolve, 800));
+        console.log('🤖 [Demo Mode] Reserva simulada con éxito. No se guardó nada en DB.');
+        return { success: true };
+    }
+
     // 1. Get Client IP
     const headersList = await headers()
     const forwardedFor = headersList.get('x-forwarded-for')

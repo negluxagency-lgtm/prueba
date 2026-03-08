@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { useBookingStore, BookingBarber } from '@/store/useBookingStore'
 import { getAvailableSlots } from '@/app/actions/get-available-slots'
 import { toast } from 'sonner'
+import { getProxiedUrl } from '@/utils/url-helper'
 
 interface DateStepProps {
     slug: string
@@ -205,8 +206,8 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                 </div>
             </div>
 
-            {/* Barber Selection (Premium only) */}
-            {barbers.length > 0 && (plan || '').toLowerCase() === 'premium' && (
+            {/* Barber Selection (Premium and Profesional) */}
+            {barbers.length > 0 && ['premium', 'profesional'].includes((plan || '').toLowerCase()) && (
                 <div className="space-y-3">
                     <p className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-2">
                         <User size={12} className="text-amber-500" />
@@ -244,7 +245,7 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                                 >
                                     {barber.foto ? (
                                         <img
-                                            src={barber.foto}
+                                            src={getProxiedUrl(barber.foto)}
                                             alt={barber.nombre}
                                             className="w-10 h-10 rounded-full object-cover"
                                         />

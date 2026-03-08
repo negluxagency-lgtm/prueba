@@ -166,6 +166,24 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
         toast.success('Factura eliminada')
     }
 
+    const getFileUuid = (url?: string) => {
+        if (!url) return null;
+        try {
+            const urlObj = new URL(url);
+            const pathParts = urlObj.pathname.split('/facturas/');
+            if (pathParts.length > 1) {
+                // Return the full relative path inside the bucket (UUID/filename)
+                // However, since we want to mask it fully, we can just use the user_id UUID
+                // or the first part of the storage path.
+                const storagePath = pathParts[1];
+                return encodeURIComponent(storagePath); 
+            }
+        } catch (e) {
+            console.warn('Could not parse file UUID:', e);
+        }
+        return null;
+    }
+
 
     return (
         <div className="space-y-6">
@@ -203,13 +221,14 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                             className="bg-transparent border-none text-[10px] md:text-sm font-black text-amber-500 outline-none cursor-pointer focus:ring-0 appearance-none uppercase tracking-widest [&>option]:bg-zinc-950"
                         >
                             <option value="">Todo</option>
-                            <option value="local">Local</option>
-                            <option value="agua">Agua</option>
-                            <option value="luz">Luz</option>
+                            <option value="alquiler">Alquiler</option>
+                            <option value="suministros">Suministros</option>
+                            <option value="material y productos">Material y Productos</option>
                             <option value="herramientas">Herramientas</option>
-                            <option value="seguros">Seguros</option>
-                            <option value="publicidad">Publicidad</option>
-                            <option value="gestorías">Gestorías</option>
+                            <option value="limpieza y mantenimiento">Limpieza y Mantenimiento</option>
+                            <option value="marketing y publicidad">Marketing y Publicidad</option>
+                            <option value="gestoría y seguros">Gestoría y Seguros</option>
+                            <option value="dietas">Dietas</option>
                             <option value="otros">Otros</option>
                         </select>
                     </div>
@@ -255,13 +274,14 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                                 onChange={e => setNewFactura({ ...newFactura, tipo: e.target.value })}
                                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold appearance-none cursor-pointer"
                             >
-                                <option value="local">Local</option>
-                                <option value="agua">Agua</option>
-                                <option value="luz">Luz</option>
+                                <option value="alquiler">Alquiler</option>
+                                <option value="suministros">Suministros</option>
+                                <option value="material y productos">Material y Productos</option>
                                 <option value="herramientas">Herramientas</option>
-                                <option value="seguros">Seguros</option>
-                                <option value="publicidad">Publicidad</option>
-                                <option value="gestorías">Gestorías</option>
+                                <option value="limpieza y mantenimiento">Limpieza y Mantenimiento</option>
+                                <option value="marketing y publicidad">Marketing y Publicidad</option>
+                                <option value="gestoría y seguros">Gestoría y Seguros</option>
+                                <option value="dietas">Dietas</option>
                                 <option value="otros">Otros</option>
                             </select>
                         </div>
@@ -346,9 +366,9 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                             </div>
 
                             <div className="flex items-center gap-3">
-                                {f.archivo_url ? (
+                                {f.archivo_url && getFileUuid(f.archivo_url) ? (
                                     <a
-                                        href={f.archivo_url}
+                                        href={`/f/${getFileUuid(f.archivo_url)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex-1 flex items-center justify-center gap-2 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-zinc-700/50 shadow-lg active:scale-95"

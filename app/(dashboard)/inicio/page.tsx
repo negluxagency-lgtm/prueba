@@ -11,6 +11,7 @@ import { AppointmentTable } from "@/components/dashboard/AppointmentTable";
 import { AppointmentModal } from "@/components/dashboard/AppointmentModal";
 import { InvoiceModal } from "@/components/dashboard/InvoiceModal";
 import { ProductSalesTable } from '@/components/dashboard/ProductSalesTable';
+import { EditProductSaleModal } from '@/components/dashboard/EditProductSaleModal';
 import ObjectiveRings from "@/components/dashboard/ObjectiveRings";
 import MonthlyGoalsChart from "@/components/dashboard/MonthlyGoalsChart";
 import { toast } from "sonner";
@@ -128,6 +129,7 @@ export default function Dashboard() {
                     Hora: venta.created_at.split('T')[1].substring(0, 5), // 'HH:MM'
                     Telefono: String(venta.cantidad), // Used for quantity count in existing logic
                     Precio: venta.precio,
+                    pago: venta.metodo_pago,
                     confirmada: true,
                     _isProductSale: true, // Internal marker
                 }));
@@ -188,6 +190,8 @@ export default function Dashboard() {
     const [editingCita, setEditingCita] = useState<Appointment | null>(null);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [invoiceAppointment, setInvoiceAppointment] = useState<Appointment | null>(null);
+    const [isProductEditModalOpen, setIsProductEditModalOpen] = useState(false);
+    const [editingProductSale, setEditingProductSale] = useState<any>(null);
 
     // Separar citas de ventas usando el marcador interno
     const productSales = allAppointments.filter(a => (a as any)._isProductSale);
@@ -212,9 +216,14 @@ export default function Dashboard() {
         }
     };
 
-    const handleEdit = (cita: Appointment) => {
-        setEditingCita(cita);
-        setIsModalOpen(true);
+    const handleEdit = (item: Appointment) => {
+        if ((item as any)._isProductSale) {
+            setEditingProductSale(item);
+            setIsProductEditModalOpen(true);
+        } else {
+            setEditingCita(item);
+            setIsModalOpen(true);
+        }
     };
 
     const handleDelete = async (item: Appointment) => {
@@ -260,6 +269,41 @@ export default function Dashboard() {
                 return 'Registro guardado correctamente';
             },
             error: (err) => `Error: ${err}`
+        });
+    };
+
+    const handleSaveProductSale = async (data: { cantidad: number; precioTotal: number; metodoPago: string }) => {
+        if (!editingProductSale || !user) return;
+
+        const promise = supabase
+            .from('ventas_productos')
+            .update({
+                cantidad: data.cantidad,
+                precio: data.precioTotal,
+                metodo_pago: data.metodoPago
+            })
+            .eq('id', editingProductSale.id)
+            .eq('barberia_id', user.id) // Security: ensure it belongs to this shop
+            .select() // Ask for the data back to ensure it was updated
+            .then(({ data: updatedData, error }) => {
+                if (error) throw error;
+                if (!updatedData || updatedData.length === 0) {
+                    throw new Error('No se pudo encontrar la venta para actualizar o no tienes permisos.');
+                }
+
+                // Update local state
+                setSales(prev => prev.map(s => s.id === editingProductSale.id ? {
+                    ...s,
+                    Telefono: String(data.cantidad),
+                    Precio: data.precioTotal,
+                    pago: data.metodoPago
+                } : s));
+                return { success: true };
+            });
+
+        toast.promise(promise, {
+            success: 'Venta actualizada correctamente',
+            error: (err) => `Error: ${err.message || 'No se pudo actualizar la venta'}`
         });
     };
 
@@ -397,6 +441,13 @@ export default function Dashboard() {
                 appointment={invoiceAppointment}
                 shopData={shopData || { name: user?.user_metadata?.barberia_nombre || 'Mi Barbería', cif: '' }}
                 onUpdateCIF={updateShopCIF}
+            />
+
+            <EditProductSaleModal
+                isOpen={isProductEditModalOpen}
+                onClose={() => { setIsProductEditModalOpen(false); setEditingProductSale(null); }}
+                onSave={handleSaveProductSale}
+                sale={editingProductSale}
             />
 
         </main>

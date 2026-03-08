@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Product } from '@/types';
 import { Package, DollarSign, Image as ImageIcon, ShoppingCart, Plus, Pencil, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getProxiedUrl } from '@/utils/url-helper';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SellProductModal } from '@/components/productos/SellProductModal';
 import { AddProductModal } from '@/components/productos/AddProductModal';
@@ -55,12 +56,36 @@ export default function ProductosPage() {
         }
     };
 
-    const handleAddProduct = async (nombre: string, precio: number, stock: number) => {
+    const handleAddProduct = async (nombre: string, precio: number, stock: number, file: File | null) => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 toast.error('Sesión no encontrada. Por favor, inicia sesión.');
                 return;
+            }
+
+            let publicUrl = '';
+            if (file) {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('productos')
+                    .upload(fileName, file);
+
+                if (uploadError) {
+                    console.error('ERROR STORAGE:', uploadError);
+                    throw new Error(`Error subiendo imagen: ${uploadError.message}`);
+                }
+
+                const { data } = supabase.storage
+                    .from('productos')
+                    .getPublicUrl(fileName);
+                
+                // Transformar URL de Supabase a URL de Proxy propio
+                // De: https://...supabase.co/storage/v1/object/public/productos/path
+                // A: /i/productos/path
+                publicUrl = `/i/productos/${fileName}`;
             }
 
             // Obtener el nombre de la barbería del perfil
@@ -77,20 +102,21 @@ export default function ProductosPage() {
 
             console.log('Intentando añadir producto a la barbería:', profile.nombre_barberia);
 
-            const { error } = await supabase
+            const { error: dbError } = await supabase
                 .from('productos')
                 .insert([{
                     nombre,
                     precio,
                     venta: 0,
                     stock,
+                    foto: publicUrl,
                     barberia: profile.nombre_barberia, // Usamos 'barberia' como matching (legacy)
                     barberia_id: user.id // Usamos UUID para el nuevo matching seguro
                 }]);
 
-            if (error) {
-                console.error('Error de Supabase al añadir producto:', error.message, error.details, error.hint, error.code);
-                throw error;
+            if (dbError) {
+                console.error('ERROR DATABASE:', dbError);
+                throw dbError;
             }
 
             toast.success(`Producto añadido: ${nombre}`);
@@ -102,11 +128,36 @@ export default function ProductosPage() {
         }
     };
 
-    const handleUpdateProduct = async (id: number, nombre: string, precio: number, stock: number) => {
+    const handleUpdateProduct = async (id: number, nombre: string, precio: number, stock: number, file: File | null) => {
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            let publicUrl = undefined;
+            if (file) {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('productos')
+                    .upload(fileName, file);
+
+                if (uploadError) throw uploadError;
+
+                const { data } = supabase.storage
+                    .from('productos')
+                    .getPublicUrl(fileName);
+                
+                // Transformar URL de Supabase a URL de Proxy propio
+                publicUrl = `/i/productos/${fileName}`;
+            }
+
+            const updateData: any = { nombre, precio, stock };
+            if (publicUrl) updateData.foto = publicUrl;
+
             const { error } = await supabase
                 .from('productos')
-                .update({ nombre, precio, stock })
+                .update(updateData)
                 .eq('id', id);
 
             if (error) throw error;
@@ -138,7 +189,7 @@ export default function ProductosPage() {
         }
     };
 
-    const handleSellProduct = async (cantidad: number) => {
+    const handleSellProduct = async (cantidad: number, metodoPago: string) => {
         if (!selectedProduct) return;
 
         // Validar Stock
@@ -156,7 +207,8 @@ export default function ProductosPage() {
                 productoId: selectedProduct.id,
                 nombreProducto: selectedProduct.nombre,
                 precioVenta: totalPrecio,
-                cantidad: cantidad
+                cantidad: cantidad,
+                metodoPago: metodoPago
             });
 
             if (!result.success) {
@@ -241,7 +293,7 @@ export default function ProductosPage() {
                                                 {prod.foto ? (
                                                     <div className="h-8 w-8 md:h-20 md:w-20 rounded-lg md:rounded-2xl overflow-hidden border border-zinc-800 group-hover:border-amber-500/50 transition-colors bg-black shadow-lg">
                                                         <img
-                                                            src={prod.foto}
+                                                            src={getProxiedUrl(prod.foto)}
                                                             alt={prod.nombre}
                                                             className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
                                                         />

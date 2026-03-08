@@ -295,9 +295,10 @@ function ReportDownloadButton({ selectedMonth, shopName }: { selectedMonth: stri
             const startOfMonth = `${targetMonth}-01`
             const endDate = new Date(year, month, 1).toISOString().split('T')[0]
 
-            const [{ data: gastos }, { data: citas }] = await Promise.all([
+            const [{ data: gastos }, { data: citas }, { data: sales }] = await Promise.all([
                 supabase.from('gastos').select('*').eq('user_id', user.id).gte('fecha', startOfMonth).lt('fecha', endDate).order('fecha'),
-                supabase.from('citas').select('Dia, Precio').eq('barberia_id', user.id).eq('confirmada', true).gte('Dia', startOfMonth).lt('Dia', endDate)
+                supabase.from('citas').select('Dia, Precio').eq('barberia_id', user.id).eq('confirmada', true).gte('Dia', startOfMonth).lt('Dia', endDate),
+                supabase.from('ventas_productos').select('created_at, precio, nombre_producto, cantidad').eq('barberia_id', user.id).gte('created_at', `${startOfMonth} 00:00:00`).lt('created_at', `${endDate} 00:00:00`)
             ])
 
             const totals = (gastos || []).reduce((a, c) => {
@@ -307,16 +308,47 @@ function ReportDownloadButton({ selectedMonth, shopName }: { selectedMonth: stri
 
             const dailyIncome: Record<string, number> = {}
             citas?.forEach(c => { dailyIncome[c.Dia] = (dailyIncome[c.Dia] || 0) + (+c.Precio || 0) })
+            
+            // Add product sales to daily income
+            sales?.forEach(s => {
+                const dateKey = s.created_at.split('T')[0]
+                dailyIncome[dateKey] = (dailyIncome[dateKey] || 0) + (+s.precio || 0)
+            })
+
             const totalInc = Object.values(dailyIncome).reduce((s, v) => s + v, 0)
             setIncome(totalInc)
 
-            const allDates = Array.from(new Set([...Object.keys(dailyIncome), ...(gastos || []).map(g => g.fecha)])).sort()
+            // Collect all unique dates
+            const allDates = Array.from(new Set([
+                ...Object.keys(dailyIncome), 
+                ...(gastos || []).map(g => g.fecha)
+            ])).sort()
+
             const built: any[] = []
             allDates.forEach(date => {
                 const dayInc = dailyIncome[date] || 0
                 const dayExp = (gastos || []).filter(g => g.fecha === date)
-                if (!dayExp.length) { if (dayInc > 0) built.push({ date: date.split('-').reverse().join('/'), income: dayInc, expense: 0, reason: '', deductible: false }) }
-                else dayExp.forEach((g, i) => built.push({ date: date.split('-').reverse().join('/'), income: i === 0 ? dayInc : 0, expense: +g.monto, reason: g.concepto, deductible: g.deducible }))
+                
+                // If there are no expenses but there is income, add one entry
+                if (!dayExp.length) { 
+                    if (dayInc > 0) built.push({ 
+                        date: date.split('-').reverse().join('/'), 
+                        income: dayInc, 
+                        expense: 0, 
+                        reason: 'Ingresos del día (Citas + Ventas)', 
+                        deductible: false 
+                    }) 
+                }
+                else {
+                    // If there are expenses, link the income to the first expense row of that day
+                    dayExp.forEach((g, i) => built.push({ 
+                        date: date.split('-').reverse().join('/'), 
+                        income: i === 0 ? dayInc : 0, 
+                        expense: +g.monto, 
+                        reason: g.concepto, 
+                        deductible: g.deducible 
+                    }))
+                }
             })
             setEntries(built)
             setReady(true)

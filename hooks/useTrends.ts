@@ -107,7 +107,10 @@ export function useTrends(referenceDate?: string) {
             sum + (Number(sale.cantidad) || 0), 0
         );
 
-        const avgTkt = totalCli > 0 ? Math.round(totalRev / totalCli) : 0;
+        // Ticket medio = ingresos totales / transacciones totales (citas + ventas de producto)
+        // Cada venta de producto cuenta como 1 transacción independiente
+        const totalTransactions = totalCli + productSales.length;
+        const avgTkt = totalTransactions > 0 ? Math.round(totalRev / totalTransactions) : 0;
         const totalNoShows = appointments.filter(cita => cita.cancelada).length;
 
         return {
@@ -261,7 +264,7 @@ export function useTrends(referenceDate?: string) {
         setMetrics(calculateMetrics(appointments, productSales));
 
         // Prepare Chart Data (Filling Gaps)
-        const dataMap: Record<string, { rev: number; cli: number; no: number; cuts: number; prods: number }> = {};
+        const dataMap: Record<string, { rev: number; cli: number; no: number; cuts: number; prods: number; prodTxns: number }> = {};
         const start = range === 'week' ? new Date(new Date(refDate).setDate(refDate.getDate() - 7))
             : range === 'month' ? new Date(refDate.getFullYear(), refDate.getMonth(), 1)
                 : new Date(refDate.getFullYear(), 0, 1);
@@ -276,7 +279,7 @@ export function useTrends(referenceDate?: string) {
         // Process appointments (citas)
         appointments.forEach(app => {
             const groupKey = range === 'year' ? app.Dia.substring(0, 7) : app.Dia;
-            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
+            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0, prodTxns: 0 };
 
             if (app.confirmada) {
                 // Solo contar citas confirmadas
@@ -291,12 +294,14 @@ export function useTrends(referenceDate?: string) {
         productSales.forEach(sale => {
             const dateStr = sale.created_at.split('T')[0];
             const groupKey = range === 'year' ? dateStr.substring(0, 7) : dateStr;
-            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
+            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0, prodTxns: 0 };
 
             // Sumar ingresos de productos
             dataMap[groupKey].rev += (Number(sale.precio) || 0);
             // Sumar cantidad de productos vendidos
             dataMap[groupKey].prods += (Number(sale.cantidad) || 0);
+            // Contar cada venta como 1 transacción
+            (dataMap[groupKey] as any).prodTxns = ((dataMap[groupKey] as any).prodTxns || 0) + 1;
         });
 
         const finalData: ChartDataPoint[] = [];
@@ -309,6 +314,7 @@ export function useTrends(referenceDate?: string) {
                 const monthKey = iterDate.toISOString().substring(0, 7);
                 const item = dataMap[monthKey] || { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
 
+                const totalTxns = item.cli + (item.prodTxns || 0);
                 finalData.push({
                     name: getLabel(`${monthKey}-01`, 'year'),
                     date: monthKey,
@@ -316,7 +322,7 @@ export function useTrends(referenceDate?: string) {
                     clients: item.cli,
                     cuts: item.cuts,
                     products: item.prods,
-                    avgTicket: item.cli > 0 ? Math.round(item.rev / item.cli) : 0,
+                    avgTicket: totalTxns > 0 ? Math.round(item.rev / totalTxns) : 0,
                     noShows: item.no
                 });
 
@@ -328,6 +334,7 @@ export function useTrends(referenceDate?: string) {
                 const isoDate = current.toISOString().split('T')[0];
                 const item = dataMap[isoDate] || { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
 
+                const totalTxns = item.cli + (item.prodTxns || 0);
                 finalData.push({
                     name: getLabel(isoDate, range),
                     date: isoDate,
@@ -335,7 +342,7 @@ export function useTrends(referenceDate?: string) {
                     clients: item.cli,
                     cuts: item.cuts,
                     products: item.prods,
-                    avgTicket: item.cli > 0 ? Math.round(item.rev / item.cli) : 0,
+                    avgTicket: totalTxns > 0 ? Math.round(item.rev / totalTxns) : 0,
                     noShows: item.no
                 });
 

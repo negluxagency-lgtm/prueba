@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AvatarUpload } from '@/components/AvatarUpload';
+import { getProxiedUrl } from '@/utils/url-helper';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -174,7 +175,7 @@ export default function ConfigurationPage() {
                 if (profile.Direccion) {
                     setAddressFields(p => ({ ...p, calle: profile.Direccion }));
                 }
-                setCurrentAvatarUrl(profile.logo_url || null);
+                setCurrentAvatarUrl(getProxiedUrl(profile.logo_url) || null);
 
                 if (profile.horario_semanal && !Array.isArray(profile.horario_semanal)) {
                     setShopSchedule(profile.horario_semanal);
@@ -265,6 +266,36 @@ export default function ConfigurationPage() {
 
     // ─── Submit ───────────────────────────────────────────────────────────────
 
+    const generateUniqueSlug = async (baseName: string, userId: string): Promise<string> => {
+        const baseSlug = baseName
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") // remove accents
+            .replace(/[^a-z0-9]+/g, '-')     // replace non-alphanumeric with hyphens
+            .replace(/(^-|-$)+/g, '');       // trim hyphens
+
+        let finalSlug = baseSlug;
+        let counter = 1;
+
+        while (true) {
+            // Check if slug exists BUT belongs to a DIFFERENT user
+            const { data: existing } = await supabase
+                .from('perfiles')
+                .select('id')
+                .eq('slug', finalSlug)
+                .neq('id', userId)
+                .maybeSingle();
+
+            if (!existing) {
+                break; // If no collision with other users, we can use this slug
+            }
+            finalSlug = `${baseSlug}-${counter}`;
+            counter++;
+        }
+        
+        return finalSlug;
+    };
+
     const handleSubmit = async () => {
         if (!user) return;
         setLoading(true);
@@ -276,13 +307,18 @@ export default function ConfigurationPage() {
                 const { error: uploadError } = await supabase.storage
                     .from('logos_barberias').upload(fileName, avatarFile, { upsert: true });
                 if (uploadError) throw uploadError;
-                const { data: urlData } = supabase.storage.from('logos_barberias').getPublicUrl(fileName);
-                finalLogoUrl = urlData.publicUrl;
+                
+                // Transformar URL de Supabase a URL de Proxy propio
+                finalLogoUrl = `/i/logos_barberias/${fileName}`;
             }
+
+            const barberiaNombre = formData.nombre_barberia || user.user_metadata?.barberia_nombre || 'Mi Barbería';
+            const finalSlug = await generateUniqueSlug(barberiaNombre, user.id);
 
             const { error: profileError } = await supabase.from('perfiles').upsert({
                 id: user.id,
-                nombre_barberia: formData.nombre_barberia || user.user_metadata?.barberia_nombre || 'Mi Barbería',
+                nombre_barberia: barberiaNombre,
+                slug: finalSlug,
                 logo_url: finalLogoUrl,
                 Direccion: `${addressFields.calle}${addressFields.numero ? ', ' + addressFields.numero : ''}${addressFields.piso ? ', ' + addressFields.piso : ''}${addressFields.ciudad ? ', ' + addressFields.ciudad : ''}`,
                 telefono: formData.telefono,

@@ -37,7 +37,7 @@ export const PaymentReportModal: React.FC<PaymentReportModalProps> = ({ isOpen, 
             const nextMonthDate = new Date(year, month, 1)
             const endDate = nextMonthDate.toISOString().split('T')[0]
 
-            const { data: citas, error } = await supabase
+            const { data: citas, error: citasError } = await supabase
                 .from('citas')
                 .select('Dia, Precio, Nombre, servicio, pago')
                 .eq('barberia_id', user.id)
@@ -47,16 +47,42 @@ export const PaymentReportModal: React.FC<PaymentReportModalProps> = ({ isOpen, 
                 .lt('Dia', endDate)
                 .order('Dia', { ascending: true })
 
-            if (error) throw error
+            // Fetch product sales with the same payment method
+            const { data: sales, error: salesError } = await supabase
+                .from('ventas_productos')
+                .select('created_at, precio, nombre_producto, metodo_pago, cantidad')
+                .eq('barberia_id', user.id)
+                .eq('metodo_pago', selectedPaymentMethod)
+                .gte('created_at', `${startOfMonth} 00:00:00`)
+                .lt('created_at', `${endDate} 00:00:00`)
 
-            const entries = (citas || []).map(c => ({
+            if (citasError) throw citasError
+            if (salesError) throw salesError
+
+            // Map appointments
+            const appointmentEntries = (citas || []).map(c => ({
                 date: c.Dia.split('-').reverse().join('/'),
                 client: c.Nombre,
                 service: c.servicio || 'Sin servicio',
-                amount: Number(c.Precio) || 0
+                amount: Number(c.Precio) || 0,
+                timestamp: new Date(c.Dia).getTime()
             }))
 
-            setReportData(entries)
+            // Map product sales
+            const productEntries = (sales || []).map(s => ({
+                date: new Date(s.created_at).toLocaleDateString('es-ES'),
+                client: 'Venta Producto',
+                service: `${s.nombre_producto} (x${s.cantidad})`,
+                amount: Number(s.precio) || 0,
+                timestamp: new Date(s.created_at).getTime()
+            }))
+
+            // Merge and sort by time
+            const combinedEntries = [...appointmentEntries, ...productEntries]
+                .sort((a, b) => a.timestamp - b.timestamp)
+                .map(({ timestamp, ...entry }) => entry)
+
+            setReportData(combinedEntries)
         } catch (err) {
             console.error('Error fetching payment report data:', err)
         } finally {

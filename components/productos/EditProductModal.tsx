@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { X, Package, DollarSign, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Product } from '@/types';
+import { getProxiedUrl } from '@/utils/url-helper';
 
 interface EditProductModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (id: number, nombre: string, precio: number, stock: number) => void;
+    onConfirm: (id: number, nombre: string, precio: number, stock: number, file: File | null) => void;
     product: Product | null;
 }
 
@@ -16,19 +17,35 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onCl
     const [nombre, setNombre] = useState('');
     const [precio, setPrecio] = useState('');
     const [stock, setStock] = useState('0');
+    const [file, setFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
         if (product) {
             setNombre(product.nombre);
             setPrecio(product.precio.toString());
             setStock(product.stock ? product.stock.toString() : '0');
+            setPreviewUrl(getProxiedUrl(product.foto) || null);
+            setFile(null);
         }
     }, [product]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const selectedFile = e.target.files[0];
+            setFile(selectedFile);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewUrl(reader.result as string);
+            };
+            reader.readAsDataURL(selectedFile);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (nombre && precio && product) {
-            onConfirm(product.id, nombre, Number(precio), Number(stock));
+            onConfirm(product.id, nombre, Number(precio), Number(stock), file);
             onClose();
         }
     };
@@ -66,6 +83,33 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onCl
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="flex flex-col items-center gap-4 mb-6">
+                                <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 w-full ml-1">Foto del Producto</label>
+                                <div className="relative group w-40 h-40">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
+                                    <div className="w-full h-full bg-black/40 border-2 border-dashed border-zinc-800 rounded-[2rem] flex flex-col items-center justify-center overflow-hidden group-hover:border-blue-500 transition-all">
+                                        {previewUrl ? (
+                                            <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <>
+                                                <div className="w-8 h-8 text-zinc-600 mb-2 flex items-center justify-center">
+                                                    <Package size={32} />
+                                                </div>
+                                                <span className="text-[9px] font-black uppercase text-zinc-500">Subir Imagen</span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 bg-blue-500 text-white p-2 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                                        <Save size={16} strokeWidth={3} />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
                                 <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 ml-1">Nombre del Producto</label>
                                 <div className="relative group">
