@@ -275,33 +275,34 @@ export default function Dashboard() {
     const handleSaveProductSale = async (data: { cantidad: number; precioTotal: number; metodoPago: string }) => {
         if (!editingProductSale || !user) return;
 
-        const promise = supabase
-            .from('ventas_productos')
-            .update({
-                cantidad: data.cantidad,
-                precio: data.precioTotal,
-                metodo_pago: data.metodoPago
-            })
-            .eq('id', editingProductSale.id)
-            .eq('barberia_id', user.id) // Security: ensure it belongs to this shop
-            .select() // Ask for the data back to ensure it was updated
-            .then(({ data: updatedData, error }) => {
-                if (error) throw error;
-                if (!updatedData || updatedData.length === 0) {
-                    throw new Error('No se pudo encontrar la venta para actualizar o no tienes permisos.');
-                }
+        const updateData = async () => {
+            const { data: updatedData, error } = await supabase
+                .from('ventas_productos')
+                .update({
+                    cantidad: data.cantidad,
+                    precio: data.precioTotal,
+                    metodo_pago: data.metodoPago
+                })
+                .eq('id', editingProductSale.id)
+                .eq('barberia_id', user.id) // Security: ensure it belongs to this shop
+                .select();
 
-                // Update local state
-                setSales(prev => prev.map(s => s.id === editingProductSale.id ? {
-                    ...s,
-                    Telefono: String(data.cantidad),
-                    Precio: data.precioTotal,
-                    pago: data.metodoPago
-                } : s));
-                return { success: true };
-            });
+            if (error) throw error;
+            if (!updatedData || updatedData.length === 0) {
+                throw new Error('No se pudo encontrar la venta para actualizar o no tienes permisos.');
+            }
 
-        toast.promise(promise, {
+            // Update local state
+            setSales(prev => prev.map(s => s.id === editingProductSale.id ? {
+                ...s,
+                Telefono: String(data.cantidad),
+                Precio: data.precioTotal,
+                pago: data.metodoPago
+            } : s));
+            return { success: true };
+        };
+
+        toast.promise(updateData(), {
             success: 'Venta actualizada correctamente',
             error: (err) => `Error: ${err.message || 'No se pudo actualizar la venta'}`
         });
