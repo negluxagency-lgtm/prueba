@@ -52,20 +52,9 @@ export function useChat() {
             // Only show loader on initial fetch if empty
             if (conversations.length === 0) setLoading(true);
 
-            // 🚀 OPTIMIZACIÓN: Filtrar por barbería y limitar carga
-            // Intentamos obtener el nombre de la barbería del perfil
-            const barberiaName = currentUser.profile_barberia || currentUser.user_metadata?.barberia_nombre;
-
-            if (!barberiaName) {
-                console.warn("useChat: No se pudo determinar el nombre de la barbería para filtrar.");
-            }
-
-            // Paralell fetch: Messages (Filtrados por barbería si es posible) + Client Names
+            // 🚀 ESTÁNDAR UUID: Filtrar por barberia_id
             let messagesQuery = supabase.from('Mensajes').select('*').order('numero', { ascending: true });
-
-            if (barberiaName) {
-                messagesQuery = messagesQuery.eq('barberia', barberiaName);
-            }
+            messagesQuery = messagesQuery.eq('barberia_id', currentUser.id);
 
             const [messagesResult, namesResult] = await Promise.all([
                 messagesQuery,
@@ -206,7 +195,7 @@ export function useChat() {
                     mensaje_recibido: null,
                     manual: true,
                     fecha: new Date().toISOString(),
-                    barberia: user?.profile_barberia || user?.user_metadata?.barberia_nombre || 'Mi Barbería'
+                    barberia_id: user.id
                 });
 
             if (error) {

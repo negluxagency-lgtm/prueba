@@ -132,15 +132,6 @@ export function useTrends(referenceDate?: string) {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return; // Silent fail o manejar error
 
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia')
-                .eq('id', user.id)
-                .single();
-
-            const barberiaId = profile?.nombre_barberia;
-            if (!barberiaId) return;
-
             // 1. Current Period Dates
             const refDate = referenceDate ? new Date(referenceDate) : new Date();
             let startDate = new Date(refDate);
@@ -184,7 +175,7 @@ export function useTrends(referenceDate?: string) {
             const currentCitasQuery = supabase
                 .from('citas')
                 .select('*')
-                .eq('barberia', barberiaId)
+                .eq('barberia_id', user.id)
                 .gte('Dia', currentStartStr)
                 .lte('Dia', currentEndStr)
                 .order('Dia', { ascending: true });
@@ -192,7 +183,7 @@ export function useTrends(referenceDate?: string) {
             const previousCitasQuery = supabase
                 .from('citas')
                 .select('*')
-                .eq('barberia', barberiaId)
+                .eq('barberia_id', user.id)
                 .gte('Dia', prevStartStr)
                 .lte('Dia', prevEndStr);
 
@@ -359,15 +350,6 @@ export function useTrends(referenceDate?: string) {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia')
-                .eq('id', user.id)
-                .single();
-
-            const barberiaId = profile?.nombre_barberia;
-            if (!barberiaId) return;
-
             fetchTrends();
 
             // Suscripción FILTRADA para citas 🔒
@@ -377,7 +359,7 @@ export function useTrends(referenceDate?: string) {
                     event: '*',
                     schema: 'public',
                     table: 'citas',
-                    filter: `barberia=eq.${barberiaId}`
+                    filter: `barberia_id=eq.${user.id}`
                 }, () => {
                     fetchTrends();
                 })

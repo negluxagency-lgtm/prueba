@@ -13,7 +13,7 @@ export async function getAdminProfiles() {
 
     const { data: profiles, error } = await supabaseAdmin
         .from('perfiles')
-        .select('nombre_barberia, correo')
+        .select('id, nombre_barberia, correo')
         .order('nombre_barberia', { ascending: true });
 
     if (error) {
@@ -24,12 +24,12 @@ export async function getAdminProfiles() {
     return profiles || [];
 }
 
-export async function getAdminBillingStats(barberiaName: string) {
+export async function getAdminBillingStats(barberiaId: string) {
     if (process.env.NODE_ENV !== 'development') {
         throw new Error('Action not allowed in production');
     }
 
-    if (!barberiaName) return null;
+    if (!barberiaId) return null;
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -37,7 +37,7 @@ export async function getAdminBillingStats(barberiaName: string) {
     const { data: appointments, error } = await supabaseAdmin
         .from('citas')
         .select('*')
-        .eq('barberia', barberiaName)
+        .eq('barberia_id', barberiaId)
         .gte('Dia', startOfMonth);
 
     if (error) {

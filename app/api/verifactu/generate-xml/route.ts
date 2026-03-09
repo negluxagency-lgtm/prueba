@@ -27,18 +27,18 @@ export async function POST(req: NextRequest) {
         )
 
         // 1. Obtener las facturas emitidas (solo con archivo_url vacío → facturas VERI*FACTU)
-        const { data: facturas, error: factError } = await supabase
+        const { data: facturas, error: facturasError } = await supabase
             .from('facturas')
-            .select('id, user_id, titulo, fecha_documento, tipo')
+            .select('id, barberia_id, titulo, fecha_documento, tipo')
             .in('id', facturaIds)
             .or('archivo_url.is.null,archivo_url.eq.')
 
-        if (factError || !facturas || facturas.length === 0) {
+        if (facturasError || !facturas || facturas.length === 0) {
             return NextResponse.json({ error: 'No se encontraron facturas válidas.' }, { status: 404 })
         }
 
-        // 2. Obtener el perfil de la barbería (NIF, nombre) — usamos user_id de la primera factura
-        const barberia_id = facturas[0].user_id
+        // 2. Obtener el perfil de la barbería (NIF, nombre) — usamos barberia_id de la primera factura
+        const barberia_id = facturas[0].barberia_id
         const { data: perfil, error: perfError } = await supabase
             .from('perfiles')
             .select('"CIF/NIF", nombre_barberia')

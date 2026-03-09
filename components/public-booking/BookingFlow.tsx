@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Link2, Copy, Check, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useBookingStore, BookingService, BookingBarber } from '@/store/useBookingStore'
 import ServiceStep from '@/components/booking/ServiceStep'
@@ -36,7 +37,19 @@ export default function BookingFlow({
     plan,
 }: BookingFlowProps) {
     const step = useBookingStore((s) => s.step)
+    const bookingUuid = useBookingStore((s) => s.bookingUuid)
     const reset = useBookingStore((s) => s.reset)
+
+    const [copied, setCopied] = useState(false)
+
+    const bookingLink = bookingUuid ? `https://app.nelux.es/cita/${bookingUuid}` : null
+
+    const handleCopy = async () => {
+        if (!bookingLink) return
+        await navigator.clipboard.writeText(bookingLink).catch(() => { })
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2500)
+    }
 
     // Reset store when component unmounts (e.g. navigation away)
     useEffect(() => {
@@ -86,16 +99,46 @@ export default function BookingFlow({
                             <CheckCircle2 className="w-12 h-12 text-green-500" />
                         </div>
                         <h2 className="text-3xl font-black text-white mb-2">¡Reservado!</h2>
-                        <p className="text-zinc-400 max-w-xs mx-auto mb-8">
+                        <p className="text-zinc-400 max-w-xs mx-auto mb-6">
                             Tu cita ha sido confirmada correctamente. Te esperamos en{' '}
                             <span className="text-white font-bold">{shopName}</span>.
                         </p>
-                        <button
-                            onClick={() => reset()}
-                            className="px-8 py-3 rounded-full bg-zinc-800 text-white font-medium hover:bg-zinc-700 transition"
-                        >
-                            Hacer otra reserva
-                        </button>
+
+                        {bookingLink && (
+                            <div className="w-full max-w-sm mt-2 space-y-3">
+                                <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">
+                                    <Link2 className="w-3 h-3" />
+                                    Enlace para cancelar / gestionar tu cita
+                                </div>
+                                <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 text-zinc-400 text-xs font-mono truncate">
+                                    {bookingLink}
+                                </div>
+                                <div className="flex flex-col gap-2 w-full">
+                                    <button
+                                        onClick={handleCopy}
+                                        className={cn(
+                                            'w-full py-3 rounded-xl font-black text-xs uppercase tracking-wide flex items-center justify-center gap-2 transition-all active:scale-[0.98]',
+                                            copied
+                                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                : 'bg-zinc-800 text-white hover:bg-zinc-700'
+                                        )}
+                                    >
+                                        {copied ? <><Check className="w-3.5 h-3.5" />¡Copiado!</> : <><Copy className="w-3.5 h-3.5" />Copiar enlace</>}
+                                    </button>
+
+                                    <a
+                                        href={bookingLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full py-3 rounded-xl font-black text-black bg-amber-500 hover:bg-amber-400 text-xs uppercase tracking-wide flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                        Guardar en una nueva pestaña
+                                    </a>
+                                </div>
+                                <p className="text-zinc-700 text-[10px] text-center">El enlace caduca automáticamente tras la fecha de tu cita.</p>
+                            </div>
+                        )}
                     </motion.div>
                 )}
 

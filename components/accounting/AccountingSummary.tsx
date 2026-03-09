@@ -54,7 +54,7 @@ export default function AccountingSummary({
             const { data: gastos, error: gastosErr } = await supabase
                 .from('gastos')
                 .select('*')
-                .eq('user_id', user.id)
+                .eq('barberia_id', user.id)
                 .gte('fecha', startOfMonth)
                 .lt('fecha', endDate)
                 .order('fecha', { ascending: true })

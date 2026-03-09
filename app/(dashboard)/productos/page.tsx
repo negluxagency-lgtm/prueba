@@ -44,7 +44,7 @@ export default function ProductosPage() {
             const { data, error } = await supabase
                 .from('productos')
                 .select('*')
-                .eq('barberia', profile.nombre_barberia)
+                .eq('barberia_id', user.id)
                 .order('nombre', { ascending: true });
 
             if (error) throw error;

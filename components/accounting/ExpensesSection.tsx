@@ -51,7 +51,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
         let query = supabase
             .from('gastos')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('barberia_id', user.id)
             .order('fecha', { ascending: false })
 
         if (targetMonth) {
@@ -74,7 +74,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
         let facturasQuery = supabase
             .from('facturas')
             .select('id, titulo, fecha_documento, archivo_url')
-            .eq('user_id', user.id)
+            .eq('barberia_id', user.id)
 
         if (targetMonth) {
             const [year, month] = targetMonth.split('-').map(Number)
@@ -156,7 +156,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                 facturaUrl = publicUrl
 
                 const { error: dbFacturaError } = await supabase.from('facturas').insert({
-                    user_id: user.id,
+                    barberia_id: user.id,
                     titulo: newGasto.concepto,
                     tipo: newGasto.categoria.toLowerCase(),
                     fecha_documento: newGasto.fecha,
@@ -167,7 +167,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
             }
 
             const { error: dbGastoError } = await supabase.from('gastos').insert({
-                user_id: user.id,
+                barberia_id: user.id,
                 concepto: newGasto.concepto,
                 monto: parseFloat(newGasto.monto),
                 fecha: newGasto.fecha,

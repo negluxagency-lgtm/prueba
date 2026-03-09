@@ -47,7 +47,7 @@ interface Barber {
 
 interface Service {
     id?: string;
-    perfil_id?: string;
+    barberia_id?: string;
     nombre: string;
     precio: number;
     duracion: number;
@@ -193,7 +193,7 @@ export default function ConfigurationPage() {
             }
 
             const { data: services } = await supabase
-                .from('servicios').select('*').eq('perfil_id', currentUser.id).order('precio');
+                .from('servicios').select('*').eq('barberia_id', currentUser.id).order('precio');
             if (services) setServicesList(services);
         };
         checkUser();
@@ -352,7 +352,7 @@ export default function ConfigurationPage() {
                 if (error) throw error;
             }
             for (const s of servicesList) {
-                const payload: any = { perfil_id: user.id, nombre: s.nombre, precio: s.precio, duracion: s.duracion };
+                const payload: any = { barberia_id: user.id, nombre: s.nombre, precio: s.precio, duracion: s.duracion };
                 if (s.id) payload.id = s.id;
                 const { error } = await supabase.from('servicios').upsert(payload);
                 if (error) throw error;

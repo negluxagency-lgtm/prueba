@@ -81,7 +81,7 @@ export function useBarberStats(mes?: string) {
                 supabase
                     .from('citas')
                     .select('barbero, Precio, confirmada')
-                    .eq('barberia', barberiaName)
+                    .eq('barberia_id', barberiaUUID)
                     .gte('Dia', startDate)
                     .lte('Dia', endDate),
 

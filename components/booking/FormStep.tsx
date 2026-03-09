@@ -27,6 +27,7 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
     const setGuestName = useBookingStore((s) => s.setGuestName)
     const setGuestPhone = useBookingStore((s) => s.setGuestPhone)
     const setIsSubmitting = useBookingStore((s) => s.setIsSubmitting)
+    const setBookingUuid = useBookingStore((s) => s.setBookingUuid)
     const setStep = useBookingStore((s) => s.setStep)
 
     // Honeypot — must always be empty. Bots fill it, humans never see it.
@@ -72,6 +73,7 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
         setIsSubmitting(false)
 
         if (result.success) {
+            if (result.uuid) setBookingUuid(result.uuid)
             setStep('SUCCESS')
         } else {
             toast.error(result.error || 'Error al reservar')

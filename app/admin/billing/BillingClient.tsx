@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { LayoutDashboard, Users, TrendingUp, DollarSign, Calendar, AlertCircle, ArrowRight } from 'lucide-react';
 
 interface Profile {
+    id: string;
     nombre_barberia: string;
     correo?: string;
 }
@@ -24,11 +25,11 @@ export default function BillingClient({ profiles, selectedBarberia, stats }: Bil
     const router = useRouter();
     const [ticketMedio, setTicketMedio] = useState<number>(15);
 
-    const handleBarberiaChange = (nombre: string) => {
-        if (!nombre) {
+    const handleBarberiaChange = (id: string) => {
+        if (!id) {
             router.push('/admin/billing');
         } else {
-            router.push(`/admin/billing?barberia=${encodeURIComponent(nombre)}`);
+            router.push(`/admin/billing?barberia=${encodeURIComponent(id)}`);
         }
     };
 
@@ -78,7 +79,7 @@ export default function BillingClient({ profiles, selectedBarberia, stats }: Bil
                             >
                                 <option value="">ELIGE UNA BARBERÍA...</option>
                                 {profiles.map(p => (
-                                    <option key={p.nombre_barberia} value={p.nombre_barberia}>
+                                    <option key={p.id} value={p.id}>
                                         {p.nombre_barberia.toUpperCase()} {p.correo ? `(${p.correo})` : ''}
                                     </option>
                                 ))}

@@ -54,7 +54,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
         let query = supabase
             .from('facturas')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('barberia_id', user.id)
 
         if (selectedMonth) {
             const startDate = `${selectedMonth}-01`
@@ -120,7 +120,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                 .getPublicUrl(fileName)
 
             const { error: dbError } = await supabase.from('facturas').insert({
-                user_id: user.id,
+                barberia_id: user.id,
                 titulo: newFactura.titulo,
                 tipo: newFactura.tipo,
                 fecha_documento: newFactura.fecha_documento,

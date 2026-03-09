@@ -113,7 +113,7 @@ export function useAppointments(selectedDate: string) {
                     Precio: formData.Precio
                 });
 
-                const { error: insertError } = await supabase
+                const { data: newCita, error: insertError } = await supabase
                     .from('citas')
                     .insert([{
                         Nombre: formData.Nombre,
@@ -127,8 +127,15 @@ export function useAppointments(selectedDate: string) {
                         barbero: formData.barbero || null, // Include barber
                         barberia_id: user.id, // 🔒 UUID requerido por RLS
                         pago: formData.pago || null
-                    }]);
+                    }])
+                    .select('uuid, Dia')
+                    .single();
                 error = insertError;
+
+                if (!insertError && newCita) {
+                    getCitas();
+                    return { success: true, uuid: newCita.uuid as string };
+                }
             }
 
             if (error) throw error;

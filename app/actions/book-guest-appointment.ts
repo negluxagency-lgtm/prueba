@@ -20,6 +20,7 @@ interface BookingData {
 interface ActionResponse {
     success: boolean
     error?: string
+    uuid?: string
 }
 
 export async function bookGuestAppointment(data: BookingData): Promise<ActionResponse> {
@@ -308,7 +309,7 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
         const { data: insertedData, error: insertError } = await supabase
             .from('citas')
             .insert(appointmentData)
-            .select()
+            .select('*')
             .single()
 
         if (insertedData) {
@@ -351,7 +352,7 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
         // 6. Revalidar para que se actualice el calendario si alguien lo está viendo
         revalidatePath(`/${slug}`)
 
-        return { success: true }
+        return { success: true, uuid: insertedData?.uuid as string | undefined }
 
     } catch (error) {
         console.error('Unexpected error:', error)

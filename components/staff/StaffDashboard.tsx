@@ -111,10 +111,10 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
         setLoading(true)
         try {
             if (activeTab === 'agenda') {
-                const response = await getStaffAgenda(shopData.nombre_barberia, barber.nombre, selectedDate, showAllAppointments)
+                const response = await getStaffAgenda(shopData.id, barber.nombre, selectedDate, showAllAppointments)
                 setAgenda(response.data)
             } else if (activeTab === 'cortes') {
-                const data = await getStaffCuts(shopData.nombre_barberia, barber.nombre, currentMonth)
+                const data = await getStaffCuts(shopData.id, barber.nombre, currentMonth)
                 setCutsData(data)
             } else if (activeTab === 'horas') {
                 const status = await getAttendanceStatus(Number(barber.id));

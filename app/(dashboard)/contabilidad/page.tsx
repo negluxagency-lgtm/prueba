@@ -296,7 +296,7 @@ function ReportDownloadButton({ selectedMonth, shopName }: { selectedMonth: stri
             const endDate = new Date(year, month, 1).toISOString().split('T')[0]
 
             const [{ data: gastos }, { data: citas }, { data: sales }] = await Promise.all([
-                supabase.from('gastos').select('*').eq('user_id', user.id).gte('fecha', startOfMonth).lt('fecha', endDate).order('fecha'),
+                supabase.from('gastos').select('*').eq('barberia_id', user.id).gte('fecha', startOfMonth).lt('fecha', endDate).order('fecha'),
                 supabase.from('citas').select('Dia, Precio').eq('barberia_id', user.id).eq('confirmada', true).gte('Dia', startOfMonth).lt('Dia', endDate),
                 supabase.from('ventas_productos').select('created_at, precio, nombre_producto, cantidad').eq('barberia_id', user.id).gte('created_at', `${startOfMonth} 00:00:00`).lt('created_at', `${endDate} 00:00:00`)
             ])

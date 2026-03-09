@@ -10,6 +10,7 @@ import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { AppointmentTable } from "@/components/dashboard/AppointmentTable";
 import { AppointmentModal } from "@/components/dashboard/AppointmentModal";
 import { InvoiceModal } from "@/components/dashboard/InvoiceModal";
+import { AppointmentLinkModal } from "@/components/dashboard/AppointmentLinkModal";
 import { ProductSalesTable } from '@/components/dashboard/ProductSalesTable';
 import { EditProductSaleModal } from '@/components/dashboard/EditProductSaleModal';
 import ObjectiveRings from "@/components/dashboard/ObjectiveRings";
@@ -51,11 +52,11 @@ export default function Dashboard() {
             if (!currentUser) return;
             setUser(currentUser);
 
-            // Link perfiles.id with servicios.perfil_id
+            // Link perfiles.id with servicios.barberia_id
             const { data: servicesData } = await supabase
                 .from('servicios')
                 .select('id, nombre, precio')
-                .eq('perfil_id', currentUser.id);
+                .eq('barberia_id', currentUser.id);
 
             if (servicesData) {
                 setServices(servicesData);
@@ -192,6 +193,7 @@ export default function Dashboard() {
     const [invoiceAppointment, setInvoiceAppointment] = useState<Appointment | null>(null);
     const [isProductEditModalOpen, setIsProductEditModalOpen] = useState(false);
     const [editingProductSale, setEditingProductSale] = useState<any>(null);
+    const [appointmentLinkUuid, setAppointmentLinkUuid] = useState<string | null>(null);
 
     // Separar citas de ventas usando el marcador interno
     const productSales = allAppointments.filter(a => (a as any)._isProductSale);
@@ -258,6 +260,7 @@ export default function Dashboard() {
     };
 
     const handleSave = async (data: AppointmentFormData) => {
+        const isNew = !editingCita;
         const promise = saveCita(data, editingCita?.id || null);
 
         toast.promise(promise, {
@@ -266,6 +269,10 @@ export default function Dashboard() {
                 if (!result.success) throw new Error(result.error);
                 setIsModalOpen(false);
                 setEditingCita(null);
+                // Show link modal only for new appointments that returned a uuid
+                if (isNew && result.uuid) {
+                    setAppointmentLinkUuid(result.uuid);
+                }
                 return 'Registro guardado correctamente';
             },
             error: (err) => `Error: ${err}`
@@ -450,6 +457,13 @@ export default function Dashboard() {
                 onSave={handleSaveProductSale}
                 sale={editingProductSale}
             />
+
+            {appointmentLinkUuid && (
+                <AppointmentLinkModal
+                    uuid={appointmentLinkUuid}
+                    onClose={() => setAppointmentLinkUuid(null)}
+                />
+            )}
 
         </main>
     );

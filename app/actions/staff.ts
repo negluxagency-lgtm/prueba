@@ -48,26 +48,26 @@ export async function setBarberPin(barberId: string, pin: string): Promise<Actio
     }
 }
 
-export async function getStaffAgenda(shopName: string, barberName: string, dateStr: string, showAll: boolean = false) {
+export async function getStaffAgenda(shopId: string, barberName: string, dateStr: string, showAll: boolean = false) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    console.log(`[getStaffAgenda] Fetching for shop: "${shopName}", barber: "${barberName}", date: "${dateStr}"`)
+    console.log(`[getStaffAgenda] Fetching for shop: "${shopId}", barber: "${barberName}", date: "${dateStr}"`)
 
     // 1. Fetch TOTAL appointments for this shop and date for diagnostic purposes
     const { data: allAppointments } = await supabase
         .from('citas')
         .select('barbero')
-        .eq('barberia', shopName)
+        .eq('barberia_id', shopId)
         .eq('Dia', dateStr)
 
     // 2. Build filtered query
     let query = supabase
         .from('citas')
         .select('*')
-        .eq('barberia', shopName)
+        .eq('barberia_id', shopId)
         .eq('Dia', dateStr)
 
     if (!showAll) {
@@ -90,7 +90,7 @@ export async function getStaffAgenda(shopName: string, barberName: string, dateS
     }
 }
 
-export async function getStaffCuts(shopName: string, barberName: string, monthStr: string) {
+export async function getStaffCuts(shopId: string, barberName: string, monthStr: string) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -104,7 +104,7 @@ export async function getStaffCuts(shopName: string, barberName: string, monthSt
     const { data, error } = await supabase
         .from('citas')
         .select('servicio, Precio')
-        .eq('barberia', shopName)
+        .eq('barberia_id', shopId)
         .eq('barbero', barberName)
         .eq('confirmada', true)
         .gte('Dia', startDate)
@@ -114,13 +114,13 @@ export async function getStaffCuts(shopName: string, barberName: string, monthSt
     const { data: shopProfile } = await supabase
         .from('perfiles')
         .select('id, objetivo_ingresos, objetivo_cortes')
-        .eq('nombre_barberia', shopName)
+        .eq('id', shopId)
         .single()
 
     const { count: barberCount } = await supabase
         .from('barberos')
         .select('*', { count: 'exact', head: true })
-        .eq('barberia_id', shopProfile?.id || '')
+        .eq('barberia_id', shopId)
 
     const divisor = barberCount || 1
 
@@ -274,7 +274,7 @@ export async function getShopServices(shopId: string) {
     const { data, error } = await supabase
         .from('servicios')
         .select('id, nombre, precio')
-        .eq('perfil_id', shopId)
+        .eq('barberia_id', shopId)
 
     if (error) {
         console.error('[getShopServices] Error:', error)

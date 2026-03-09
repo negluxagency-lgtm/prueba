@@ -49,6 +49,7 @@ interface BookingState {
 
     // Internal
     isSubmitting: boolean
+    bookingUuid: string | null
 }
 
 // ──────────────────────────────────────────────
@@ -64,6 +65,7 @@ interface BookingActions {
     setGuestName: (name: string) => void
     setGuestPhone: (phone: string) => void
     setIsSubmitting: (val: boolean) => void
+    setBookingUuid: (uuid: string | null) => void
     reset: () => void
 }
 
@@ -80,6 +82,7 @@ const initialState: BookingState = {
     guestName: '',
     guestPhone: '',
     isSubmitting: false,
+    bookingUuid: null,
 }
 
 // ──────────────────────────────────────────────
@@ -97,5 +100,6 @@ export const useBookingStore = create<BookingState & BookingActions>()((set) => 
     setGuestName: (name) => set({ guestName: name }),
     setGuestPhone: (phone) => set({ guestPhone: phone }),
     setIsSubmitting: (val) => set({ isSubmitting: val }),
+    setBookingUuid: (uuid) => set({ bookingUuid: uuid }),
     reset: () => set(initialState),
 }))

@@ -24,7 +24,7 @@ export default async function AdminBillingPage({ searchParams }: PageProps) {
 
     // 2. Await searchParams (Formato Next.js 15+)
     const resolvedParams = await searchParams;
-    const barberiaName = resolvedParams.barberia as string || '';
+    const barberiaId = resolvedParams.barberia as string || '';
 
     // 3. Obtener Datos via Server Actions (Seguro)
     const profiles = await getAdminProfiles().catch(err => {
@@ -32,7 +32,7 @@ export default async function AdminBillingPage({ searchParams }: PageProps) {
         return [];
     });
 
-    const stats = await getAdminBillingStats(barberiaName).catch(err => {
+    const stats = await getAdminBillingStats(barberiaId).catch(err => {
         console.error('Error loading stats:', err);
         return null;
     });
@@ -40,7 +40,7 @@ export default async function AdminBillingPage({ searchParams }: PageProps) {
     return (
         <BillingClient
             profiles={profiles}
-            selectedBarberia={barberiaName}
+            selectedBarberia={barberiaId}
             stats={stats}
         />
     );

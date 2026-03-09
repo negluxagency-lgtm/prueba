@@ -39,7 +39,7 @@ export default async function PublicBookingPage(props: PageProps) {
     const { data: services } = await supabase
         .from('servicios')
         .select('*')
-        .eq('perfil_id', profile.id)
+        .eq('barberia_id', profile.id)
         .order('precio', { ascending: true })
 
     // 3. Fetch Barbers

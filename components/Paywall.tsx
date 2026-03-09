@@ -43,17 +43,17 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             price: "39€",
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
-            features: ["Todo lo del plan Básico", "Métricas avanzadas", "Gestión de equipo y fichajes", "Portal personalizdo para tus barberos", "Recordatorio citas WhatsApp", "Filtro Reviews Positivas Google", "Gestión de Facturas y Salarios"],
+            features: ["Todo lo del plan Básico", "Métricas avanzadas", "Gestión de equipo y fichajes", "Portal personalizdo para tus barberos", "Filtro Reviews Positivas Google", "Gestión de Facturas y Salarios (Cumplimiento Veri*factu obligatorio 2026)"],
             link: "https://buy.stripe.com/bJe3cu8h50dedv18E128801",
             highlight: true,
             icon: Star
         },
         {
             name: "Premium",
-            price: "49€",
+            price: "55€",
             period: "/mes",
             description: "Para barberías profesionales.",
-            features: ["Todo lo del plan Profesional", "Apartado de mensajes con clientes", "Tu IA personalizada responde WhatsApp y agenda citas", "Soporte 24/7", "Consultoría mensual", "Gestión Contable Total"],
+            features: ["Todo lo del plan Profesional", "Recordatorio citas WhatsApp", "Apartado de mensajes con clientes", "Tu IA personalizada responde WhatsApp y agenda citas", "Soporte 24/7", "Consultoría mensual", "Gestión Contable Total"],
             link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
             highlight: false,
             icon: Shield
@@ -115,10 +115,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                             key={index}
                             className={`
                                 relative p-6 md:p-8 rounded-[2rem] border transition-all duration-300 group flex flex-col
-                                ${plan.highlight || displayPlans.length === 1
-                                    ? 'bg-zinc-900/80 border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.1)] md:scale-105 z-20'
-                                    : 'bg-zinc-900/40 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/60'
-                                }
+                                bg-zinc-900/40 border-zinc-800 hover:border-amber-500/20 hover:bg-zinc-900/60 shadow-xl
                             `}
                         >
                             {(plan.highlight && displayPlans.length > 1) && (
@@ -128,7 +125,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                             )}
 
                             <div className="flex items-center gap-3 mb-4">
-                                <div className={`p-2.5 md:p-3 rounded-xl ${plan.highlight || displayPlans.length === 1 ? 'bg-amber-500/10 text-amber-500' : 'bg-zinc-800 text-zinc-400'}`}>
+                                <div className={`p-2.5 md:p-3 rounded-xl bg-zinc-800 text-zinc-400 group-hover:text-amber-500 transition-colors`}>
                                     <plan.icon className="w-5 h-5 md:w-6 md:h-6" />
                                 </div>
                                 <h3 className="text-lg md:text-xl font-bold text-white uppercase">{plan.name}</h3>
@@ -152,7 +149,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                             {isNegative ? (
                                                 <X className="w-4 h-4 md:w-5 md:h-5 shrink-0 text-zinc-600 mt-0.5" />
                                             ) : (
-                                                <Check className={`w-4 h-4 md:w-5 md:h-5 shrink-0 ${plan.highlight || displayPlans.length === 1 ? 'text-amber-500' : 'text-zinc-500'} mt-0.5`} />
+                                                <Check className={`w-4 h-4 md:w-5 md:h-5 shrink-0 text-amber-500/50 group-hover:text-amber-500 transition-colors mt-0.5`} />
                                             )}
                                             <span className={`leading-tight ${isNegative ? "text-zinc-500" : "text-zinc-300"}`}>
                                                 {feature}
@@ -167,10 +164,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                     href={getLink(plan.link)}
                                     className={`
                                             block w-full py-3 md:py-4 rounded-xl font-black text-center text-xs md:text-sm uppercase tracking-wide transition-all
-                                            ${plan.highlight
-                                            ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20'
-                                            : 'bg-zinc-800 text-white hover:bg-zinc-700'
-                                        }
+                                            bg-zinc-800 text-white hover:bg-amber-500 hover:text-black shadow-lg
                                         `}
                                 >
                                     {user ? 'Seleccionar Plan' : 'Registrarse para empezar'}
