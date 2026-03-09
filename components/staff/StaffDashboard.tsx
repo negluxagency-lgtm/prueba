@@ -340,21 +340,23 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
 
             {/* Navigation Tabs */}
             <div className="flex gap-2 mb-8 bg-zinc-900 p-2 rounded-[2rem] border border-zinc-800">
-                {['agenda', 'cortes', 'horas'].map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab as TabType)}
-                        className={cn(
-                            "flex-1 flex flex-col md:flex-row items-center justify-center gap-2 py-3 rounded-full transition-all text-sm font-bold capitalize",
-                            activeTab === tab ? "bg-amber-500 text-black shadow-lg" : "text-zinc-500 hover:text-white"
-                        )}
-                    >
-                        {tab === 'agenda' && <CalendarIcon className="w-4 h-4" />}
-                        {tab === 'cortes' && <Scissors className="w-4 h-4" />}
-                        {tab === 'horas' && <Clock className="w-4 h-4" />}
-                        <span className="hidden md:inline">{tab === 'cortes' ? 'Rendimiento' : tab === 'horas' ? 'Jornada' : 'Mi Agenda'}</span>
-                    </button>
-                ))}
+                {['agenda', 'cortes', 'horas']
+                    .filter(tab => tab !== 'horas' || shopData.plan !== 'basico')
+                    .map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab as TabType)}
+                            className={cn(
+                                "flex-1 flex flex-col md:flex-row items-center justify-center gap-2 py-3 rounded-full transition-all text-sm font-bold capitalize",
+                                activeTab === tab ? "bg-amber-500 text-black shadow-lg" : "text-zinc-500 hover:text-white"
+                            )}
+                        >
+                            {tab === 'agenda' && <CalendarIcon className="w-4 h-4" />}
+                            {tab === 'cortes' && <Scissors className="w-4 h-4" />}
+                            {tab === 'horas' && <Clock className="w-4 h-4" />}
+                            <span className="hidden md:inline">{tab === 'cortes' ? 'Rendimiento' : tab === 'horas' ? 'Jornada' : 'Mi Agenda'}</span>
+                        </button>
+                    ))}
             </div>
 
             {/* Content Area */}

@@ -24,6 +24,7 @@ interface StaffAppProps {
         Direccion?: string
         telefono?: string
         correo?: string
+        plan?: string
     }
     barbers: StaffBarber[]
     slug: string

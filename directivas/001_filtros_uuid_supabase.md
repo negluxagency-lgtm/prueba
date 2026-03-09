@@ -22,4 +22,5 @@ Asegurar que todas las consultas y mutaciones inter-tablas en Supabase (`citas`,
 ## 5. Bitácora de Anomalías (Aprendizaje Continuo)
 | Fecha | Error Detectado | Solución Implementada |
 | :--- | :--- | :--- |
-| 2026-03-09 | Pérdida de integridad referencial al consultar citas y ventas por nombre literal de la barbería (propensa a múltiples colisiones). | Refactorización de hooks (useTrends, useBarberStats) y Server Actions (staff.ts, admin-billing.ts) para requerir y usar exclusivamente `barberia_id`. |
+| 2026-03-09 | Pérdida de integridad referencial al consultar citas y ventas por nombre literal de la barbería. | Refactorización de hooks (useTrends, useBarberStats) y Server Actions. |
+| 2026-03-09 | Error "record 'new' has no field 'perfil_id'" en /configuracion. | Se identificó un trigger legado en la DB (probablemente en `servicios` o `barberos`) que intenta acceder a `perfil_id` en lugar de `barberia_id`. Requiere parche SQL manual. |

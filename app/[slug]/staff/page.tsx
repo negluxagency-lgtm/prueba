@@ -19,7 +19,7 @@ export default async function StaffPage(props: PageProps) {
     // 1. Fetch Profile (Shop) by Slug
     const { data: profile, error: profileError } = await supabase
         .from('perfiles')
-        .select('id, nombre_barberia, logo_url, "CIF/NIF", Direccion, telefono, correo')
+        .select('id, nombre_barberia, logo_url, "CIF/NIF", Direccion, telefono, correo, plan')
         .eq('slug', params.slug)
         .single()
 

@@ -1,5 +1,6 @@
 'use server';
 
+import { format, addMonths } from 'date-fns';
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 
@@ -23,16 +24,24 @@ export async function updateClosingDates(dates: string[]) {
 
         if (fetchError) throw fetchError;
 
-        // 4. Lógica de Fusión y Deduplicación (Usando Set de Strings)
-        // fechas_cierre es un JSONB, asumiendo array de strings.
+        // 4. Lógica de Reemplazo Inteligente
+        // Identificamos qué mes está gestionando el usuario (lógica "antes del 25")
+        const now = new Date();
+        const targetDate = now.getDate() < 25 ? now : addMonths(now, 1);
+        const targetMonthStr = format(targetDate, 'yyyy-MM');
+
         const existingDates: string[] = Array.isArray(profile?.fechas_cierre)
             ? profile.fechas_cierre
             : [];
 
-        // Creamos un Set unificado y dispersamos a array nuevamente
-        const unifiedDates = Array.from(new Set([...existingDates, ...dates]));
+        // Filtramos las fechas que NO pertenecen al mes que estamos editando
+        const otherMonthsDates = existingDates.filter(d => !d.startsWith(targetMonthStr));
 
-        // Ordenamos las fechas cronológicamente para mantener orden visual en BD (opcional pero limpio)
+        // Combinamos las fechas de otros meses con las nuevas del mes actual
+        // Usamos Set para evitar duplicados si el cliente envió fechas de otros meses por error o persistencia
+        const unifiedDates = Array.from(new Set([...otherMonthsDates, ...dates]));
+
+        // Ordenamos las fechas cronológicamente
         unifiedDates.sort();
 
         // 5. Actualizar en Supabase

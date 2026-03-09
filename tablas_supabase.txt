@@ -8,6 +8,8 @@ Identidad y Acceso:
 
 id (UUID): Identificador único (vinculado a auth.users).
 
+barberia_id: (UUID) de la barbería.
+
 nombre_barberia: (PK lógica) Identificador legible.
 
 slug: (String, Unique) URL amigable para el perfil público (wolf_barbershop).
@@ -51,7 +53,7 @@ Identificadores:
 
 id: (Int8) ID único de la cita.
 
-user_id / barberia_id: (UUID) Vincula con perfiles.id (Crucial para RLS).
+barberia_id: (UUID) Vincula con perfiles.id (Crucial para RLS).
 
 barberia: (Text) Vincula con perfiles.nombre_barberia (Legado).
 
@@ -72,6 +74,8 @@ precio: (Numeric) Coste final.
 fecha (Date) y hora (Time): Cuándo ocurre.
 
 barbero: (Text/UUID) NUEVO: Nombre o ID del barbero específico asignado (Visible solo en planes Premium).
+
+duracion: (Int) NUEVO: Duración de la cita en minutos.
 
 Seguridad y Estado:
 
@@ -107,7 +111,7 @@ Ejemplo: [{ "dia": 1, "activo": true, "turnos": [{ "inicio": "10:00", "fin": "14
 4. Tabla "servicios" (Catálogo)
 id: (UUID).
 
-perfil_id: (UUID).
+barberia_id: (UUID).
 
 nombre: (Text) "Corte Clásico".
 
@@ -148,7 +152,9 @@ created_at: Fecha.
 7. Tabla "mensajes" (Chat & Auditoría)
 id: (Int).
 
-barberia: Vincula con perfil.
+barberia_id: (UUID).
+
+barberia: nombre de la barbería.
 
 tlf: ID de conversación (Teléfono cliente).
 

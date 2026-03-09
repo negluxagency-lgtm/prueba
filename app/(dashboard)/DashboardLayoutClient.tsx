@@ -7,7 +7,7 @@ import LogoutButton from "@/components/LogoutButton";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Paywall } from "@/components/Paywall";
 import { TrialBanner } from "@/components/TrialBanner";
-import { TrialNoticeModal } from "@/components/TrialNoticeModal";
+
 import MonthlyClosingModal from "@/components/MonthlyClosingModal";
 import { AlertCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -69,8 +69,6 @@ export default function DashboardLayoutClient({
                 <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">
                     <Paywall showAllPlans={true} />
                 </div>
-                {/* Modal informativo por si acaso, aunque el Paywall ya es explícito */}
-                <TrialNoticeModal userStatus={status} />
             </div>
         );
     }
@@ -115,7 +113,7 @@ export default function DashboardLayoutClient({
                     </div>
                 </div>
             </div>
-            <TrialNoticeModal userStatus={status as any} />
+
             <MonthlyClosingModal
                 isOpen={showClosingModal}
                 onClose={() => setShowClosingModal(false)}
