@@ -38,6 +38,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico?v=nelux2', sizes: 'any' },
+      { url: '/favicon.svg?v=nelux2', type: 'image/svg+xml' },
+      { url: '/favicon-96x96.png?v=nelux2', type: 'image/png', sizes: '96x96' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png?v=nelux2', sizes: '180x180', type: 'image/png' },
     ],
     shortcut: '/favicon.ico?v=nelux2',
     other: [

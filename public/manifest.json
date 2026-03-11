@@ -8,9 +8,19 @@
   "theme_color": "#f59e0b",
   "icons": [
     {
-      "src": "/favicon.ico?v=nelux2",
-      "sizes": "any",
+      "src": "/favicon-96x96.png?v=nelux2",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png?v=nelux2",
+      "sizes": "180x180",
+      "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico?v=nelux2",
+      "sizes": "any"
     }
   ]
 }
