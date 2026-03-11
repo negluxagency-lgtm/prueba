@@ -690,7 +690,7 @@ export default function InicioPage() {
 
             <footer className="border-t border-zinc-800 py-8 px-4 md:px-8 lg:px-6">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-zinc-500 text-sm">
-                    <p>© 2026 Nelux. El software para barberos líder. Todos los derechos reservados.</p>
+                    <p>© 2026 Nelux. El software #1 para barberías. Todos los derechos reservados.</p>
                     <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
                         <Link href="/" className="hover:text-white transition-colors" title="El mejor Software para Barberos">Software para Barberos</Link>
                         <Link href="/pricing" className="hover:text-white transition-colors">Planes y Precios</Link>
