@@ -36,8 +36,18 @@ export const metadata: Metadata = {
     type: 'website',
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/favicon.ico?v=nelux2', sizes: 'any' },
+      { url: '/favicon-32x32.png?v=nelux2', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-16x16.png?v=nelux2', type: 'image/png', sizes: '16x16' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png?v=nelux2', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico?v=nelux2',
+    other: [
+      { rel: 'manifest', url: '/manifest.json?v=nelux2' },
+    ],
   }
 };
 
