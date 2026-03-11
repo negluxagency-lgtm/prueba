@@ -108,7 +108,7 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
             if (hasDuplicate) {
                 return {
                     success: false,
-                    error: 'Ya detectamos una cita activa para este número de teléfono hoy o en una fecha futura. Por favor, revisa tus citas o contacta con la barbería.'
+                    error: 'Ya tienes una cita pendiente, si crees que se debe a un error contacta con la barbería.'
                 }
             }
         }

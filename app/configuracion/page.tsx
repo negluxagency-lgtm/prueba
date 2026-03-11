@@ -313,6 +313,21 @@ export default function ConfigurationPage() {
             }
 
             const barberiaNombre = formData.nombre_barberia || user.user_metadata?.barberia_nombre || 'Mi Barbería';
+
+            // 1.5 Verificar que el nombre exacto de la barbería NO exista en otra cuenta
+            const { data: existingNameProfile } = await supabase
+                .from('perfiles')
+                .select('id')
+                .eq('nombre_barberia', barberiaNombre.trim())
+                .neq('id', user.id)
+                .maybeSingle();
+
+            if (existingNameProfile) {
+                toast.error('Ese nombre de barbería ya está registrado. Por favor, elige uno distinto.');
+                setLoading(false);
+                return;
+            }
+
             const finalSlug = await generateUniqueSlug(barberiaNombre, user.id);
 
             const { error: profileError } = await supabase.from('perfiles').upsert({
@@ -641,7 +656,14 @@ function Step1({ formData, handleChange, currentAvatarUrl, setAvatarFile, loadin
                         name="nombre_barberia"
                         placeholder="Ej: Barber King"
                         value={formData.nombre_barberia}
-                        onChange={handleChange}
+                        onChange={(e) => {
+                            // Permitir solo letras (incluyendo acentos y ñ), números y espacios
+                            const val = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]/g, '');
+                            handleChange({
+                                ...e,
+                                target: { ...e.target, name: 'nombre_barberia', value: val }
+                            });
+                        }}
                         className={inputCls}
                     />
                 </Field>

@@ -44,7 +44,7 @@ export default function ServiceStep({ services }: ServiceStepProps) {
                     <button
                         key={service.id}
                         onClick={() => handleSelect(service)}
-                        className="relative group flex flex-col items-start p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900 hover:border-amber-500/50 transition-all text-left active:scale-[0.98]"
+                        className="relative group flex flex-col items-start p-4 rounded-xl border border-zinc-800/50 bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-800/60 hover:border-amber-500/50 transition-all text-left active:scale-[0.98]"
                     >
                         <h3 className="font-bold text-white text-sm md:text-base leading-tight mb-1">
                             {service.nombre}

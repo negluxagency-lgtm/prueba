@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import BookingFlow from '@/components/public-booking/BookingFlow'
 import { MapPin, Phone } from 'lucide-react'
 import { getProxiedUrl } from '@/utils/url-helper'
+import Image from 'next/image'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,10 +60,11 @@ export default async function PublicBookingPage(props: PageProps) {
                     {/* ── Banner Image ── */}
                     <div className="relative w-full h-56 md:h-72 overflow-hidden md:rounded-2xl">
                         {profile.banner_url ? (
-                            <img
+                            <Image
                                 src={getProxiedUrl(profile.banner_url)}
-                                alt="Banner barbería"
-                                className="w-full h-full object-cover"
+                                alt={`Banner principal y promocional de la barbería ${profile.nombre_barberia || 'NeluxBarber'}`}
+                                fill
+                                className="object-cover"
                             />
                         ) : (
                             /* Fallback gradient banner */
@@ -72,7 +74,7 @@ export default async function PublicBookingPage(props: PageProps) {
                             </div>
                         )}
                         {/* Bottom fade to black */}
-                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
+                        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/70 to-transparent pointer-events-none" />
                     </div>
 
                     {/* ── Profile photo + Shop info ── */}
@@ -81,19 +83,21 @@ export default async function PublicBookingPage(props: PageProps) {
                         {/* Profile photo — overlapping the banner bottom */}
                         <div className="absolute -top-12 md:-top-14 left-5 md:left-4">
                             <div className="
+                                relative
                                 w-24 h-24 md:w-28 md:h-28
                                 rounded-full
                                 ring-4 ring-black
                                 overflow-hidden
-                                shadow-[0_0_0_3px_rgba(245,158,11,0.7),0_0_28px_rgba(245,158,11,0.45)]
+                                shadow-[0_0_0_4px_rgba(245,158,11,0.9),0_0_45px_rgba(245,158,11,0.65)]
                                 bg-zinc-900
                                 flex items-center justify-center
                             ">
                                 {profile.logo_url ? (
-                                    <img
+                                    <Image
                                         src={getProxiedUrl(profile.logo_url)}
-                                        alt={profile.nombre_barberia || 'Logo'}
-                                        className="w-full h-full object-cover"
+                                        alt={`Logo oficial de la barbería ${profile.nombre_barberia || 'NeluxBarber'} - Reservas de cortes de pelo`}
+                                        fill
+                                        className="object-cover"
                                     />
                                 ) : (
                                     <>

@@ -139,7 +139,7 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
             </div>
 
             {/* Calendar */}
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 md:p-6 space-y-4">
+            <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/50 rounded-2xl p-4 md:p-6 space-y-4">
                 {/* Month Navigation */}
                 <div className="flex items-center justify-between mb-2">
                     <button
@@ -217,10 +217,10 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                         <button
                             onClick={() => setBarberId(null)}
                             className={cn(
-                                'flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2',
+                                'flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2 backdrop-blur-sm',
                                 selectedBarberId === null
-                                    ? 'bg-amber-500 text-black border-amber-500 shadow-lg'
-                                    : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                                    ? 'bg-amber-500/90 text-black border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                                    : 'bg-zinc-900/40 border-zinc-800/50 text-zinc-400 hover:bg-zinc-800/60'
                             )}
                         >
                             <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
@@ -237,10 +237,10 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                                     key={barber.id}
                                     onClick={() => setBarberId(barber.id)}
                                     className={cn(
-                                        'flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2',
+                                        'flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2 backdrop-blur-sm',
                                         selectedBarberId === barber.id
-                                            ? 'bg-amber-500 text-black border-amber-500 shadow-lg'
-                                            : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                                            ? 'bg-amber-500/90 text-black border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                                            : 'bg-zinc-900/40 border-zinc-800/50 text-zinc-400 hover:bg-zinc-800/60'
                                     )}
                                 >
                                     {barber.foto ? (

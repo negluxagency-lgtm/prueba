@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { MailCheck } from 'lucide-react';
+import { MailCheck, Eye, EyeOff } from 'lucide-react';
 import { signUp } from '@/app/actions/auth';
 
 export default function RegisterPage() {
@@ -17,21 +17,16 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [barberiaNombre, setBarberiaNombre] = useState('');
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg(null);
         setLoading(true);
-
-        if (!barberiaNombre.trim()) {
-            setErrorMsg("El nombre de la barbería es obligatorio.");
-            setLoading(false);
-            return;
-        }
 
         if (password !== confirmPassword) {
             setErrorMsg("Las contraseñas no coinciden.");
@@ -46,25 +41,8 @@ export default function RegisterPage() {
         }
 
         try {
-            // 1. Verificar si el nombre de la barbería ya existe
-            const { data: existingData, error: searchError } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia')
-                .eq('nombre_barberia', barberiaNombre.trim())
-                .maybeSingle();
-
-            if (searchError) {
-                console.error('Error al verificar duplicados:', searchError);
-            }
-
-            if (existingData) {
-                setErrorMsg("Ese nombre ya está en uso, prueba con otro.");
-                setLoading(false);
-                return;
-            }
-
-            // 2. Proceder con el registro usando la Server Action para PKCE
-            const result = await signUp(email, password, barberiaNombre.trim());
+            // 1. Proceder con el registro usando la Server Action para PKCE
+            const result = await signUp(email, password);
 
             if (result.error) {
                 setErrorMsg(result.error);
@@ -120,19 +98,6 @@ export default function RegisterPage() {
 
                         <form onSubmit={handleRegister} className="flex flex-col gap-4">
                             <div className="space-y-4">
-                                <div>
-                                    <label className="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">
-                                        Nombre del Negocio
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Ej: Barbería Premium"
-                                        value={barberiaNombre}
-                                        onChange={(e) => setBarberiaNombre(e.target.value)}
-                                        className="w-full p-4 rounded-xl bg-zinc-800/50 border border-zinc-700 text-sm text-white outline-none focus:border-amber-500 transition-all"
-                                        required
-                                    />
-                                </div>
 
                                 <div>
                                     <label className="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">
@@ -152,30 +117,48 @@ export default function RegisterPage() {
                                     <label className="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">
                                         Contraseña
                                     </label>
-                                    <input
-                                        type="password"
-                                        placeholder="********"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full p-4 rounded-xl bg-zinc-800/50 border border-zinc-700 text-sm text-white outline-none focus:border-amber-500 transition-all"
-                                        required
-                                        minLength={6}
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="********"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="w-full p-4 rounded-xl bg-zinc-800/50 border border-zinc-700 text-sm text-white outline-none focus:border-amber-500 transition-all pr-12"
+                                            required
+                                            minLength={6}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-amber-500 transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div>
                                     <label className="text-xs font-bold text-zinc-500 uppercase ml-1 mb-1 block">
                                         Confirmar Contraseña
                                     </label>
-                                    <input
-                                        type="password"
-                                        placeholder="********"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full p-4 rounded-xl bg-zinc-800/50 border border-zinc-700 text-sm text-white outline-none focus:border-amber-500 transition-all"
-                                        required
-                                        minLength={6}
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            placeholder="********"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            className="w-full p-4 rounded-xl bg-zinc-800/50 border border-zinc-700 text-sm text-white outline-none focus:border-amber-500 transition-all pr-12"
+                                            required
+                                            minLength={6}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-amber-500 transition-colors"
+                                        >
+                                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

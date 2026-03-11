@@ -105,7 +105,7 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
             </div>
 
             {/* Booking Summary Card */}
-            <div className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800/80 space-y-3 shadow-xl">
+            <div className="bg-zinc-900/40 backdrop-blur-md p-5 rounded-2xl border border-zinc-800/50 space-y-3 shadow-xl">
                 <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
                     <div>
                         <p className="text-xs text-zinc-500 font-bold uppercase">Servicio</p>

@@ -4,27 +4,23 @@ import { createClient } from '@/utils/supabase/server'
 import { headers } from 'next/headers'
 
 // Definimos un tipo para aceptar ambos formatos y argumentos individuales
-type SignUpData = FormData | { email: string; password: string; barberiaNombre?: string }
+type SignUpData = FormData | { email: string; password: string }
 
-export async function signUp(data: SignUpData | string, arg2?: string, arg3?: string) {
+export async function signUp(data: SignUpData | string, arg2?: string) {
     let email: string;
     let password: string;
-    let barberiaNombre: string | undefined;
 
     // 1. EXTRAER DATOS (Lógica universal)
     if (data instanceof FormData) {
         email = data.get('email') as string;
         password = data.get('password') as string;
-        barberiaNombre = (data.get('barberiaNombre') as string) || (data.get('barberia_nombre') as string);
     } else if (typeof data === 'object' && data !== null) {
         email = (data as any).email;
         password = (data as any).password;
-        barberiaNombre = (data as any).barberiaNombre || (data as any).barberia_nombre;
     } else if (typeof data === 'string' && typeof arg2 === 'string') {
-        // Soporte para llamada directa: signUp(email, password, barberiaNombre)
+        // Soporte para llamada directa: signUp(email, password)
         email = data;
         password = arg2;
-        barberiaNombre = arg3;
     } else {
         return { error: "Formato de datos inválido para el registro." };
     }
@@ -45,10 +41,7 @@ export async function signUp(data: SignUpData | string, arg2?: string, arg3?: st
             email,
             password,
             options: {
-                emailRedirectTo: `${siteUrl}/auth/callback?next=/auth/verified`,
-                data: {
-                    barberia_nombre: barberiaNombre?.trim()
-                }
+                emailRedirectTo: `${siteUrl}/auth/callback?next=/auth/verified`
             },
         })
 

@@ -4,6 +4,7 @@ import CancelButton from './CancelButton'
 import EditDateButton from './EditDateButton'
 import { Calendar, Clock, Scissors, User, AlertCircle, XCircle } from 'lucide-react'
 import { getProxiedUrl } from '@/utils/url-helper'
+import Image from 'next/image'
 
 interface PageProps {
     params: Promise<{ uuid: string }>
@@ -77,11 +78,12 @@ export default async function CitaPage(props: PageProps) {
                         <>
                             {shopLogo && (
                                 <div className="flex justify-center mb-6">
-                                    <div className="w-24 h-24 rounded-2xl overflow-hidden border border-zinc-800 shadow-xl bg-zinc-900">
-                                        <img 
+                                    <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-zinc-800 shadow-xl bg-zinc-900">
+                                        <Image 
                                             src={shopLogo} 
                                             alt={shopName}
-                                            className="w-full h-full object-cover"
+                                            fill
+                                            className="object-cover"
                                         />
                                     </div>
                                 </div>

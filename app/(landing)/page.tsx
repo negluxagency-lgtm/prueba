@@ -1,17 +1,19 @@
 import Link from 'next/link';
 import { Bot, TrendingUp, Zap, ArrowRight, CheckCircle2, MessageCircle, Package, Power, Smartphone, BrainCircuit, QrCode } from 'lucide-react';
-import DemoAppointmentTable from '@/components/landing/DemoAppointmentTable';
-import DemoRingChart from '@/components/landing/DemoRingChart';
-import DemoGrowthChart from '@/components/landing/DemoGrowthChart';
-import DemoChatPreview from '@/components/landing/DemoChatPreview';
-import DemoProductTable from '@/components/landing/DemoProductTable';
-import StaticBookingPreview from '@/components/landing/StaticBookingPreview';
-import DemoStaffVisual from '@/components/landing/DemoStaffVisual';
 import { Users, Clock, Receipt, Banknote } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const DemoAppointmentTable = dynamic(() => import('@/components/landing/DemoAppointmentTable'));
+const DemoRingChart = dynamic(() => import('@/components/landing/DemoRingChart'));
+const DemoGrowthChart = dynamic(() => import('@/components/landing/DemoGrowthChart'));
+const DemoChatPreview = dynamic(() => import('@/components/landing/DemoChatPreview'));
+const DemoProductTable = dynamic(() => import('@/components/landing/DemoProductTable'));
+const StaticBookingPreview = dynamic(() => import('@/components/landing/StaticBookingPreview'));
+const DemoStaffVisual = dynamic(() => import('@/components/landing/DemoStaffVisual'));
 
 export const metadata = {
-    title: 'Nelux - Tu Barbería en Piloto Automático',
-    description: 'Corta más, gestiona menos. La evolución digital de tu barbería. Todo lo que necesitas en un mismo lugar.',
+    title: 'NeluxBarber - El Mejor Software para Barberos y App de Barberías con IA',
+    description: 'La app para barberías líder con software para barberos. Agenda citas automáticamente con IA, facturación adaptada a Veri*factu 2026, comisiones y gestión total.',
 };
 
 export default function InicioPage() {
@@ -66,9 +68,9 @@ export default function InicioPage() {
 
                 {/* Headline */}
                 <h1 className="relative z-10 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-center text-white leading-tight max-w-4xl">
-                    Nelux Barber, tu Barbería en{' '}
+                    El Software para Barberos con{' '}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">
-                        Piloto Automático
+                        Automatización IA
                     </span>
                 </h1>
 
@@ -127,17 +129,17 @@ export default function InicioPage() {
                             </div>
 
                             <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
-                                Transforma tu Negocio en una{' '}
+                                La App para Barberías que asegura tu{' '}
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">
-                                    Máquina Exacta
+                                    Éxito y Legalidad
                                 </span>
                             </h2>
 
                             <p className="text-zinc-400 text-lg leading-relaxed mix-blend-lighten">
-                                Nelux no es solo una agenda, es la estructura operativa completa para escalar tu barbería sin perder la cabeza.
-                                Centralizamos tus reservas, tu facturación, las nóminas de tus barberos y el stock de tus productos en un único
-                                panel de control inteligente.
-                                Con nosotros, recuperas el tiempo necesario para centrarte en lo importante: <strong className="text-white font-semibold">cortar pelo y hacer crecer tu marca</strong>.
+                                NeluxBarber no es solo una agenda, es la estructura operativa completa para escalar tu barbería sin perder la cabeza.
+                                Centralizamos tus reservas, tu facturación adaptada a la normativa <strong className="text-amber-500 font-bold">Veri*Factu 2026</strong>, las nóminas de tus barberos y el stock de productos en un único
+                                panel de control impulsado por Inteligencia Artificial.
+                                Con el mejor software de gestión para barberos, recuperas el tiempo necesario para centrarte en lo importante: <strong className="text-white font-semibold">cortar pelo y hacer crecer tu marca</strong>.
                             </p>
                         </div>
 
@@ -247,7 +249,7 @@ export default function InicioPage() {
                             </div>
 
                             <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
-                                El Cerebro que{' '}
+                                La IA para Barberos que{' '}
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">
                                     Nunca Duerme
                                 </span>
@@ -256,7 +258,7 @@ export default function InicioPage() {
                             <p className="text-zinc-400 text-lg leading-relaxed mb-8">
                                 Desde <span className="text-white font-semibold">&quot;Hola&quot;</span> hasta{' '}
                                 <span className="text-white font-semibold">&quot;Cita Confirmada&quot;</span> sin que toques el móvil.
-                                Nuestro bot impulsado por GPT convierte interesados en clientes reales <span className="text-amber-500 font-bold">24/7</span>.
+                                Nuestro software incluye un chatbot AI impulsado por GPT que convierte interesados en clientes reales agendados <span className="text-amber-500 font-bold">24/7</span>.
                             </p>
 
                             <ul className="space-y-4 mb-8">
@@ -633,7 +635,7 @@ export default function InicioPage() {
                                         DESPLIEGUE VISUAL
                                     </h3>
                                     <p className="text-zinc-400 leading-relaxed">
-                                        Gestiona cada rincón de tu barbería desde un único panel central que va desde tus ingresos y gastos hasta tus turnos, nóminas, facturación legal (Veri*factu obligatorio 2026), horarios y stock de productos. Todo lo que necesitas para que tu negocio funcione en piloto automático.
+                                        Gestiona cada rincón de tu barbería desde un único panel central web o app móvil. Controla tus ingresos, gastos, turnos, nóminas, facturación legal (<strong className="text-amber-500">Veri*Factu 2026</strong>), y stock. El software para barberos más moderno que necesitas para que tu negocio funcione en piloto automático.
                                     </p>
                                 </div>
                             </div>
@@ -686,12 +688,14 @@ export default function InicioPage() {
                 </div>
             </section>
 
-            {/* Footer */}
             <footer className="border-t border-zinc-800 py-8 px-4 md:px-8 lg:px-6">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-zinc-500 text-sm">
-                    <p>© 2026 Nelux. Todos los derechos reservados.</p>
-                    <div className="flex items-center gap-6">
-                        <Link href="/register" className="hover:text-white transition-colors">Registro</Link>
+                    <p>© 2026 Nelux. El software para barberos líder. Todos los derechos reservados.</p>
+                    <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
+                        <Link href="/" className="hover:text-white transition-colors" title="El mejor Software para Barberos">Software para Barberos</Link>
+                        <Link href="/pricing" className="hover:text-white transition-colors">Planes y Precios</Link>
+                        <Link href="/login" className="hover:text-white transition-colors">Iniciar sesión en la App</Link>
+                        <Link href="/register" className="hover:text-white transition-colors">Crear Barbería</Link>
                     </div>
                 </div>
             </footer>

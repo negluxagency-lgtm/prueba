@@ -105,6 +105,12 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                 : "Elige el plan que mejor se adapte a las necesidades de tu barbería."
                         }
                     </p>
+                    {(!status || status !== 'pagado') && (
+                        <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs lg:text-sm font-bold tracking-wide">
+                            <Zap className="w-4 h-4" />
+                            <span>Prueba gratuita de 7 días. <span className="text-white">Sin tarjeta de crédito.</span></span>
+                        </div>
+                    )}
                 </div>
 
 
@@ -163,11 +169,11 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                 <a
                                     href={getLink(plan.link)}
                                     className={`
-                                            block w-full py-3 lg:py-4 rounded-xl font-black text-center text-xs lg:text-sm uppercase tracking-wide transition-all
+                                            block w-full py-3 lg:py-4 rounded-xl font-black text-center text-[10px] lg:text-xs uppercase tracking-wide transition-all
                                             bg-zinc-800 text-white hover:bg-amber-500 hover:text-black shadow-lg
                                         `}
                                 >
-                                    {user ? 'Seleccionar Plan' : 'Registrarse para empezar'}
+                                    {user ? 'Seleccionar Plan' : 'Empezar prueba gratis de 7 días'}
                                 </a>
                             )}
                         </div>
