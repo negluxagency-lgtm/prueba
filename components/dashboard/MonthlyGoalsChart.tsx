@@ -26,7 +26,7 @@ const MonthlyGoalsChart: React.FC<MonthlyGoalsChartProps> = ({ data, loading }) 
 
     if (loading) {
         return (
-            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] border border-zinc-800 p-6 shadow-2xl w-full h-full flex flex-col animate-pulse">
+            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl lg:rounded-[2rem] border border-zinc-800 p-6 shadow-2xl w-full h-full flex flex-col animate-pulse">
                 <div className="h-6 w-48 bg-zinc-800 rounded mb-8"></div>
                 <div className="flex-1 bg-zinc-800/50 rounded-xl"></div>
             </div>
@@ -34,13 +34,13 @@ const MonthlyGoalsChart: React.FC<MonthlyGoalsChartProps> = ({ data, loading }) 
     }
 
     return (
-        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] border border-zinc-800 py-6 px-0 shadow-2xl w-full h-full flex flex-col">
+        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl lg:rounded-[2rem] border border-zinc-800 py-6 px-0 shadow-2xl w-full h-full flex flex-col">
             {/* Encabezado */}
             <div className="flex items-center gap-3 mb-6 px-6 shrink-0">
                 <div className="bg-amber-500/10 p-2 rounded-lg">
                     <Target className="text-amber-500 w-5 h-5" />
                 </div>
-                <h3 className="text-zinc-100 font-bold text-base md:text-lg uppercase tracking-tight">Rendimiento Mensual</h3>
+                <h3 className="text-zinc-100 font-bold text-base lg:text-lg uppercase tracking-tight">Rendimiento Mensual</h3>
             </div>
 
             {/* Gráfico */}

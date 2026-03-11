@@ -133,12 +133,14 @@ export function useTrends(referenceDate?: string) {
             if (!user) return; // Silent fail o manejar error
 
             // 1. Current Period Dates
-            const refDate = referenceDate ? new Date(referenceDate) : new Date();
+            // Para 'week' ("Esta Semana"), forzamos siempre la fecha actual (ignorar mes seleccionado)
+            const refDate = (range === 'week' || !referenceDate) ? new Date() : new Date(referenceDate);
             let startDate = new Date(refDate);
             let endDate = new Date(refDate);
 
             if (range === 'week') {
-                startDate.setDate(refDate.getDate() - 7);
+                // Últimos 7 días incluyendo hoy
+                startDate.setDate(refDate.getDate() - 6);
             }
             if (range === 'month') {
                 startDate = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
@@ -167,7 +169,7 @@ export function useTrends(referenceDate?: string) {
             }
 
             const currentStartStr = formatDate(startDate);
-            const currentEndStr = range === 'week' ? formatDate(new Date()) : formatDate(endDate);
+            const currentEndStr = formatDate(endDate);
             const prevStartStr = formatDate(prevStartDate);
             const prevEndStr = formatDate(prevEndDate);
 
@@ -256,7 +258,7 @@ export function useTrends(referenceDate?: string) {
 
         // Prepare Chart Data (Filling Gaps)
         const dataMap: Record<string, { rev: number; cli: number; no: number; cuts: number; prods: number; prodTxns: number }> = {};
-        const start = range === 'week' ? new Date(new Date(refDate).setDate(refDate.getDate() - 7))
+        const start = range === 'week' ? new Date(new Date(refDate).setDate(refDate.getDate() - 6))
             : range === 'month' ? new Date(refDate.getFullYear(), refDate.getMonth(), 1)
                 : new Date(refDate.getFullYear(), 0, 1);
 

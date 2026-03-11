@@ -240,11 +240,11 @@ export default function PerfilPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] p-4 md:p-8">
+        <div className="min-h-screen bg-[#0a0a0a] p-4 lg:p-8">
             <div className="max-w-4xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="space-y-2">
-                    <h1 className="text-3xl md:text-4xl font-bold text-white">
+                    <h1 className="text-3xl lg:text-4xl font-bold text-white">
                         Perfil de Barbería
                     </h1>
                     <p className="text-sm text-zinc-500">
@@ -263,9 +263,9 @@ export default function PerfilPage() {
                         </h2>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-8 items-start">
+                    <div className="flex flex-col lg:flex-row gap-8 items-start">
                         {/* Columna Izquierda: Logo y Banner */}
-                        <div className="flex flex-col gap-8 w-full md:w-64 shrink-0">
+                        <div className="flex flex-col gap-8 w-full lg:w-64 shrink-0">
                             {/* Selector de Foto de Perfil */}
                             <div className="flex flex-col items-center gap-4 w-full">
                                 <AvatarUpload
@@ -330,7 +330,7 @@ export default function PerfilPage() {
                                     <ExternalLink className="w-4 h-4" />
                                     Link para agendar en tu barbería
                                 </label>
-                                <div className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-white text-xs md:text-sm break-all font-mono min-h-[42px] flex items-center">
+                                <div className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-white text-xs lg:text-sm break-all font-mono min-h-[42px] flex items-center">
                                     {`app.nelux.es/${perfil.slug || '(sin-slug)'}`}
                                 </div>
                             </div>
@@ -342,7 +342,7 @@ export default function PerfilPage() {
                                         <User className="w-4 h-4 text-amber-500" />
                                         Link portal de barberos
                                     </label>
-                                    <div className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-amber-500/80 text-xs md:text-sm font-mono break-all min-h-[42px] flex items-center">
+                                    <div className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-amber-500/80 text-xs lg:text-sm font-mono break-all min-h-[42px] flex items-center">
                                         {`app.nelux.es/${perfil.slug || '(sin-slug)'}/staff`}
                                     </div>
                                 </div>
@@ -377,11 +377,11 @@ export default function PerfilPage() {
                             <div className="pt-4 border-t border-zinc-800/50">
                                 <Link
                                     href="/configuracion"
-                                    className="inline-flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 bg-zinc-800 hover:bg-zinc-700 
-                                         text-white text-[10px] md:text-sm font-bold uppercase tracking-widest rounded-xl 
+                                    className="inline-flex items-center gap-2 px-3 py-2 lg:px-4 lg:py-2.5 bg-zinc-800 hover:bg-zinc-700 
+                                         text-white text-[10px] lg:text-sm font-bold uppercase tracking-widest rounded-xl 
                                          border border-zinc-700 hover:border-zinc-600 transition-all active:scale-95"
                                 >
-                                    <Settings className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-500" />
+                                    <Settings className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-amber-500" />
                                     <span className="leading-none">Cambiar Datos de Configuración</span>
                                 </Link>
                             </div>
@@ -392,7 +392,7 @@ export default function PerfilPage() {
                 {/* Sección de Gestión Operativa (NUEVO) */}
                 <div className={cn(
                     "grid grid-cols-1 gap-6",
-                    perfil.plan === 'Básico' ? "md:grid-cols-2" : "md:grid-cols-3"
+                    perfil.plan === 'Básico' ? "lg:grid-cols-2" : "lg:grid-cols-3"
                 )}>
                     {/* Tarjeta: Gestión de Equipo */}
                     {perfil.plan !== 'Básico' && (

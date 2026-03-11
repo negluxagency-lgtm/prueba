@@ -64,7 +64,7 @@ export default function DashboardLayoutClient({
     // 1. CASO BLOQUEO (IMPAGO) - Renderiza LAYOUT CON SIDEBAR + PAYWALL
     if (status === 'impago') {
         return (
-            <div className="flex h-screen overflow-hidden flex-col md:flex-row">
+            <div className="flex h-screen overflow-hidden flex-col lg:flex-row">
                 <Sidebar />
                 <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">
                     <Paywall showAllPlans={true} />
@@ -75,21 +75,21 @@ export default function DashboardLayoutClient({
 
     // 2. CASO ACCESO PERMITIDO (PAGADO o PRUEBA)
     return (
-        <div className="flex h-screen overflow-hidden flex-col md:flex-row">
+        <div className="flex h-screen overflow-hidden flex-col lg:flex-row">
             <Sidebar />
 
             <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">
                 {/* Banner solo si está en prueba */}
                 {status === 'prueba' && (
-                    <div className="fixed top-0 left-0 right-0 md:relative md:top-auto z-[60] shrink-0">
+                    <div className="fixed top-0 left-0 right-0 lg:relative lg:top-auto z-[60] shrink-0">
                         <TrialBanner daysRemaining={daysRemaining} />
                     </div>
                 )}
 
-                <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' ? 'pt-[52px] md:pt-0' : ''}`}>
+                <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' ? 'pt-[52px] lg:pt-0' : ''}`}>
                     {/* Banner de Confirmación de Calendario (NUEVO) */}
                     {!isLoading && localCalendarioConfirmed === false && (
-                        <div className="bg-amber-500/10 border-b border-amber-500/20 p-3 md:p-4 flex flex-col md:flex-row items-center justify-center gap-3 md:gap-6 animate-in slide-in-from-top duration-500">
+                        <div className="bg-amber-500/10 border-b border-amber-500/20 p-3 lg:p-4 flex flex-col lg:flex-row items-center justify-center gap-3 lg:gap-6 animate-in slide-in-from-top duration-500">
                             <div className="flex items-center gap-2 text-amber-500">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                                 <p className="text-xs md:text-sm font-bold uppercase tracking-wider">
@@ -107,7 +107,7 @@ export default function DashboardLayoutClient({
                     )}
 
 
-                    <div className="relative flex-1 pt-6 md:pt-0 pb-20 md:pb-0">
+                    <div className="relative flex-1 pt-6 lg:pt-0 pb-20 lg:pb-0">
                         <LogoutButton />
                         {children}
                     </div>

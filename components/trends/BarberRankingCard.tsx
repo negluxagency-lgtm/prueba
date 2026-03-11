@@ -7,9 +7,10 @@ interface BarberRankingCardProps {
     stats: BarberStat[]
     loading: boolean
     globalCutsGoal: number
+    selectedMonthText?: string
 }
 
-export default function BarberRankingCard({ stats, loading, globalCutsGoal }: BarberRankingCardProps) {
+export default function BarberRankingCard({ stats, loading, globalCutsGoal, selectedMonthText }: BarberRankingCardProps) {
     // Sort by cuts for this specific view (volume of work)
     const sortedByCuts = [...stats].sort((a, b) => b.totalCuts - a.totalCuts)
 
@@ -24,7 +25,7 @@ export default function BarberRankingCard({ stats, loading, globalCutsGoal }: Ba
                 <div>
                     <h2 className="text-base md:text-lg font-black uppercase tracking-tight text-white flex items-center gap-2">
                         <Scissors className="w-4 h-4 text-amber-500" />
-                        Rendimiento por Barbero
+                        Rendimiento por Barbero {selectedMonthText ? `(${selectedMonthText})` : ''}
                     </h2>
                     <p className="text-xs text-zinc-500 mt-0.5 whitespace-nowrap">Meta individual: <span className="text-amber-500 font-bold">{perBarberGoal} cortes</span></p>
                 </div>

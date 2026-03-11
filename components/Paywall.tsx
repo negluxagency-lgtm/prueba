@@ -70,12 +70,12 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
     if (subLoading) return null;
 
     return (
-        <div className={`${isSection ? '' : 'h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-start md:justify-center p-4 md:p-8 pt-20 md:pt-8 overflow-y-auto relative'}`}>
+        <div className={`${isSection ? '' : 'h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-start lg:justify-center p-4 lg:p-8 pt-20 lg:pt-8 overflow-y-auto relative'}`}>
             {/* Logout Button for Paywall */}
             {!isSection && variant !== 'pricing' && (
                 <button
                     onClick={() => supabase.auth.signOut()}
-                    className="fixed top-4 md:top-4 right-4 z-50 text-zinc-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest bg-black/40 hover:bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur-md border border-zinc-800/50"
+                    className="fixed top-4 lg:top-4 right-4 z-50 text-zinc-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest bg-black/40 hover:bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur-md border border-zinc-800/50"
                 >
                     Cerrar Sesión
                 </button>
@@ -86,9 +86,9 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.05),transparent_70%)] pointer-events-none" />
             )}
 
-            <div className="max-w-5xl w-full relative z-10 pb-32 md:pb-0">
-                <div className="text-center mb-8 md:mb-16 mt-8 md:mt-0">
-                    <h1 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter text-white mb-3 md:mb-4 leading-tight">
+            <div className="max-w-5xl w-full relative z-10 pb-32 lg:pb-0">
+                <div className="text-center mb-8 lg:mb-16 mt-8 lg:mt-0">
+                    <h1 className="text-3xl lg:text-5xl font-black italic uppercase tracking-tighter text-white mb-3 lg:mb-4 leading-tight">
                         {status === 'pagado' ? (
                             <>Tu <span className="text-amber-500">Plan Actual</span></>
                         ) : isLock ? (
@@ -97,7 +97,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                             <>Mejora tu <span className="text-amber-500">Plan</span></>
                         )}
                     </h1>
-                    <p className="text-zinc-400 text-sm md:text-xl max-w-2xl mx-auto px-4">
+                    <p className="text-zinc-400 text-sm lg:text-xl max-w-2xl mx-auto px-4">
                         {status === 'pagado'
                             ? "Aquí tienes las características incluidas en tu suscripción actual."
                             : isLock
@@ -109,47 +109,47 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
 
 
 
-                <div className={`grid grid-cols-1 gap-6 md:gap-8 items-start pb-6 md:pb-0 ${displayPlans.length > 1 ? 'md:grid-cols-3' : 'md:max-w-md mx-auto'}`}>
+                <div className={`grid grid-cols-1 gap-6 lg:gap-8 items-start pb-6 lg:pb-0 ${displayPlans.length > 1 ? 'lg:grid-cols-3' : 'lg:max-w-md mx-auto'}`}>
                     {displayPlans.map((plan, index) => (
                         <div
                             key={index}
                             className={`
-                                relative p-6 md:p-8 rounded-[2rem] border transition-all duration-300 group flex flex-col
+                                relative p-6 lg:p-8 rounded-[2rem] border transition-all duration-300 group flex flex-col
                                 bg-zinc-900/40 border-zinc-800 hover:border-amber-500/20 hover:bg-zinc-900/60 shadow-xl
                             `}
                         >
                             {(plan.highlight && displayPlans.length > 1) && (
-                                <div className="absolute -top-3 md:-top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-black font-bold px-3 py-1 rounded-full text-xs md:text-sm uppercase tracking-wider shadow-lg whitespace-nowrap">
+                                <div className="absolute -top-3 lg:-top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-black font-bold px-3 py-1 rounded-full text-xs lg:text-sm uppercase tracking-wider shadow-lg whitespace-nowrap">
                                     Más Popular
                                 </div>
                             )}
 
                             <div className="flex items-center gap-3 mb-4">
-                                <div className={`p-2.5 md:p-3 rounded-xl bg-zinc-800 text-zinc-400 group-hover:text-amber-500 transition-colors`}>
-                                    <plan.icon className="w-5 h-5 md:w-6 md:h-6" />
+                                <div className={`p-2.5 lg:p-3 rounded-xl bg-zinc-800 text-zinc-400 group-hover:text-amber-500 transition-colors`}>
+                                    <plan.icon className="w-5 h-5 lg:w-6 lg:h-6" />
                                 </div>
-                                <h3 className="text-lg md:text-xl font-bold text-white uppercase">{plan.name}</h3>
+                                <h3 className="text-lg lg:text-xl font-bold text-white uppercase">{plan.name}</h3>
                             </div>
 
-                            <div className="mb-4 md:mb-6">
-                                <span className="text-3xl md:text-4xl font-black text-white">{plan.price}</span>
-                                <span className="text-zinc-500 font-medium text-sm md:text-base">{plan.period}</span>
+                            <div className="mb-4 lg:mb-6">
+                                <span className="text-3xl lg:text-4xl font-black text-white">{plan.price}</span>
+                                <span className="text-zinc-500 font-medium text-sm lg:text-base">{plan.period}</span>
                             </div>
 
-                            <p className="text-zinc-400 text-xs md:text-sm mb-6 md:mb-8 min-h-[40px] leading-relaxed">
+                            <p className="text-zinc-400 text-xs lg:text-sm mb-6 lg:mb-8 min-h-[40px] leading-relaxed">
                                 {plan.description}
                             </p>
 
-                            <ul className="space-y-3 md:space-y-4 mb-6 md:mb-8 flex-1">
+                            <ul className="space-y-3 lg:space-y-4 mb-6 lg:mb-8 flex-1">
                                 {plan.features.map((feature, i) => {
                                     const isNegative = feature === "Sin tecnologías IA";
 
                                     return (
-                                        <li key={i} className="flex items-start gap-3 text-xs md:text-sm">
+                                        <li key={i} className="flex items-start gap-3 text-xs lg:text-sm">
                                             {isNegative ? (
-                                                <X className="w-4 h-4 md:w-5 md:h-5 shrink-0 text-zinc-600 mt-0.5" />
+                                                <X className="w-4 h-4 lg:w-5 lg:h-5 shrink-0 text-zinc-600 mt-0.5" />
                                             ) : (
-                                                <Check className={`w-4 h-4 md:w-5 md:h-5 shrink-0 text-amber-500/50 group-hover:text-amber-500 transition-colors mt-0.5`} />
+                                                <Check className={`w-4 h-4 lg:w-5 lg:h-5 shrink-0 text-amber-500/50 group-hover:text-amber-500 transition-colors mt-0.5`} />
                                             )}
                                             <span className={`leading-tight ${isNegative ? "text-zinc-500" : "text-zinc-300"}`}>
                                                 {feature}
@@ -163,7 +163,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                 <a
                                     href={getLink(plan.link)}
                                     className={`
-                                            block w-full py-3 md:py-4 rounded-xl font-black text-center text-xs md:text-sm uppercase tracking-wide transition-all
+                                            block w-full py-3 lg:py-4 rounded-xl font-black text-center text-xs lg:text-sm uppercase tracking-wide transition-all
                                             bg-zinc-800 text-white hover:bg-amber-500 hover:text-black shadow-lg
                                         `}
                                 >
@@ -176,9 +176,9 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
 
                 {/* Persuasive Sections for Pricing Variant */}
                 {!isLock && (
-                    <div className="mt-6 md:mt-16 border-t border-zinc-800/50 pt-8">
+                    <div className="mt-6 lg:mt-16 border-t border-zinc-800/50 pt-8">
                         <div className="text-center mb-16">
-                            <h2 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter text-white mb-4">
+                            <h2 className="text-2xl lg:text-4xl font-black italic uppercase tracking-tighter text-white mb-4">
                                 ¿Por qué elegir <span className="text-amber-500">Nelux</span>?
                             </h2>
                             <p className="text-zinc-500 max-w-xl mx-auto">
@@ -186,7 +186,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                             <div className="text-center group">
                                 <div className="inline-flex p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 mb-6 group-hover:scale-110 transition-transform">
                                     <Rocket className="w-8 h-8 text-amber-500" />
@@ -218,15 +218,15 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                             </div>
                         </div>
 
-                        <div className="mt-20 bg-gradient-to-br from-zinc-900/50 to-zinc-900/10 border border-zinc-800 p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden">
+                        <div className="mt-20 bg-gradient-to-br from-zinc-900/50 to-zinc-900/10 border border-zinc-800 p-8 lg:p-12 rounded-[2.5rem] relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-8 opacity-10">
                                 <Heart className="w-32 h-32 text-amber-500" />
                             </div>
                             <div className="relative z-10 max-w-2xl">
-                                <h3 className="text-xl md:text-2xl font-black text-white italic uppercase mb-4">
+                                <h3 className="text-xl lg:text-2xl font-black text-white italic uppercase mb-4">
                                     Únete a la <span className="text-amber-500">Revolución</span> del Sector
                                 </h3>
-                                <p className="text-zinc-400 text-sm md:text-base leading-relaxed mb-8">
+                                <p className="text-zinc-400 text-sm lg:text-base leading-relaxed mb-8">
                                     No somos solo un software de gestión. Somos tu socio estratégico. Entendemos el arte de la barbería y la importancia de un servicio impecable.
                                 </p>
                                 <div className="flex flex-wrap gap-4">
@@ -258,7 +258,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                     </div>
                 )}
 
-                <p className="text-center text-zinc-600 text-[10px] md:text-xs mt-8 md:mt-12 pb-8 md:pb-0">
+                <p className="text-center text-zinc-600 text-[10px] lg:text-xs mt-8 lg:mt-12 pb-8 lg:pb-0">
                     🔒 Pagos procesados de forma segura por Stripe. Puedes cancelar en cualquier momento.
                 </p>
             </div>

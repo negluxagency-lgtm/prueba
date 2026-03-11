@@ -99,7 +99,7 @@ const StaticBookingPreview = () => {
                             <Clock className="w-4 h-4 text-amber-500" />
                             Horas Disponibles
                         </h4>
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
                             {slots.map((time) => (
                                 <div
                                     key={time}

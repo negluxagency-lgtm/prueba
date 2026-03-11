@@ -72,6 +72,7 @@ interface MonthlyTrendsProps {
     objCuts?: number;
     objProducts?: number;
     loading?: boolean;
+    selectedMonthText?: string;
 }
 
 export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({
@@ -81,7 +82,8 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({
     objRevenue = 25000,
     objCuts = 1000,
     objProducts = 40,
-    loading
+    loading,
+    selectedMonthText
 }) => {
     return (
         <div className={cn(
@@ -93,11 +95,13 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({
                     <div className="p-1.5 bg-amber-500/10 rounded-lg">
                         <TrendingUp size={16} className="text-amber-500" />
                     </div>
-                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-zinc-400">Tendencias del Mes</h3>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-zinc-400">
+                        Tendencias del Mes {selectedMonthText ? `(${selectedMonthText})` : ''}
+                    </h3>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <TrendItem
                     label="Ingresos Totales"
                     actual={revenue}

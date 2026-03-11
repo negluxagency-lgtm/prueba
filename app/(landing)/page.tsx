@@ -16,7 +16,7 @@ export const metadata = {
 
 export default function InicioPage() {
     return (
-        <main className="min-h-screen bg-zinc-950 overflow-hidden pt-6 md:pt-0 text-white">
+        <main className="min-h-screen bg-zinc-950 overflow-x-hidden pt-6 md:pt-0 text-white">
             {/* Navigation */}
             <nav className="fixed top-0 left-0 right-0 z-[100] border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl">
                 <div className="max-w-7xl mx-auto px-6 h-16 md:h-20 flex items-center justify-between">
@@ -49,7 +49,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 HERO SECTION
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative min-h-[80vh] md:min-h-[90vh] flex flex-col items-center justify-center px-4 md:px-6 pt-24 md:pt-32 pb-4 md:pb-4">
+            <section className="relative min-h-[80vh] md:min-h-[90vh] flex flex-col items-center justify-center px-4 md:px-8 lg:px-6 pt-24 md:pt-32 pb-4 md:pb-4">
                 {/* Radial gradient glow at top */}
                 <div
                     className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none"
@@ -114,9 +114,9 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 SECTION: VENTAJAS Y BENEFICIOS
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative py-16 md:py-24 px-6 bg-zinc-900/20 border-y border-zinc-800/50">
+            <section className="relative py-16 md:py-24 px-4 md:px-8 lg:px-6 bg-zinc-900/20 border-y border-zinc-800/50">
                 <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-start">
                         {/* Detalles / Párrafo Explicativo (Izquierda) */}
                         <div>
                             <div className="flex items-center gap-3 mb-6">
@@ -150,7 +150,7 @@ export default function InicioPage() {
                             <ul className="space-y-6">
                                 {[
                                     { title: 'Panel Personalizado', desc: 'Landing exclusiva de reservas para tus clientes sin que tengan que descargar ninguna app ni registrarse.' },
-                                    { title: 'Ahorro de Tiempo Masivo', desc: 'Las citas se agendan solas, olvidte de contestar llamadas y mensajes todo el día.' },
+                                    { title: 'Ahorro de Tiempo', desc: 'Las citas se agendan solas, olvídate de contestar llamadas y mensajes todo el día.' },
                                     { title: 'Adiós a los No-Shows', desc: 'Recordatorios automáticos por WhatsApp antes de la cita.' },
                                     { title: 'Control Total de Barberos', desc: 'Gestión de barberos, fichajes (entrada/salida) y facturación individual.' },
                                     { title: 'Ingresos y Contabilidad Centralizada', desc: 'Gráficas en tiempo real, facturas Veri*Factu (obligatorio 2026) y exportación legal.' },
@@ -175,7 +175,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 SECTION A: PUBLIC BOOKING PAGE
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative py-20 md:py-32 px-6 bg-transparent md:bg-zinc-900/30">
+            <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6 bg-transparent md:bg-zinc-900/30">
                 {/* Subtle glow */}
                 <div
                     className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none"
@@ -185,7 +185,7 @@ export default function InicioPage() {
                 />
 
                 <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
                         {/* Preview Right (Desktop) / Top (Mobile) */}
                         <div className="order-2 lg:order-2 flex justify-center w-full">
                             <StaticBookingPreview />
@@ -215,7 +215,7 @@ export default function InicioPage() {
 
                             <ul className="space-y-4 mb-8">
                                 {[
-                                    'Página web exclusiva (nelux.app/tubarberia)',
+                                    'Página web exclusiva (app.nelux.es/tu_barberia)',
                                     'No requiere descargar ninguna App',
                                     'Cliente no necesita crearse cuenta (Guest Mode)',
                                     'Selección de barbero y servicio visual',
@@ -234,9 +234,9 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 SECTION A.5: THE BRAIN (AI & Automation)
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section id="features" className="relative py-20 md:py-32 px-6">
+            <section id="features" className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6">
                 <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-start">
                         {/* Text Left */}
                         <div>
                             <div className="flex items-center gap-3 mb-6">
@@ -284,7 +284,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 SECTION B: FINANCIAL CONTROL
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative py-20 md:py-32 px-6 bg-transparent md:bg-zinc-900/30">
+            <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6 bg-transparent md:bg-zinc-900/30">
                 {/* Subtle glow - hidden on mobile */}
                 <div
                     className="hidden md:block absolute bottom-0 right-0 w-[600px] h-[400px] pointer-events-none"
@@ -294,7 +294,7 @@ export default function InicioPage() {
                 />
 
                 <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-start">
                         {/* Graphics Left */}
                         <div className="order-2 lg:order-1 space-y-6">
                             <DemoRingChart />
@@ -343,7 +343,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 SECTION B.5: STAFF & SCHEDULE MANAGEMENT
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative py-20 md:py-32 px-6">
+            <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6">
                 {/* Subtle glow */}
                 <div
                     className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none"
@@ -353,7 +353,7 @@ export default function InicioPage() {
                 />
 
                 <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-start">
                         {/* Text Left */}
                         <div className="order-1 lg:order-1">
                             <div className="flex items-center gap-3 mb-6">
@@ -401,7 +401,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 SECTION C: MANUAL INTERVENTION (WhatsApp Control)
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative py-20 md:py-32 px-6">
+            <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6">
                 {/* Subtle glow */}
                 <div
                     className="absolute top-1/2 left-0 w-[400px] h-[400px] pointer-events-none -translate-y-1/2"
@@ -411,7 +411,7 @@ export default function InicioPage() {
                 />
 
                 <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-start">
                         {/* Text Left */}
                         <div>
                             <div className="flex items-center gap-3 mb-6">
@@ -459,7 +459,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 SECTION D: PRODUCT SALES & STOCK
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative py-20 md:py-32 px-6 bg-transparent md:bg-zinc-900/30">
+            <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6 bg-transparent md:bg-zinc-900/30">
                 {/* Subtle glow - hidden on mobile */}
                 <div
                     className="hidden md:block absolute bottom-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] pointer-events-none"
@@ -469,7 +469,7 @@ export default function InicioPage() {
                 />
 
                 <div className="max-w-7xl mx-auto relative z-10">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-start">
                         {/* Product Table Left */}
                         <div className="order-2 lg:order-1">
                             <DemoProductTable />
@@ -517,7 +517,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 CÓMO FUNCIONA SECTION
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative py-20 md:py-32 px-6 bg-zinc-950">
+            <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6 bg-zinc-950">
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="text-center mb-12 md:mb-20">
@@ -530,7 +530,7 @@ export default function InicioPage() {
                     </div>
 
                     {/* Grid 2x2 en Desktop, Timeline Vertical en Móvil */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 lg:gap-8">
                         {/* Step 1 */}
                         <div className="relative group">
                             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 md:p-8 transition-all duration-300 hover:border-amber-500/30 hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.1)]">
@@ -645,7 +645,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 CTA FOOTER SECTION
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative py-24 md:py-32 px-6">
+            <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6">
                 {/* Gradient glow */}
                 <div
                     className="absolute inset-0 pointer-events-none"
@@ -687,7 +687,7 @@ export default function InicioPage() {
             </section>
 
             {/* Footer */}
-            <footer className="border-t border-zinc-800 py-8 px-6">
+            <footer className="border-t border-zinc-800 py-8 px-4 md:px-8 lg:px-6">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-zinc-500 text-sm">
                     <p>© 2026 Nelux. Todos los derechos reservados.</p>
                     <div className="flex items-center gap-6">

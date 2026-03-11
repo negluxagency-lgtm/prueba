@@ -73,13 +73,13 @@ const MonthlyStats: React.FC<MonthlyStatsProps> = ({ revenue, cuts, products }) 
     };
 
     return (
-        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] border border-zinc-800 p-6 shadow-2xl w-full h-full flex flex-col">
+        <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl lg:rounded-[2rem] border border-zinc-800 p-6 shadow-2xl w-full h-full flex flex-col">
             {/* Encabezado */}
             <div className="flex items-center gap-3 mb-6 shrink-0">
                 <div className="bg-amber-500/10 p-2 rounded-lg">
                     <Target className="text-amber-500 w-5 h-5" />
                 </div>
-                <h3 className="text-zinc-100 font-bold text-base md:text-lg">Objetivos Mensuales</h3>
+                <h3 className="text-zinc-100 font-bold text-base lg:text-lg">Objetivos Mensuales</h3>
             </div>
 
             {/* Gráfico */}

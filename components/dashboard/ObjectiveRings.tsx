@@ -35,13 +35,19 @@ interface ObjectiveRingsProps {
 }
 
 const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, productos, loading }) => {
-    const [isMobile, setIsMobile] = React.useState(false);
+    const [barThickness, setBarThickness] = React.useState(8);
 
     React.useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        const checkSize = () => {
+            const w = window.innerWidth;
+            if (w < 640) setBarThickness(8); // < sm
+            else if (w < 1024) setBarThickness(14); // sm & md (ocupa toda la fila)
+            else if (w < 1280) setBarThickness(10); // lg (comparte espacio con sidebar y otra columna)
+            else setBarThickness(14); // xl
+        };
+        checkSize();
+        window.addEventListener('resize', checkSize);
+        return () => window.removeEventListener('resize', checkSize);
     }, []);
 
     // Configuración de colores y radios para Recharts
@@ -89,15 +95,15 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
 
     return (
         <div className={cn(
-            "bg-zinc-900/50 backdrop-blur-sm rounded-xl md:rounded-[2rem] shadow-2xl pl-1 pr-2 py-6 md:p-6 border border-zinc-800 overflow-visible mr-[20px] md:mr-0 transition-opacity duration-300",
+            "bg-zinc-900/50 backdrop-blur-sm rounded-xl lg:rounded-[2rem] shadow-2xl pl-1 pr-2 py-6 lg:p-6 border border-zinc-800 overflow-visible mr-[20px] lg:mr-0 transition-opacity duration-300",
             loading ? "opacity-40 animate-pulse pointer-events-none" : "opacity-100"
         )}>
             {/* Título pegado a la parte superior */}
-            <h3 className="text-zinc-500 text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-2 md:mb-4 pl-2 text-left">
+            <h3 className="text-zinc-500 text-[9px] sm:text-[10px] lg:text-[9px] xl:text-[10px] font-black uppercase tracking-[0.2em] mb-2 md:mb-4 pl-2 text-left">
                 Objetivos del Día
             </h3>
 
-            <div className="flex flex-row items-center gap-0 md:gap-8">
+            <div className="flex flex-row items-center gap-0 lg:gap-4 xl:gap-8">
                 {/* Leyenda y Datos (Izquierda) */}
                 <div className="flex-1 w-full space-y-1 md:space-y-4 relative z-10 -ml-1 md:ml-0">
                     <div className="grid grid-cols-1 gap-0.5 md:gap-2">
@@ -110,8 +116,8 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
                                         </div>
                                     </div>
                                     <div className="pl-2.5 md:pl-0">
-                                        <p className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-wider leading-tight">{metric.label}</p>
-                                        <p className={cn("text-[11px] md:text-lg font-bold leading-none md:leading-normal", metric.color)}>
+                                        <p className="text-[8px] sm:text-[9px] md:text-[11px] lg:text-[9px] xl:text-[10px] text-zinc-500 font-bold uppercase tracking-wider leading-tight">{metric.label}</p>
+                                        <p className={cn("text-[11px] sm:text-sm md:text-xl lg:text-sm xl:text-lg font-bold leading-none lg:leading-normal", metric.color)}>
                                             {metric.actual}{metric.label.includes('Ingresos') ? '€' : ''}
                                             <span className="text-zinc-700 font-normal mx-0.5 md:mx-1">/</span>
                                             <span className="text-zinc-400">{metric.objetivo}{metric.label.includes('Ingresos') ? '€' : ''}</span>
@@ -119,7 +125,7 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1 md:gap-2">
-                                    <span className={cn("hidden md:block font-black text-xl", metric.color)}>
+                                    <span className={cn("hidden sm:block font-black sm:text-xs md:text-lg lg:text-sm xl:text-xl", metric.color)}>
                                         {metric.percentage}%
                                     </span>
                                 </div>
@@ -129,14 +135,14 @@ const ObjectiveRings: React.FC<ObjectiveRingsProps> = ({ ingresos, cortes, produ
                 </div>
 
                 {/* Gráfico Radial (Derecha) */}
-                <div className="relative w-[120px] h-[120px] md:h-[240px] md:w-[240px] shrink-0 transform -translate-x-[5px] md:translate-x-0">
+                <div className="relative w-[120px] h-[120px] sm:w-[160px] sm:h-[160px] md:w-[220px] md:h-[220px] lg:w-[180px] lg:h-[180px] xl:h-[240px] xl:w-[240px] shrink-0 transform -translate-x-[5px] lg:translate-x-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <RadialBarChart
                             cx="50%"
                             cy="50%"
                             innerRadius="30%"
                             outerRadius="100%"
-                            barSize={isMobile ? 8 : 12}
+                            barSize={barThickness}
                             data={data}
                             startAngle={90}
                             endAngle={450}

@@ -347,14 +347,14 @@ export default function Dashboard() {
     };
 
     return (
-        <main className="flex-1 p-4 md:p-10 max-w-7xl mx-auto w-full pb-24 md:pb-10">
+        <main className="flex-1 p-4 lg:p-10 max-w-7xl mx-auto w-full pb-24 lg:pb-10">
             <DashboardHeader
                 selectedDate={selectedDate}
                 setSelectedDate={setSelectedDate}
             />
 
-            <div className="flex flex-col lg:flex-row gap-0 md:gap-6 mb-6 md:mb-10 items-stretch justify-start">
-                <div className="flex flex-row gap-0 w-full lg:flex-1 items-stretch min-h-[160px] md:min-h-0">
+            <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 mb-6 lg:mb-10 items-stretch justify-start">
+                <div className="flex flex-row gap-0 w-full lg:flex-1 items-stretch min-h-[160px] lg:min-h-0">
                     <div className="w-[75%] lg:w-full">
                         <ObjectiveRings
                             ingresos={stats.ingresos}
@@ -372,7 +372,7 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <div className="w-full lg:flex-1 hidden md:flex flex-col gap-6 items-end">
+                <div className="w-full lg:flex-1 hidden lg:flex flex-col gap-6 items-end">
                     <div className="w-full">
                         <MonthlyGoalsChart
                             data={chartData}
@@ -382,8 +382,8 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Stats row for Desktop (Hidden on mobile as it's already in the rings container) */}
-            <div className="hidden md:flex mb-6 md:mb-10 lg:px-4">
+            {/* Stats row for Desktop (Hidden on mobile AND tablet) */}
+            <div className="hidden lg:flex mb-6 lg:mb-10 lg:px-4">
                 <DashboardStats
                     appointments={appointments}
                     monthlyRevenue={stats.ingresos.actual}
@@ -391,7 +391,7 @@ export default function Dashboard() {
                 />
             </div>
 
-            <div className="space-y-4 md:space-y-10">
+            <div className="space-y-4 lg:space-y-10">
                 <AppointmentTable
                     appointments={appointments}
                     selectedDate={selectedDate}

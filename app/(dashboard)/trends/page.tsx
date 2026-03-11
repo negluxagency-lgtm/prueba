@@ -18,6 +18,18 @@ export default function TrendsPage() {
   // Barber stats: use selected month for the ranking card
   const { stats: barberStats, loading: barberLoading } = useBarberStats(selectedMonth);
 
+  const getFormattedMonth = () => {
+    if (!selectedMonth) return '';
+    try {
+        const [year, month] = selectedMonth.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        return date.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+    } catch (e) {
+        return selectedMonth;
+    }
+  };
+  const selectedMonthText = getFormattedMonth();
+
   const [objectives, setObjectives] = useState({
     ingresos: 0,
     cortes: 0,
@@ -51,17 +63,17 @@ export default function TrendsPage() {
   }, []);
 
   return (
-    <main className="flex-1 p-2 md:p-10 max-w-4xl md:max-w-6xl mx-auto w-full pb-24 md:pb-10">
-      <header className="mb-8 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <main className="flex-1 p-2 lg:p-10 max-w-4xl lg:max-w-6xl mx-auto w-full pb-24 lg:pb-10">
+      <header className="mb-8 lg:mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase mb-2">
+          <h1 className="text-3xl lg:text-4xl font-black italic tracking-tighter uppercase mb-2">
             Analytics <span className="text-amber-500">Center</span>
           </h1>
-          <p className="text-zinc-500 font-medium text-sm md:text-base">Análisis de rendimiento real.</p>
+          <p className="text-zinc-500 font-medium text-sm lg:text-base">Análisis de rendimiento real.</p>
         </div>
 
         {/* GLOBAL MONTH SELECTOR */}
-        <div className="flex items-center gap-3 self-start md:self-auto">
+        <div className="flex items-center gap-3 self-start lg:self-auto">
           <div className="relative group/filter bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-2 flex items-center gap-3 hover:border-amber-500/30 transition-all shadow-xl">
             <Filter className="w-4 h-4 text-zinc-500 group-hover:text-amber-500 transition-colors" />
             <input
@@ -84,7 +96,7 @@ export default function TrendsPage() {
       </header>
 
       {/* KPI GRID */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-12">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 lg:mb-12">
         {[
           { id: 'revenue' as MetricType, label: 'Ingresos', val: `${metrics.totalRevenue}€`, icon: DollarSign, trend: range, color: 'text-green-500' },
           { id: 'clients' as MetricType, label: 'Citas', val: metrics.totalCuts, icon: Calendar, trend: range, color: 'text-amber-500' },
@@ -94,26 +106,26 @@ export default function TrendsPage() {
           <div
             key={i}
             onClick={() => setActiveMetric(stat.id)}
-            className={`cursor-pointer bg-zinc-900/80 border p-4 md:p-6 rounded-2xl md:rounded-3xl flex flex-col justify-between transition-all animate-in fade-in zoom-in duration-300 ${activeMetric === stat.id
+            className={`cursor-pointer bg-zinc-900/80 border p-4 lg:p-6 rounded-2xl lg:rounded-3xl flex flex-col justify-between transition-all animate-in fade-in zoom-in duration-300 ${activeMetric === stat.id
               ? 'border-amber-500 ring-1 ring-amber-500/20 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
               : 'border-zinc-800 hover:border-zinc-700'
               }`}
             style={{ animationDelay: `${i * 100}ms` }}
           >
-            <div className="flex justify-between items-start mb-2 md:mb-4">
-              <div className={`p-2 md:p-3 rounded-lg md:rounded-xl bg-zinc-800/50 ${stat.color}`}>
-                <stat.icon className="w-[18px] h-[18px] md:w-5 md:h-5" />
+            <div className="flex justify-between items-start mb-2 lg:mb-4">
+              <div className={`p-2 lg:p-3 rounded-lg lg:rounded-xl bg-zinc-800/50 ${stat.color}`}>
+                <stat.icon className="w-[18px] h-[18px] lg:w-5 lg:h-5" />
               </div>
-              <span className="text-[8px] md:text-[10px] font-bold bg-zinc-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded md:rounded-lg text-zinc-400 capitalize">
+              <span className="text-[8px] lg:text-[10px] font-bold bg-zinc-800 px-1.5 py-0.5 lg:px-2 lg:py-1 rounded lg:rounded-lg text-zinc-400 capitalize">
                 {stat.trend === 'week' ? 'Semana' : stat.trend === 'month' ? 'Mes' : stat.trend === 'year' ? 'Año' : stat.trend}
               </span>
             </div>
             <div>
-              <p className="text-zinc-500 text-[8px] md:text-[10px] uppercase font-black mb-1">{stat.label}</p>
+              <p className="text-zinc-500 text-[8px] lg:text-[10px] uppercase font-black mb-1">{stat.label}</p>
               {loading ? (
-                <div className="h-6 md:h-8 w-12 md:w-16 bg-zinc-800 rounded animate-pulse" />
+                <div className="h-6 lg:h-8 w-12 lg:w-16 bg-zinc-800 rounded animate-pulse" />
               ) : (
-                <p className="text-xl md:text-2xl font-bold text-white">{stat.val}</p>
+                <p className="text-xl lg:text-2xl font-bold text-white">{stat.val}</p>
               )}
             </div>
           </div>
@@ -139,6 +151,7 @@ export default function TrendsPage() {
           objCuts={objectives.cortes}
           objProducts={objectives.productos}
           loading={loadingObjectives}
+          selectedMonthText={selectedMonthText}
         />
       </div>
 
@@ -149,6 +162,7 @@ export default function TrendsPage() {
             stats={barberStats}
             loading={barberLoading}
             globalCutsGoal={objectives.cortes}
+            selectedMonthText={selectedMonthText}
           />
         </div>
       )}

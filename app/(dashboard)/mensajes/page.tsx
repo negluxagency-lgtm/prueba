@@ -60,12 +60,12 @@ function ChatInterface() {
     };
 
     return (
-        <div className="flex bg-[#0a0a0a] text-zinc-100 overflow-hidden absolute inset-x-0 top-10 bottom-20 md:inset-0">
+        <div className="flex bg-[#0a0a0a] text-zinc-100 overflow-hidden absolute inset-x-0 top-10 bottom-20 lg:inset-0">
             {/* LEFT SIDEBAR: CONTACTS */}
-            <div className={`w-full md:w-[350px] border-r border-zinc-800 flex flex-col bg-zinc-950/50 ${selectedTlf ? 'hidden md:flex' : 'flex'}`}>
-                <div className="p-4 md:p-6 border-b border-zinc-800">
-                    <h1 className="text-xl md:text-2xl font-black uppercase tracking-tighter">Mensajes</h1>
-                    <p className="text-zinc-500 text-[10px] md:text-xs font-bold mt-0.5 md:mt-1">
+            <div className={`w-full lg:w-[350px] border-r border-zinc-800 flex flex-col bg-zinc-950/50 ${selectedTlf ? 'hidden lg:flex' : 'flex'}`}>
+                <div className="p-4 lg:p-6 border-b border-zinc-800">
+                    <h1 className="text-xl lg:text-2xl font-black uppercase tracking-tighter">Mensajes</h1>
+                    <p className="text-zinc-500 text-[10px] lg:text-xs font-bold mt-0.5 lg:mt-1">
                         {loading ? 'Cargando...' : `${conversations.length} Conversaciones`}
                     </p>
                 </div>
@@ -94,25 +94,25 @@ function ChatInterface() {
             </div>
 
             {/* RIGHT SIDE: CHAT */}
-            <div className={`flex-1 flex flex-col bg-[#0f0f11] ${selectedTlf ? 'flex' : 'hidden md:flex'}`}>
+            <div className={`flex-1 flex flex-col bg-[#0f0f11] ${selectedTlf ? 'flex' : 'hidden lg:flex'}`}>
                 {selectedConversation ? (
                     <>
                         {/* CHAT HEADER */}
-                        <div className="h-16 md:h-20 border-b border-zinc-800 flex items-center px-4 md:px-8 justify-between bg-zinc-950/80 backdrop-blur-md">
-                            <div className="flex items-center gap-3 md:gap-4">
+                        <div className="h-16 lg:h-20 border-b border-zinc-800 flex items-center px-4 lg:px-8 justify-between bg-zinc-950/80 backdrop-blur-md">
+                            <div className="flex items-center gap-3 lg:gap-4">
                                 <button
                                     onClick={() => setSelectedTlf(null)}
-                                    className="md:hidden p-2 -ml-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+                                    className="lg:hidden p-2 -ml-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
                                 >
                                     <ChevronLeft size={24} />
                                 </button>
-                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-                                    <User className="text-black w-4 h-4 md:w-5 md:h-5" />
+                                <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                                    <User className="text-black w-4 h-4 lg:w-5 lg:h-5" />
                                 </div>
                                 <div>
-                                    <h2 className="font-bold text-base md:text-lg leading-none">{selectedConversation.tlf}</h2>
+                                    <h2 className="font-bold text-base lg:text-lg leading-none">{selectedConversation.tlf}</h2>
                                     {selectedConversation.clientName && (
-                                        <span className="text-[10px] md:text-xs text-zinc-500 font-medium mt-1 block">
+                                        <span className="text-[10px] lg:text-xs text-zinc-500 font-medium mt-1 block">
                                             {selectedConversation.clientName}
                                         </span>
                                     )}
@@ -120,22 +120,22 @@ function ChatInterface() {
                             </div>
                             <a
                                 href={`tel:${selectedConversation.tlf}`}
-                                className="p-2 md:p-3 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-white flex items-center justify-center"
+                                className="p-2 lg:p-3 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400 hover:text-white flex items-center justify-center"
                             >
-                                <Phone className="w-[18px] h-[18px] md:w-5 md:h-5" />
+                                <Phone className="w-[18px] h-[18px] lg:w-5 lg:h-5" />
                             </a>
                         </div>
 
                         {/* MESSAGES AREA */}
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6 custom-scrollbar bg-[url('/noise.svg')]">
+                        <div className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-4 lg:space-y-6 custom-scrollbar bg-[url('/noise.svg')]">
                             {selectedConversation.messages.map((msg, idx) => (
                                 <div key={`${msg.id}-${idx}`} className={`flex ${msg.isMine ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[85%] md:max-w-[70%] rounded-xl md:rounded-2xl p-3 md:p-4 shadow-lg ${msg.isMine
+                                    <div className={`max-w-[85%] lg:max-w-[70%] rounded-xl lg:rounded-2xl p-3 lg:p-4 shadow-lg ${msg.isMine
                                         ? 'bg-amber-600 text-white rounded-tr-none'
                                         : 'bg-zinc-800 text-zinc-200 rounded-tl-none'
                                         }`}>
-                                        <p className="text-xs md:text-sm leading-relaxed">{msg.content}</p>
-                                        <p className={`text-[9px] md:text-[10px] mt-1.5 md:mt-2 text-right opacity-70 ${msg.isMine ? 'text-white/80' : 'text-zinc-500'}`}>
+                                        <p className="text-xs lg:text-sm leading-relaxed">{msg.content}</p>
+                                        <p className={`text-[9px] lg:text-[10px] mt-1.5 lg:mt-2 text-right opacity-70 ${msg.isMine ? 'text-white/80' : 'text-zinc-500'}`}>
                                             {formatTime(msg.timestamp)}
                                         </p>
                                     </div>
@@ -145,22 +145,22 @@ function ChatInterface() {
                         </div>
 
                         {/* INPUT AREA */}
-                        <div className="p-3 md:p-6 border-t border-zinc-800 bg-zinc-950">
-                            <div className="flex gap-2 md:gap-4">
+                        <div className="p-3 lg:p-6 border-t border-zinc-800 bg-zinc-950">
+                            <div className="flex gap-2 lg:gap-4">
                                 <input
                                     type="text"
                                     value={inputMessage}
                                     onChange={(e) => setInputMessage(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                     placeholder="Mensaje..."
-                                    className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg md:rounded-xl px-3 py-3 md:px-4 md:py-4 text-xs md:text-sm focus:outline-none focus:border-amber-500 transition-colors text-white placeholder-zinc-600"
+                                    className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg lg:rounded-xl px-3 py-3 lg:px-4 lg:py-4 text-xs lg:text-sm focus:outline-none focus:border-amber-500 transition-colors text-white placeholder-zinc-600"
                                 />
                                 <button
                                     onClick={handleSend}
                                     disabled={!inputMessage.trim()}
-                                    className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-black p-3 md:p-4 rounded-lg md:rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-95"
+                                    className="bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-black p-3 lg:p-4 rounded-lg lg:rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-95"
                                 >
-                                    <Send className="w-[18px] h-[18px] md:w-5 md:h-5" />
+                                    <Send className="w-[18px] h-[18px] lg:w-5 lg:h-5" />
                                 </button>
                             </div>
                         </div>

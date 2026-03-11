@@ -12,7 +12,7 @@ const BARBERS = [
 
 export default function DemoStaffVisual() {
     return (
-        <div className="relative w-full max-w-lg mx-auto">
+        <div className="relative w-full max-w-lg mx-auto pb-16 lg:pb-20">
             {/* Background Glow */}
             <div className="absolute -inset-4 bg-indigo-500/5 blur-3xl rounded-[3rem]" />
 
@@ -65,7 +65,7 @@ export default function DemoStaffVisual() {
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="absolute -right-4 md:-right-8 -bottom-4 bg-indigo-600 border border-indigo-500 p-4 rounded-3xl shadow-xl shadow-indigo-600/20 max-w-[160px]"
+                    className="absolute -right-2 lg:-right-8 -bottom-12 lg:-bottom-4 bg-indigo-600 border border-indigo-500 p-4 rounded-3xl shadow-xl shadow-indigo-600/20 max-w-[160px]"
                 >
                     <div className="flex items-center gap-2 mb-2">
                         <Calculator className="w-4 h-4 text-white" />
