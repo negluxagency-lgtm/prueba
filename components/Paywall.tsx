@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Check, Star, Shield, X, Rocket, Zap, Heart, TrendingUp } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
+import ManageSubscriptionButton from '@/components/ManageSubscriptionButton';
 
 interface PaywallProps {
     variant?: 'lock' | 'pricing';
@@ -89,7 +90,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             <div className="max-w-5xl w-full relative z-10 pb-32 lg:pb-0">
                 <div className="text-center mb-8 lg:mb-16 mt-8 lg:mt-0">
                     <h1 className="text-3xl lg:text-5xl font-black italic uppercase tracking-tighter text-white mb-3 lg:mb-4 leading-tight">
-                        {status === 'pagado' ? (
+                        {status === 'pagado' && variant !== 'pricing' ? (
                             <>Tu <span className="text-amber-500">Plan Actual</span></>
                         ) : isLock ? (
                             <>Activa <span className="text-amber-500">Nelux Barbershop</span></>
@@ -98,7 +99,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                         )}
                     </h1>
                     <p className="text-zinc-400 text-sm lg:text-xl max-w-2xl mx-auto px-4">
-                        {status === 'pagado'
+                        {status === 'pagado' && variant !== 'pricing'
                             ? "Aquí tienes las características incluidas en tu suscripción actual."
                             : isLock
                                 ? "Elige un plan para seguir gestionando tu imperio sin interrupciones."
@@ -250,7 +251,16 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                     </div>
                 )}
 
-                {variant !== 'pricing' && (
+                {(variant === 'pricing' || variant === 'lock') && user && (
+                    <div className="mt-12 flex justify-center">
+                        <ManageSubscriptionButton 
+                            className="bg-zinc-900/50 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 hover:bg-zinc-800 transition-all text-xs font-bold uppercase tracking-widest px-6 py-6 rounded-xl"
+                            variant="outline"
+                        />
+                    </div>
+                )}
+
+                {variant !== 'pricing' && !user && (
                     <div className="mt-12 flex justify-center">
                         <a
                             href="https://billing.stripe.com/p/login/7sY4gy54TaRS9eL6vT28800"

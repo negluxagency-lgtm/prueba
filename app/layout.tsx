@@ -35,6 +35,11 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     type: 'website',
   },
+  appleWebApp: {
+    title: 'NeluxBarber',
+    statusBarStyle: 'default',
+    capable: true,
+  },
   icons: {
     icon: [
       { url: '/favicon.ico?v=nelux2', sizes: 'any' },
@@ -47,6 +52,7 @@ export const metadata: Metadata = {
     shortcut: '/favicon.ico?v=nelux2',
     other: [
       { rel: 'manifest', url: '/manifest.json?v=nelux2' },
+      { rel: 'mask-icon', url: '/safari-pinned-tab.svg?v=nelux2', color: '#f59e0b' },
     ],
   }
 };

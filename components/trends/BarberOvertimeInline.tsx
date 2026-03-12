@@ -66,6 +66,7 @@ export function BarberOvertimeInline({ barberId, barberiaId, month, onChanged }:
     }
 
     useEffect(() => {
+        if (!barberId || !month) return
         fetchRecords()
     }, [barberId, month])
 

@@ -51,7 +51,7 @@ export default function InicioPage() {
             {/* ═══════════════════════════════════════════════════════════════════════
                 HERO SECTION
             ═══════════════════════════════════════════════════════════════════════ */}
-            <section className="relative min-h-[80vh] md:min-h-[90vh] flex flex-col items-center justify-center px-4 md:px-8 lg:px-6 pt-24 md:pt-32 pb-4 md:pb-4">
+            <section className="relative min-h-[80vh] md:min-h-[90vh] flex flex-col items-center justify-center px-4 md:px-8 lg:px-6 pt-24 md:pt-32 pb-12 md:pb-24">
                 {/* Radial gradient glow at top */}
                 <div
                     className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] pointer-events-none"
@@ -75,7 +75,7 @@ export default function InicioPage() {
                 </h1>
 
                 {/* Subheadline */}
-                <p className="relative z-10 text-zinc-400 text-lg md:text-xl text-center max-w-2xl mt-6 leading-relaxed">
+                <p className="relative z-10 text-zinc-400 text-base md:text-xl text-center max-w-2xl mt-6 leading-relaxed">
                     Corta más, gestiona menos. La evolución digital de tu barbería. Todo lo que necesitas en un mismo lugar.
                 </p>
 
@@ -97,17 +97,17 @@ export default function InicioPage() {
                 </div>
 
                 {/* Trust indicators */}
-                <div className="relative z-10 flex flex-col md:flex-row flex-wrap items-center justify-center gap-3 md:gap-6 mt-8 md:mt-12 text-zinc-500 text-xs md:text-sm">
-                    <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <div className="relative z-10 flex flex-row flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-8 md:mt-12 text-zinc-500 text-[10px] sm:text-xs md:text-sm">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                        <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
                         Sin tarjeta requerida
                     </div>
-                    <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        Configura en 5 minutos
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                        <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
+                        Configura en 5 min
                     </div>
-                    <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                        <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-green-500" />
                         Soporte 24/7
                     </div>
                 </div>
@@ -135,10 +135,10 @@ export default function InicioPage() {
                                 </span>
                             </h2>
 
-                            <p className="text-zinc-400 text-lg leading-relaxed mix-blend-lighten">
-                                NeluxBarber no es solo una agenda, es la estructura operativa completa para escalar tu barbería sin perder la cabeza.
-                                Centralizamos tus reservas, tu facturación adaptada a la normativa <strong className="text-amber-500 font-bold">Veri*Factu 2026</strong>, las nóminas de tus barberos y el stock de productos en un único
-                                panel de control impulsado por Inteligencia Artificial.
+                            <p className="text-zinc-400 text-base md:text-lg leading-relaxed mix-blend-lighten">
+                                NeluxBarber no es solo una agenda, es la estructura completa para escalar tu barbería sin perder la cabeza.
+                                Centralizamos tus reservas, tu facturación adaptada a <strong className="text-amber-500 font-bold">Veri*Factu 2026</strong>, las nóminas de tus barberos y el stock de productos en un único
+                                panel de control.
                                 Con el mejor software de gestión para barberos, recuperas el tiempo necesario para centrarte en lo importante: <strong className="text-white font-semibold">cortar pelo y hacer crecer tu marca</strong>.
                             </p>
                         </div>
@@ -209,7 +209,7 @@ export default function InicioPage() {
                                 </span>
                             </h2>
 
-                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
+                            <p className="text-zinc-400 text-base md:text-lg leading-relaxed mb-8">
                                 Tus clientes no quieren otra app ocupando espacio.
                                 Te creamos una <span className="text-white font-semibold">página de reservas personalizada</span> donde pueden agendar en segundos.
                                 Sin registrarse, sin contraseñas, directo al grano.
@@ -255,7 +255,7 @@ export default function InicioPage() {
                                 </span>
                             </h2>
 
-                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
+                            <p className="text-zinc-400 text-base md:text-lg leading-relaxed mb-8">
                                 Desde <span className="text-white font-semibold">&quot;Hola&quot;</span> hasta{' '}
                                 <span className="text-white font-semibold">&quot;Cita Confirmada&quot;</span> sin que toques el móvil.
                                 Nuestro software incluye un chatbot AI impulsado por GPT que convierte interesados en clientes reales agendados <span className="text-amber-500 font-bold">24/7</span>.
@@ -319,7 +319,7 @@ export default function InicioPage() {
                                 </span>
                             </h2>
 
-                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
+                            <p className="text-zinc-400 text-base md:text-lg leading-relaxed mb-8">
                                 Olvídate de hojas de cálculo y cajas registradoras anticuadas.
                                 Visualiza tus ingresos diarios, tendencias semanales y objetivos mensuales en un panel diseñado para <span className="text-white font-semibold">tomar decisiones, no perder tiempo</span>.
                             </p>
@@ -372,7 +372,7 @@ export default function InicioPage() {
                                 </span>
                             </h2>
 
-                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
+                            <p className="text-zinc-400 text-base md:text-lg leading-relaxed mb-8">
                                 Olvídate de los líos con los horarios y los cálculos de comisiones.
                                 Gestiona la jornada laboral completa de tu equipo, desde el fichaje de entrada hasta la liquidación final del mes. <span className="text-white font-semibold">Transparencia total para ti y tus barberos</span>.
                             </p>
@@ -430,7 +430,7 @@ export default function InicioPage() {
                                 </span>
                             </h2>
 
-                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
+                            <p className="text-zinc-400 text-base md:text-lg leading-relaxed mb-8">
                                 Con el plan Premium, la IA trabaja por ti, pero tú decides cuándo intervenir.
                                 Entra en cualquier conversación de WhatsApp, responde manualmente y vuelve a dejar que el bot continúe. <span className="text-white font-semibold">Sin fricción, sin límites</span>.
                             </p>
@@ -493,7 +493,7 @@ export default function InicioPage() {
                                 </span>
                             </h2>
 
-                            <p className="text-zinc-400 text-lg leading-relaxed mb-8">
+                            <p className="text-zinc-400 text-base md:text-lg leading-relaxed mb-8">
                                 Gestiona tu inventario de productos, controla el stock en tiempo real y registra ventas con un solo clic.
                                 Cada venta se suma automáticamente a tus ingresos del día. <span className="text-white font-semibold">Cero papeleo, máximo beneficio</span>.
                             </p>
@@ -526,7 +526,7 @@ export default function InicioPage() {
                         <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mb-6 leading-tight">
                             Cómo <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">Funciona</span>
                         </h2>
-                        <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto">
+                        <p className="text-zinc-400 text-base md:text-xl max-w-2xl mx-auto">
                             De 0 a piloto automático en 4 pasos. Sin complicaciones técnicas.
                         </p>
                     </div>
@@ -553,7 +553,7 @@ export default function InicioPage() {
                                     <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
                                         ACTIVA EL NÚCLEO
                                     </h3>
-                                    <p className="text-zinc-400 leading-relaxed">
+                                    <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
                                         Suscríbete desde 19€/mes y toma el mando. Sin comisiones ocultas. Configura tu perfil y horarios en un par de clics: tu nueva Web de Citas se genera de forma instantánea y totalmente personalizada. Tu negocio, digitalizado al momento.
                                     </p>
                                 </div>
@@ -580,7 +580,7 @@ export default function InicioPage() {
                                     <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
                                         LA LÍNEA ROJA
                                     </h3>
-                                    <p className="text-zinc-400 leading-relaxed">
+                                    <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
                                         Abre las puertas de tu barbería en la web. Un portal conectado a tus servicios y equipo donde tus clientes reservan sin descargar apps ni registros tediosos. Olvídate de interrumpir cortes para contestar llamadas o mensajes.
                                     </p>
                                 </div>
@@ -607,7 +607,7 @@ export default function InicioPage() {
                                     <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
                                         SINCRONIZACIÓN NEURONAL
                                     </h3>
-                                    <p className="text-zinc-400 leading-relaxed">
+                                    <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
                                         Deja que la IA trabaje por ti. Tu agenda se llena sola mediante la web o nuestro chat inteligente (GPT-5). Todo se sincroniza en tiempo real: si alguien reserva online, el hueco desaparece al instante. Cero conflictos, máxima ocupación.
                                     </p>
                                 </div>
@@ -634,7 +634,7 @@ export default function InicioPage() {
                                     <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
                                         DESPLIEGUE VISUAL
                                     </h3>
-                                    <p className="text-zinc-400 leading-relaxed">
+                                    <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
                                         Gestiona cada rincón de tu barbería desde un único panel central web o app móvil. Controla tus ingresos, gastos, turnos, nóminas, facturación legal (<strong className="text-amber-500">Veri*Factu 2026</strong>), y stock. El software para barberos más moderno que necesitas para que tu negocio funcione en piloto automático.
                                     </p>
                                 </div>
@@ -661,7 +661,7 @@ export default function InicioPage() {
                         ¿Listo para Despegar?
                     </h2>
 
-                    <p className="text-zinc-400 text-lg md:text-xl leading-relaxed mb-10">
+                    <p className="text-zinc-400 text-base md:text-xl leading-relaxed mb-10">
                         Únete a las barberías que ya operan en piloto automático. Prueba gratuita de 7 días, sin compromiso. ¿Estás listo para que tu barbería pase al siguiente nivel?
                     </p>
 

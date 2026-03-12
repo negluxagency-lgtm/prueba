@@ -342,15 +342,15 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
                                     <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Días Trabajados</p>
-                                    <p className="text-xl md:text-2xl font-black text-white">{dailySummaries.length}</p>
+                                    <p className="text-lg font-black text-white">{dailySummaries.length}</p>
                                 </div>
                                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
                                     <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Horas Totales</p>
-                                    <p className="text-xl md:text-2xl font-black text-white">{formatHours(totalMonthSecs)}</p>
+                                    <p className="text-lg font-black text-white">{formatHours(totalMonthSecs)}</p>
                                 </div>
                                 <div className={cn("border rounded-2xl p-4 text-center", autoOvertime?.totalHoras ? "bg-amber-500/10 border-amber-500/20" : "bg-zinc-900 border-zinc-800")}>
                                     <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Horas Extra</p>
-                                    {loadingOvertime ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-amber-500" /> : <p className={cn("text-xl md:text-2xl font-black", autoOvertime?.totalHoras ? "text-amber-500" : "text-white")}>{autoOvertime?.totalHoras ? `${autoOvertime.totalHoras.toFixed(1)}h` : '—'}</p>}
+                                    {loadingOvertime ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-amber-500" /> : <p className={cn("text-lg font-black", autoOvertime?.totalHoras ? "text-amber-500" : "text-white")}>{autoOvertime?.totalHoras ? `${autoOvertime.totalHoras.toFixed(1)}h` : '—'}</p>}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl p-1.5">
@@ -602,17 +602,17 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                                 <div className="grid grid-cols-3 gap-3">
                                     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
                                         <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Días Trabajados</p>
-                                        <p className="text-xl md:text-2xl font-black text-white">{dailySummaries.length}</p>
+                                        <p className="text-lg font-black text-white">{dailySummaries.length}</p>
                                     </div>
                                     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
                                         <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Horas Totales</p>
-                                        <p className="text-xl md:text-2xl font-black text-white">{formatHours(totalMonthSecs)}</p>
+                                        <p className="text-lg font-black text-white">{formatHours(totalMonthSecs)}</p>
                                     </div>
                                     <div className={cn("border rounded-2xl p-4 text-center", autoOvertime?.totalHoras ? "bg-amber-500/10 border-amber-500/20" : "bg-zinc-900 border-zinc-800")}>
                                         <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Horas Extra</p>
                                         {loadingOvertime
                                             ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-amber-500" />
-                                            : <p className={cn("text-xl md:text-2xl font-black", autoOvertime?.totalHoras ? "text-amber-500" : "text-white")}>
+                                            : <p className={cn("text-lg font-black", autoOvertime?.totalHoras ? "text-amber-500" : "text-white")}>
                                                 {autoOvertime?.totalHoras ? `${autoOvertime.totalHoras.toFixed(1)}h` : '—'}
                                             </p>
                                         }

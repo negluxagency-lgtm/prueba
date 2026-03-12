@@ -37,6 +37,7 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
     const [agenda, setAgenda] = useState<any[]>([])
     const [showAllAppointments, setShowAllAppointments] = useState(false)
     const dateInputRef = useRef<HTMLInputElement>(null)
+    const loadDataRef = useRef<() => Promise<void>>(async () => {})
 
     // Cortes State
     const [currentMonth, setCurrentMonth] = useState(format(new Date(), 'yyyy-MM'))
@@ -91,6 +92,8 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
     }
 
     // --- REALTIME SUBSCRIPTION ---
+    // Usamos un ref para que el callback siempre llame a la versión más reciente de loadData
+    // evitando el stale closure que reseteaba selectedDate y showAllAppointments a sus valores iniciales
     useEffect(() => {
         if (!shopData?.id) return
         const channel = supabase
@@ -101,7 +104,7 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                 table: 'citas',
                 filter: `barberia_id=eq.${shopData.id}`
             }, () => {
-                setTimeout(() => loadData(), 500)
+                setTimeout(() => loadDataRef.current(), 500)
             })
             .subscribe()
         return () => { supabase.removeChannel(channel) }
@@ -129,11 +132,22 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
         }
     }
 
+    // Mantener el ref siempre sincronizado con la última versión de loadData
+    useEffect(() => {
+        loadDataRef.current = loadData
+    })
+
     const handleUpdateStatus = async (id: number, status: 'pendiente' | 'confirmada' | 'cancelada', pago?: string) => {
+        // Actualización optimista: actualiza el estado local sin recargar toda la agenda
+        setAgenda(prev => prev.map(cita =>
+            cita.id === id
+                ? { ...cita, confirmada: status === 'confirmada', cancelada: status === 'cancelada', metodo_pago: pago ?? cita.metodo_pago }
+                : cita
+        ))
         toast.promise(updateStaffAppointmentStatus(id, status, barber.nombre, pago), {
             loading: 'Actualizando...',
-            success: () => { loadData(); return 'Estado actualizado' },
-            error: 'Error al actualizar'
+            success: 'Estado actualizado',
+            error: (err) => { loadData(); return 'Error al actualizar' }
         })
     }
 
@@ -777,8 +791,9 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                 onClose={() => setPaymentModal(null)}
                 onSelect={(method) => {
                     if (paymentModal) {
-                        handleUpdateStatus(Number(paymentModal.id), 'confirmada', method)
-                        setPaymentModal(null)
+                        const id = Number(paymentModal.id)
+                        setPaymentModal(null)  // cierra el modal primero, antes de disparar el update
+                        handleUpdateStatus(id, 'confirmada', method)
                     }
                 }}
             />

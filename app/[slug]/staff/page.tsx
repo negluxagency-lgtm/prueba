@@ -30,7 +30,7 @@ export default async function StaffPage(props: PageProps) {
     // 2. Fetch Barbers (With their PIN mapping, Photo and Schedule)
     const { data: barbers, error: barbersError } = await supabase
         .from('barberos')
-        .select('id, nombre, pin, foto, horario_semanal')
+        .select('id, nombre, pin, foto, horario_semanal, "jefe/dueño"')
         .eq('barberia_id', profile.id)
         .order('nombre', { ascending: true })
 
@@ -50,7 +50,10 @@ export default async function StaffPage(props: PageProps) {
     }
 
     // Map `pin` to `hasPin` boolean to secure the PIN from the client
-    const secureBarbers = barbers.map(b => ({
+    // Filter out the owner from the staff view
+    const secureBarbers = barbers
+        .filter(b => !b['jefe/dueño'])
+        .map(b => ({
         id: b.id,
         nombre: b.nombre,
         foto: b.foto,
