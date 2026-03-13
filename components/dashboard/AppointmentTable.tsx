@@ -143,8 +143,9 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             {(userPlan === 'Premium' || userPlan === 'Profesional') && (
                                                 <td className="px-2 py-1 lg:px-4 lg:py-3 text-zinc-300 text-[10px] lg:text-xs font-medium text-center">
                                                     {(() => {
-                                                        if (!cita.barbero) return <span className="text-zinc-600 italic">Sin asignar</span>;
-                                                        const barberObj = barbers.find(b => b.id === cita.barbero);
+                                                        const bId = cita.barbero_id || cita.barbero;
+                                                        if (!bId) return <span className="text-zinc-600 italic">Sin asignar</span>;
+                                                        const barberObj = barbers.find(b => String(b.id) === String(bId) || b.nombre === cita.barbero);
                                                         return barberObj ? barberObj.nombre : cita.barbero;
                                                     })()}
                                                 </td>

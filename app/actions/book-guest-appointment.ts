@@ -52,13 +52,14 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
     const ip = forwardedFor?.split(',')[0].trim() || realIp || '127.0.0.1'
 
     // Initialize Admin Client (Service Role)
-    // NECESARIO para saltarse las políticas RLS si las hay, o para asegurar la inserción desde el servidor
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
     try {
+        console.log(`🚀 [Booking] Starting process for slug: ${slug}, service: ${serviceId}, barber: ${barberId || 'Auto'}`);
+
         // 2. Buscar el ID de la barbería usando el Slug
         const { data: profile, error: profileError } = await supabase
             .from('perfiles')
@@ -67,6 +68,7 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
             .single()
 
         if (profileError || !profile) {
+            console.error('❌ [Booking] Profile not found:', profileError);
             return { success: false, error: 'La barbería no existe o el enlace es inválido.' }
         }
 
@@ -75,8 +77,7 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
             return { success: false, error: 'Faltan datos requeridos.' }
         }
 
-        // 3.5 CRITICAL: Bloqueo de duplicados (Corte de Energía - Take 4)
-        // Buscamos TODAS las citas futuras para esta barbería para filtrar con precisión quirúrgica
+        // 3.5 Bloqueo de duplicados
         const today = new Date().toISOString().split('T')[0]
         const cleanTargetPhone = guestPhone.replace(/\D/g, '')
 
@@ -92,13 +93,8 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
 
         if (allFutureAppointments && allFutureAppointments.length > 0) {
             const hasDuplicate = allFutureAppointments.some(apt => {
-                // Si la cita está explícitamente cancelada, la ignoramos
                 if (apt.cancelada === true) return false
-
-                // Normalizamos el teléfono de la DB para comparar
                 const dbPhone = String(apt.Telefono || '').replace(/\D/g, '')
-
-                // Verificamos si coinciden (mismo número o uno contiene al otro, min 9 dígitos)
                 if (dbPhone.length >= 9 && cleanTargetPhone.length >= 9) {
                     return dbPhone.endsWith(cleanTargetPhone) || cleanTargetPhone.endsWith(dbPhone)
                 }
@@ -116,26 +112,19 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
         // 4. Obtener el precio del servicio seleccionado
         const { data: serviceData, error: serviceError } = await supabase
             .from('servicios')
-            .select('precio')
+            .select('precio, duracion')
             .eq('id', serviceId)
             .single()
 
         if (serviceError || !serviceData) {
+            console.error('❌ [Booking] Service error:', serviceError);
             return { success: false, error: 'El servicio seleccionado no es válido.' }
         }
 
-        // 5. Get Service Duration for overlap check
-        const { data: fullServiceData } = await supabase
-            .from('servicios')
-            .select('duracion')
-            .eq('id', serviceId)
-            .single()
-
-        const serviceDuration = fullServiceData?.duracion || 30 // Default 30min
+        const serviceDuration = serviceData.duracion || 30
 
         // 6. Get Barber Name (Legacy Compatibility)
-        // System historically stores barber NAME in 'barbero' column, not ID.
-        let barberName = null
+        let barberName: string | null = null
         if (barberId) {
             const { data: bData } = await supabase
                 .from('barberos')
@@ -148,63 +137,41 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
         }
 
         // 7. CRITICAL: Validate no duplicate booking
-        // STRATEGY CHANGE: Fetch ALL appointments for the day and filter in JS to avoid SQL mismatches
         const validationBarber = barberName || (barberId ? String(barberId) : null)
 
         if (validationBarber) {
-            console.log('🔒 [Duplicate Check] Validating for:', validationBarber, 'on', date, 'at', time)
-
-            // Fetch everything for this day/shop
             const { data: dayAppointments } = await supabase
                 .from('citas')
-                .select('Hora, duracion, barbero, Dia, id, cancelada')
+                .select('Hora, duracion, barbero, barbero_id, Dia, id, cancelada')
                 .eq('barberia_id', profile.id)
-                .eq('Dia', date) // Only filter by day
-
-            console.log(`🔍 [Duplicate Check] Verify logic: Found ${dayAppointments?.length || 0} total appointments for this day.`)
+                .eq('Dia', date)
 
             if (dayAppointments && dayAppointments.length > 0) {
-                // Filter in JS
                 const conflictingAppointments = dayAppointments.filter((apt: any) => {
-                    // 1. Check Cancellation
                     if (apt.cancelada) return false;
+                    const dbName = String(apt.barbero || '').trim().toLowerCase()
+                    const dbId = String(apt.barbero_id || '').trim().toLowerCase()
+                    const targetName = String(barberName || '').trim().toLowerCase()
+                    const targetId = String(barberId || '').trim().toLowerCase()
 
-                    // 2. Check Barber (Case insensitive, trim)
-                    const dbBarber = String(apt.barbero || '').trim().toLowerCase()
-                    const targetBarber = String(validationBarber).trim().toLowerCase()
+                    const matchId = targetId && dbId === targetId
+                    const matchName = targetName && dbName === targetName
+                    const matchLegacyId = targetId && dbName === targetId
 
-                    // Also check against ID just in case
-                    const targetID = String(barberId || '').trim()
-
-                    // Match Name OR ID
-                    const isBarberMatch = (dbBarber === targetBarber) || (dbBarber === targetID)
-
-                    if (!isBarberMatch) return false;
-
-                    return true;
+                    return matchId || matchName || matchLegacyId;
                 })
 
-                console.log(`🔍 [Duplicate Check] After JS Filter: Found ${conflictingAppointments.length} appointments for this barber.`)
-
-                // Check for time overlap
                 const hasConflict = conflictingAppointments.some((apt: any) => {
                     const [requestedHour, requestedMin] = time.split(':').map(Number)
                     const requestedStartMin = requestedHour * 60 + requestedMin
                     const requestedEndMin = requestedStartMin + serviceDuration
 
-                    const [aptHour, aptMin] = String(apt.Hora).split(':').map(Number) // Handle HH:MM:SS
+                    const [aptHour, aptMin] = String(apt.Hora).split(':').map(Number)
                     const aptStartMin = aptHour * 60 + aptMin
-
-                    // Robust duration: DB duration > Service duration > Default 30
                     const aptDuration = apt.duracion || serviceDuration || 30
                     const aptEndMin = aptStartMin + aptDuration
 
-                    const overlaps = requestedStartMin < aptEndMin && requestedEndMin > aptStartMin
-
-                    if (overlaps) {
-                        console.log(`  🚨 CONFLICT DETECTED with apt ${apt.id}: ${apt.Hora} (${aptStartMin}-${aptEndMin}) vs Requested (${requestedStartMin}-${requestedEndMin})`)
-                    }
-                    return overlaps
+                    return requestedStartMin < aptEndMin && requestedEndMin > aptStartMin
                 })
 
                 if (hasConflict) {
@@ -214,75 +181,72 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
                     }
                 }
             }
-        } else {
-            console.log('⚠️ [Duplicate Check] No barberId provided, skipping specific barber validation')
         }
 
         // 7. Insertar la Cita
-        // CRÍTICO: El trigger de DB valida automáticamente el rate limiting (5 citas/hora por IP)
-        // La IP se envía en el campo ip_address para que el trigger funcione correctamente
         const appointmentData: any = {
             barberia_id: profile.id,
             Servicio_id: serviceId,
-            Dia: date,            // YYYY-MM-DD
-            Hora: time,           // HH:MM
-            Nombre: guestName,    // Usamos las columnas existentes
-            Telefono: guestPhone, // Usamos las columnas existentes
-            Precio: serviceData.precio, // Auto-fill precio
-            duracion: serviceDuration, // Store service duration for future overlap checks
-            confirmada: false,    // 🔒 Inicialización explícita para evitar NULLs
-            cancelada: false,     // 🔒 Inicialización explícita para evitar NULLs
-            Automatica: true,     // Flag para distinguir reservas automáticas
-            ip_address: ip        // 🔒 CRÍTICO: IP requerida para rate limiting del trigger
+            Dia: date,
+            Hora: time,
+            Nombre: guestName,
+            Telefono: guestPhone,
+            Precio: serviceData.precio,
+            duracion: serviceDuration,
+            confirmada: false,
+            cancelada: false,
+            Automatica: true,
+            ip_address: ip
         }
 
         // Handle Barber Assignment
         let finalBarberId = barberId
 
-        // If no specific barber selected, try to auto-assign an available one
         if (!finalBarberId) {
-            // 1. Get all barbers for this shop
             const { data: shopBarbers } = await supabase
                 .from('barberos')
-                .select('id, nombre') // Fetch name for legacy storage
+                .select('id, nombre')
                 .eq('barberia_id', profile.id)
 
             if (shopBarbers && shopBarbers.length > 0) {
-                // 2. Get bookings for this specific slot to find who is busy (with overlap check)
                 const [reqHour, reqMin] = time.split(':').map(Number)
                 const reqStartMin = reqHour * 60 + reqMin
                 const reqEndMin = reqStartMin + serviceDuration
 
                 const { data: allAppointments } = await supabase
                     .from('citas')
-                    .select('barbero, Hora, duracion')
+                    .select('barbero, barbero_id, Hora, duracion')
                     .eq('barberia_id', profile.id)
                     .eq('Dia', date)
                     .eq('cancelada', false)
-                    .not('barbero', 'is', null)
 
-                // Find barbers with conflicting appointments
-                const busyBarberIds = new Set<string>()
-                allAppointments?.forEach((apt: any) => {
-                    const [aptHour, aptMin] = apt.Hora.split(':').map(Number)
-                    const aptStartMin = aptHour * 60 + aptMin
-                    const aptDuration = apt.duracion || serviceDuration
-                    const aptEndMin = aptStartMin + aptDuration
+                const availableBarbers = shopBarbers.filter((barber: any) => {
+                    const hasConflict = allAppointments?.some((apt: any) => {
+                        const dbName = String(apt.barbero || '').trim().toLowerCase()
+                        const dbId = String(apt.barbero_id || '').trim().toLowerCase()
+                        const targetName = String(barber.nombre || '').trim().toLowerCase()
+                        const targetId = String(barber.id || '').trim().toLowerCase()
 
-                    // Check overlap
-                    if (reqStartMin < aptEndMin && reqEndMin > aptStartMin) {
-                        busyBarberIds.add(apt.barbero)
-                    }
+                        const matchId = targetId && dbId === targetId
+                        const matchName = targetName && dbName === targetName
+                        const matchLegacyId = targetId && dbName === targetId
+
+                        if (!(matchId || matchName || matchLegacyId)) return false
+
+                        // Check time overlap
+                        const [aptHour, aptMin] = apt.Hora.split(':').map(Number)
+                        const aptStartMin = aptHour * 60 + aptMin
+                        const aptDuration = apt.duracion || serviceDuration
+                        const aptEndMin = aptStartMin + aptDuration
+
+                        return reqStartMin < aptEndMin && reqEndMin > aptStartMin
+                    })
+                    return !hasConflict
                 })
 
-                // 3. Filter available
-                const availableBarbers = shopBarbers.filter((b: any) => !busyBarberIds.has(b.id))
-
                 if (availableBarbers.length > 0) {
-                    // 4. Randomly assign one
                     const randomBarber = availableBarbers[Math.floor(Math.random() * availableBarbers.length)]
-                    finalBarberId = randomBarber.id
-                    // Update barberName for storage
+                    finalBarberId = String(randomBarber.id)
                     barberName = randomBarber.nombre
                 } else {
                     return {
@@ -293,18 +257,11 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
             }
         }
 
-        // Add barber ID to appointment if one was selected or assigned
-        // Add barber Name (legacy) or ID (fallback) to appointment
-        // Logic: If barberName exists (either from original selection or auto-assignment), use it.
-        // Otherwise fallback to ID (shouldn't happen if name fetch works, but safe fallback).
         const barberValueToStore = barberName || (finalBarberId ? String(finalBarberId) : null)
+        if (barberValueToStore) appointmentData.barbero = barberValueToStore
+        if (finalBarberId) appointmentData.barbero_id = finalBarberId
 
-        if (barberValueToStore) {
-            appointmentData.barbero = barberValueToStore
-            // Removed incorrect capitalized 'Barbero' key
-        }
-
-        console.log('📦 [Insert Debug] Final payload:', appointmentData)
+        console.log('📦 [Booking] Final payload:', JSON.stringify(appointmentData));
 
         const { data: insertedData, error: insertError } = await supabase
             .from('citas')
@@ -312,50 +269,35 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
             .select('*')
             .single()
 
-        if (insertedData) {
-            console.log('📦 [Post-Insert Debug] Saved record:', insertedData)
-
-            // FORCE UPDATE if the database ignored our barber column (Trigger? Ghost column?)
-            // We check if we sent a barber but it came back null
-            if (appointmentData.barbero && !insertedData.barbero) {
-                console.log('⚠️ [CRITICAL] Database ignored barbero column on INSERT. Attempting FORCE UPDATE...')
-
-                const { error: updateError } = await supabase
-                    .from('citas')
-                    .update({ barbero: appointmentData.barbero })
-                    .eq('id', insertedData.id)
-
-                if (updateError) {
-                    console.error('❌ Force update failed:', updateError)
-                } else {
-                    console.log('✅ Force update SUCCESS. Barber saved.')
-                }
-            }
-        }
-
         if (insertError) {
-            console.error('Error inserting appointment:', insertError)
-
-            // Capturar específicamente el error del trigger de rate limiting
-            if (insertError.message?.includes('Límite de citas excedido') ||
-                insertError.message?.includes('rate_limit')) {
-                return {
-                    success: false,
-                    error: 'Has superado el límite de reservas por hora. Por favor, inténtalo más tarde.'
-                }
+            console.error('❌ [Booking] Insert error:', insertError);
+            if (insertError.message?.includes('Límite de citas excedido') || insertError.message?.includes('rate_limit')) {
+                return { success: false, error: 'Has superado el límite de reservas por hora.' }
             }
-
-            // Error genérico para otros casos
-            return { success: false, error: 'No se pudo completar la reserva. Inténtalo de nuevo.' }
+            return { success: false, error: 'No se pudo completar la reserva: ' + insertError.message }
         }
 
-        // 6. Revalidar para que se actualice el calendario si alguien lo está viendo
+        if (insertedData) {
+            console.log('✅ [Booking] Success! UUID:', insertedData.uuid);
+            
+            // Check if barber columns were correctly saved
+            if ((appointmentData.barbero && !insertedData.barbero) || (appointmentData.barbero_id && !insertedData.barbero_id)) {
+                console.warn('⚠️ [Booking] Database ignored barber columns. Retrying update...');
+                await supabase
+                    .from('citas')
+                    .update({ 
+                        barbero: appointmentData.barbero,
+                        barbero_id: appointmentData.barbero_id
+                    })
+                    .eq('id', insertedData.id)
+            }
+        }
+
         revalidatePath(`/${slug}`)
+        return { success: true, uuid: insertedData?.uuid }
 
-        return { success: true, uuid: insertedData?.uuid as string | undefined }
-
-    } catch (error) {
-        console.error('Unexpected error:', error)
-        return { success: false, error: 'Ha ocurrido un error inesperado.' }
+    } catch (error: any) {
+        console.error('❌ [Booking] Unexpected error:', error)
+        return { success: false, error: 'Ha ocurrido un error inesperado: ' + (error.message || 'Desconocido') }
     }
 }

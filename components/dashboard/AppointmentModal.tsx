@@ -89,15 +89,29 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                             {/* Barber Selector */}
                             <select
                                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
-                                value={formData.barbero || ""}
-                                onChange={(e) => setFormData({ ...formData, barbero: e.target.value })}
+                                value={formData.barbero_id || formData.barbero || ""}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const selectedBarber = barbers?.find(b => String(b.id) === val || b.nombre === val || String(b) === val);
+                                    if (selectedBarber) {
+                                        setFormData({ 
+                                            ...formData, 
+                                            barbero: selectedBarber.nombre || String(selectedBarber),
+                                            barbero_id: String(selectedBarber.id) || undefined
+                                        });
+                                    } else {
+                                        // Case empty
+                                        setFormData({ ...formData, barbero: "", barbero_id: undefined })
+                                    }
+                                }}
                             >
                                 <option value="">Selecciona un barbero (Opcional)</option>
                                 {barbers?.map((barber: any, index: number) => {
                                     const key = barber.id || index;
                                     const label = barber.nombre || barber;
+                                    const value = barber.id ? String(barber.id) : label;
                                     return (
-                                        <option key={key} value={label}>
+                                        <option key={key} value={value}>
                                             {label}
                                         </option>
                                     );

@@ -5,6 +5,7 @@ export interface Appointment {
     servicio?: string;
     Servicio_id?: string;
     barbero?: string;
+    barbero_id?: string;
     Dia: string;
     Hora: string;
     Telefono: string;
@@ -19,6 +20,7 @@ export interface AppointmentFormData {
     servicio?: string;
     Servicio_id?: string;
     barbero?: string;
+    barbero_id?: string;
     Dia: string;
     Hora: string;
     Telefono: string;

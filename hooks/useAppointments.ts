@@ -100,6 +100,7 @@ export function useAppointments(selectedDate: string) {
                         Precio: formData.Precio,
                         confirmada: formData.confirmada,
                         barbero: formData.barbero || null, // Include barber
+                        barbero_id: formData.barbero_id || null, // Include barber ID
                         pago: formData.pago || null
                     })
                     .eq('id', editingId)
@@ -125,6 +126,7 @@ export function useAppointments(selectedDate: string) {
                         Precio: formData.Precio,
                         confirmada: formData.confirmada ?? false,
                         barbero: formData.barbero || null, // Include barber
+                        barbero_id: formData.barbero_id || null, // Include barber ID
                         barberia_id: user.id, // 🔒 UUID requerido por RLS
                         pago: formData.pago || null
                     }])

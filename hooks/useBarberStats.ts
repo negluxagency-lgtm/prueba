@@ -80,7 +80,7 @@ export function useBarberStats(mes?: string) {
                 // Citas (appointments)
                 supabase
                     .from('citas')
-                    .select('barbero, Precio, confirmada')
+                    .select('barbero, barbero_id, Precio, confirmada')
                     .eq('barberia_id', barberiaUUID)
                     .gte('Dia', startDate)
                     .lte('Dia', endDate),
@@ -165,10 +165,21 @@ export function useBarberStats(mes?: string) {
 
             for (const cita of citas) {
                 if (!cita.confirmada) continue
-                const name = (cita.barbero as string)?.trim() || 'Sin asignar'
-                if (!map[name]) {
-                    map[name] = {
-                        nombre: name,
+                
+                // Prioritize grouping by barbero_id
+                let key = cita.barbero_id ? String(cita.barbero_id) : (cita.barbero as string)?.trim() || 'Sin asignar'
+                
+                // If it's an ID, try to find the barber name from barberosData
+                if (cita.barbero_id) {
+                    const found = barberosData?.find(b => String(b.id) === String(cita.barbero_id))
+                    if (found) {
+                        key = found.nombre.trim()
+                    }
+                }
+
+                if (!map[key]) {
+                    map[key] = {
+                        nombre: key,
                         totalRevenue: 0,
                         totalCuts: 0,
                         salario_base: 0,
@@ -177,8 +188,8 @@ export function useBarberStats(mes?: string) {
                         totalExtraHours: 0
                     }
                 }
-                map[name].totalRevenue += Number(cita.Precio) || 0
-                map[name].totalCuts += 1
+                map[key].totalRevenue += Number(cita.Precio) || 0
+                map[key].totalCuts += 1
             }
 
             // 4. Accumulate manual extra hours on top of auto hours

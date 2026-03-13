@@ -14,6 +14,7 @@ interface GetAvailableSlotsParams {
 interface Appointment {
     Hora: string
     barbero: string
+    barbero_id?: string
     duracion?: number
 }
 
@@ -46,20 +47,19 @@ function hasOverlap(
 
     return appointments.some(app => {
         // Robust comparison: Check against Name (primary) OR ID (fallback)
-        const dbBarber = String(app.barbero || '').trim().toLowerCase()
-        const targetName = String(barberName).trim().toLowerCase()
-        const targetId = String(barberId).trim().toLowerCase()
+        const dbBarberName = String(app.barbero || '').trim().toLowerCase()
+        const dbBarberId = String(app.barbero_id || '').trim().toLowerCase()
+        const targetName = String(barberName || '').trim().toLowerCase()
+        const targetId = String(barberId || '').trim().toLowerCase()
 
-        // Log mismatch for debugging
-        // if (dbBarber !== targetName && dbBarber !== targetId) {
-        //    console.log(`    [Mismatch] App Barber '${dbBarber}' != Target '${targetName}'/'${targetId}'`)
-        //    return false
-        // }
-        // Uncomment above if desperate, but for now just filter
+        // Match if ID matches OR Name matches (legacy)
+        const matchId = targetId && dbBarberId === targetId
+        const matchName = targetName && dbBarberName === targetName
+        
+        // Special case: if db holds ID in name column
+        const matchLegacyId = targetId && dbBarberName === targetId
 
-        if (dbBarber !== targetName && dbBarber !== targetId) return false
-
-        // console.log(`   [Name Match] Found ${dbBarber} vs ${targetName}`)
+        if (!matchId && !matchName && !matchLegacyId) return false
 
         const appStartMin = toMinutes(app.Hora)
         const appDuration = app.duracion || defaultDuration
@@ -69,7 +69,7 @@ function hasOverlap(
         const isOverlapping = slotStartMin < appEndMin && slotEndMin > appStartMin
 
         if (isOverlapping) {
-            console.log(`    ⛔ COLLISION: Slot ${slotStartMin}-${slotEndMin} overlaps with App ${appStartMin}-${appEndMin} (${dbBarber})`)
+            console.log(`    ⛔ COLLISION: Slot ${slotStartMin}-${slotEndMin} overlaps with App ${appStartMin}-${appEndMin} (${dbBarberName})`)
         }
 
         return isOverlapping
@@ -159,9 +159,9 @@ export async function getAvailableSlots({
     // 3. Get Existing Appointments
     const { data: rawAppointments, error: appointmentError } = await supabase
         .from('citas')
-        .select('Hora, barbero, duracion, Dia, cancelada')
+        .select('Hora, barbero, barbero_id, duracion, Dia, cancelada')
         .eq('barberia_id', profile.id)
-        .like('Dia', `${dateString}%`) // Filtro estricto en BD por día (soporta formatos YYYY-MM-DD y YYYY-MM-DDTHH...)
+        .eq('Dia', dateString) // Cambiado a .eq para mayor precisión si el tipo es DATE o string exacto
 
     // DEBUG: Log raw fetch count
     console.log(`🔍 [getAvailableSlots] SQL fetched: ${rawAppointments?.length} for shop ${profile.id} on ${dateString}`)

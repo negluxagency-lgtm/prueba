@@ -114,10 +114,10 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
         setLoading(true)
         try {
             if (activeTab === 'agenda') {
-                const response = await getStaffAgenda(shopData.id, barber.nombre, selectedDate, showAllAppointments)
+                const response = await getStaffAgenda(shopData.id, barber.nombre, selectedDate, showAllAppointments, barber.id)
                 setAgenda(response.data)
             } else if (activeTab === 'cortes') {
-                const data = await getStaffCuts(shopData.id, barber.nombre, currentMonth)
+                const data = await getStaffCuts(shopData.id, barber.nombre, currentMonth, barber.id)
                 setCutsData(data)
             } else if (activeTab === 'horas') {
                 const status = await getAttendanceStatus(Number(barber.id));
@@ -144,7 +144,7 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                 ? { ...cita, confirmada: status === 'confirmada', cancelada: status === 'cancelada', metodo_pago: pago ?? cita.metodo_pago }
                 : cita
         ))
-        toast.promise(updateStaffAppointmentStatus(id, status, barber.nombre, pago), {
+        toast.promise(updateStaffAppointmentStatus(id, status, barber.nombre, pago, barber.id), {
             loading: 'Actualizando...',
             success: 'Estado actualizado',
             error: (err) => { loadData(); return 'Error al actualizar' }
@@ -161,7 +161,12 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
     }
 
     const handleSaveAppointment = async (data: AppointmentFormData) => {
-        const res = await saveStaffAppointment(data, editingAppointment?.id || null, shopData.id)
+        const payload = {
+            ...data,
+            barbero: barber.nombre,
+            barbero_id: barber.id
+        }
+        const res = await saveStaffAppointment(payload, editingAppointment?.id || null, shopData.id)
         if (res.success) {
             toast.success('Cita guardada')
             setIsEditModalOpen(false)

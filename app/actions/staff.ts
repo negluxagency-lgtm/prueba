@@ -48,13 +48,13 @@ export async function setBarberPin(barberId: string, pin: string): Promise<Actio
     }
 }
 
-export async function getStaffAgenda(shopId: string, barberName: string, dateStr: string, showAll: boolean = false) {
+export async function getStaffAgenda(shopId: string, barberName: string, dateStr: string, showAll: boolean = false, barberId?: string) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    console.log(`[getStaffAgenda] Fetching for shop: "${shopId}", barber: "${barberName}", date: "${dateStr}"`)
+    console.log(`[getStaffAgenda] Fetching for shop: "${shopId}", barber: "${barberName}", barberId: "${barberId}", date: "${dateStr}"`)
 
     // 1. Fetch TOTAL appointments for this shop and date for diagnostic purposes
     const { data: allAppointments } = await supabase
@@ -71,7 +71,11 @@ export async function getStaffAgenda(shopId: string, barberName: string, dateStr
         .eq('Dia', dateStr)
 
     if (!showAll) {
-        query = query.or(`barbero.eq."${barberName}",barbero.eq.Cualquiera,barbero.is.null`)
+        if (barberId) {
+             query = query.or(`barbero_id.eq."${barberId}",barbero.eq."${barberName}",barbero.eq.Cualquiera,barbero.is.null`)
+        } else {
+             query = query.or(`barbero.eq."${barberName}",barbero.eq.Cualquiera,barbero.is.null`)
+        }
     }
 
     const { data, error } = await query.order('Hora', { ascending: true })
@@ -90,7 +94,7 @@ export async function getStaffAgenda(shopId: string, barberName: string, dateStr
     }
 }
 
-export async function getStaffCuts(shopId: string, barberName: string, monthStr: string) {
+export async function getStaffCuts(shopId: string, barberName: string, monthStr: string, barberId?: string) {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -101,14 +105,21 @@ export async function getStaffCuts(shopId: string, barberName: string, monthStr:
     const startDate = `${monthStr}-01`
     const endDate = `${monthStr}-${String(lastDay).padStart(2, '0')}`
 
-    const { data, error } = await supabase
+    let query = supabase
         .from('citas')
         .select('servicio, Precio')
         .eq('barberia_id', shopId)
-        .eq('barbero', barberName)
         .eq('confirmada', true)
         .gte('Dia', startDate)
         .lte('Dia', endDate)
+
+    if (barberId) {
+        query = query.or(`barbero_id.eq."${barberId}",barbero.eq."${barberName}"`)
+    } else {
+        query = query.eq('barbero', barberName)
+    }
+
+    const { data, error } = await query
 
     // Fetch shop targets and barber count
     const { data: shopProfile } = await supabase
@@ -176,7 +187,8 @@ export async function updateStaffAppointmentStatus(
     id: number,
     status: 'pendiente' | 'confirmada' | 'cancelada',
     barberName?: string,
-    pago?: string
+    pago?: string,
+    barberId?: string
 ): Promise<ActionResponse> {
     const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -187,6 +199,7 @@ export async function updateStaffAppointmentStatus(
     if (status === 'confirmada') {
         dbValues = { confirmada: true, cancelada: false }
         if (barberName) dbValues.barbero = barberName
+        if (barberId) dbValues.barbero_id = barberId
         if (pago) dbValues.pago = pago
     }
     if (status === 'cancelada') dbValues = { confirmada: false, cancelada: true }
@@ -239,6 +252,7 @@ export async function saveStaffAppointment(data: any, editingId: number | null, 
         Precio: data.Precio,
         confirmada: data.confirmada ?? false,
         barbero: data.barbero || null,
+        barbero_id: data.barbero_id || null,
         barberia_id: shopId,
         pago: data.pago || null
     }

@@ -51,9 +51,10 @@ export default function BarberRankingCard({ stats, loading, globalCutsGoal, sele
                     {sortedByCuts.map((barber, idx) => {
                         const progressPct = Math.min(Math.round((barber.totalCuts / perBarberGoal) * 100), 100)
                         const realPct = Math.round((barber.totalCuts / perBarberGoal) * 100)
+                        const key = barber.id || barber.nombre
 
                         return (
-                            <div key={barber.nombre} className="flex items-center gap-4">
+                            <div key={key} className="flex items-center gap-4">
                                 {/* Position badge */}
                                 <span className={`text-xs font-black w-5 text-center shrink-0 ${idx === 0 ? 'text-amber-400' : idx === 1 ? 'text-zinc-300' : 'text-zinc-600'}`}>
                                     #{idx + 1}

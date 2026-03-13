@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import CancelButton from './CancelButton'
-import EditDateButton from './EditDateButton'
+import RescheduleFlow from './RescheduleFlow'
 import { Calendar, Clock, Scissors, User, AlertCircle, XCircle } from 'lucide-react'
 import { getProxiedUrl } from '@/utils/url-helper'
 import Image from 'next/image'
@@ -20,21 +20,50 @@ export default async function CitaPage(props: PageProps) {
 
     const { data: cita, error } = await supabase
         .from('citas')
-        .select('id, Nombre, Dia, Hora, servicio, barbero, Precio, cancelada, confirmada, uuid, barberia_id')
+        .select('id, Nombre, Dia, Hora, servicio, barbero, barbero_id, Precio, cancelada, confirmada, uuid, barberia_id, Servicio_id')
         .eq('uuid', uuid)
         .single()
 
     if (error || !cita) notFound()
 
-    // Fetch shop name and logo
+    // Fetch shop details
     const { data: shop } = await supabase
         .from('perfiles')
-        .select('nombre_barberia, logo_url')
+        .select('nombre_barberia, logo_url, slug, plan, fechas_cierre')
         .eq('id', cita.barberia_id)
         .single()
 
+    // Fetch all barbers for this shop
+    const { data: barbers } = await supabase
+        .from('barberos')
+        .select('id, nombre, foto, horario_semanal, fechas_cierre')
+        .eq('barberia_id', cita.barberia_id)
+
+    // Fetch service duration
+    let serviceDuration = 30 // Default fallback
+    if (cita.Servicio_id) {
+        const { data: service } = await supabase
+            .from('servicios')
+            .select('duracion')
+            .eq('id', cita.Servicio_id)
+            .single()
+        if (service?.duracion) serviceDuration = service.duracion
+    } else if (cita.servicio) {
+         // Fallback by name if ID is missing
+         const { data: service } = await supabase
+            .from('servicios')
+            .select('duracion')
+            .eq('nombre', cita.servicio)
+            .eq('barberia_id', cita.barberia_id)
+            .single()
+        if (service?.duracion) serviceDuration = service.duracion
+    }
+
     const shopName = shop?.nombre_barberia || 'la barbería'
     const shopLogo = shop?.logo_url ? getProxiedUrl(shop.logo_url) : null
+    const slug = shop?.slug || ''
+    const plan = shop?.plan || 'Básico'
+    const closingDates = shop?.fechas_cierre || []
 
     const today = new Date().toISOString().split('T')[0]
     const isExpired = cita.Dia < today
@@ -124,7 +153,17 @@ export default async function CitaPage(props: PageProps) {
                             </div>
 
                             <div className="space-y-3">
-                                <EditDateButton uuid={uuid} currentDia={cita.Dia} currentHora={cita.Hora} />
+                                <RescheduleFlow 
+                                    uuid={uuid} 
+                                    currentDia={cita.Dia} 
+                                    currentHora={cita.Hora} 
+                                    currentBarberId={cita.barbero_id}
+                                    slug={slug}
+                                    closingDates={closingDates}
+                                    barbers={barbers || []}
+                                    plan={plan}
+                                    serviceDuration={serviceDuration}
+                                />
                                 <CancelButton uuid={uuid} />
                             </div>
 
