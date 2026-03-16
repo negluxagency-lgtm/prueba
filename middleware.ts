@@ -6,7 +6,9 @@ export async function middleware(request: NextRequest) {
     // 🔒 CAPA DE SEGURIDAD EXTRA (Auditoría Punto 3)
     // -----------------------------------------------------------------
     // Si intentan entrar a /admin y estamos en Producción -> Fuera.
-    if (request.nextUrl.pathname.startsWith('/admin')) {
+    // Si intentan entrar a /admin y estamos en Producción -> Fuera.
+    // EXCEPCIÓN: /admin/mensajes (protegido internamente por email)
+    if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin/mensajes')) {
         if (process.env.NODE_ENV === 'production') {
             const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
             console.warn(`🛑 Acceso bloqueado a /admin desde ${ip}`);
