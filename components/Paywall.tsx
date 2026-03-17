@@ -9,7 +9,7 @@ import ManageSubscriptionButton from '@/components/ManageSubscriptionButton';
 interface PaywallProps {
     variant?: 'lock' | 'pricing';
     isSection?: boolean;
-    showAllPlans?: boolean; // Si true, siempre muestra los 3 planes. Si false, filtra por plan actual cuando está pagado.
+    showAllPlans?: boolean; // Si true, siempre muestra los 4 planes. Si false, filtra por plan actual cuando está pagado.
 }
 
 export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = false }: PaywallProps) => {
@@ -35,29 +35,40 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             period: "/mes",
             description: "Para barberos independientes que están empezando.",
             features: ["Agenda ilimitada", "Página de citas personalizada", "Gestión de gastos e ingresos", "Gestión de clientes", "Reportes básicos", "Gestión de productos"],
-            link: "https://buy.stripe.com/7sY4gy54TaRS9eL6vT28800",
+            link: "https://buy.stripe.com/5kQ00i2WL7FG1Mj3jH28803",
             highlight: false,
             icon: Shield
         },
         {
             name: "Profesional",
-            price: "39€",
+            price: "49€",
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
-            features: ["Todo lo del plan Básico", "Métricas avanzadas", "Gestión de equipo y fichajes", "Portal personalizdo para tus barberos", "Filtro Reviews Positivas Google", "Gestión de Facturas y Salarios (Cumplimiento Veri*factu obligatorio 2026)"],
-            link: "https://buy.stripe.com/bJe3cu8h50dedv18E128801",
+            features: ["Todo lo del plan Básico", "Métricas avanzadas", "Gestión de equipo y fichajes", "Portal personalizdo para tus barberos", "Recordatorios de citas por WhatsApp", "Gestión de Facturas y Salarios (Cumplimiento Veri*factu obligatorio 2026)"],
+            link: "https://buy.stripe.com/fZu8wOcxl1hi0Ifg6t28804",
             highlight: true,
             icon: Star
         },
         {
             name: "Premium",
-            price: "55€",
+            price: "99€",
             period: "/mes",
             description: "Para barberías profesionales.",
-            features: ["Todo lo del plan Profesional", "Recordatorio citas WhatsApp", "Apartado de mensajes con clientes", "Tu IA personalizada responde WhatsApp y agenda citas", "Soporte 24/7", "Consultoría mensual", "Gestión Contable Total"],
+            features: ["Todo lo del plan Profesional", "Soporte 24/7", "Consultoría mensual", "Gestión Contable Total"],
             link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
             highlight: false,
             icon: Shield
+        },
+        {
+            name: "IA Personalizada",
+            price: "149€",
+            period: "/mes",
+            description: "Una IA personalizada para tu barbería para que nunca jamás tengas que agendar una cita manualmente, da igual por donde te coctacten.",
+            features: ["Todo lo del plan Premium", "Apartado de mensajes con clientes", "Tu IA personalizada responde WhatsApp, al teléfono y agenda citas 24/7", "Soporte inmediato"],
+            link: "https://wa.me/34623064127",
+            highlight: false,
+            icon: Shield,
+            isContact: true
         }
     ];
 
@@ -68,10 +79,13 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
         ? ALL_PLANS.filter(p => p.name.toLowerCase() === paidPlan.toLowerCase())
         : ALL_PLANS;
 
+    const normalPlans = displayPlans.filter(p => !p.isContact);
+    const iaPlan = displayPlans.find(p => p.isContact);
+
     if (subLoading) return null;
 
     return (
-        <div className={`${isSection ? '' : 'h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-start lg:justify-center p-4 lg:p-8 pt-20 lg:pt-8 overflow-y-auto relative'}`}>
+        <div className={`${isSection ? '' : 'h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-start p-4 lg:p-8 pt-20 lg:pt-8 overflow-y-auto relative'}`}>
             {/* Logout Button for Paywall */}
             {!isSection && variant !== 'pricing' && (
                 <button
@@ -116,8 +130,8 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
 
 
 
-                <div className={`grid grid-cols-1 gap-6 lg:gap-8 items-start pb-6 lg:pb-0 ${displayPlans.length > 1 ? 'lg:grid-cols-3' : 'lg:max-w-md mx-auto'}`}>
-                    {displayPlans.map((plan, index) => (
+                <div className={`grid grid-cols-1 gap-6 lg:gap-8 items-start pb-6 lg:pb-0 ${normalPlans.length > 1 ? 'lg:grid-cols-3' : 'lg:max-w-md mx-auto'}`}>
+                    {normalPlans.map((plan, index) => (
                         <div
                             key={index}
                             className={`
@@ -125,7 +139,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                 bg-zinc-900/40 border-zinc-800 hover:border-amber-500/20 hover:bg-zinc-900/60 shadow-xl
                             `}
                         >
-                            {(plan.highlight && displayPlans.length > 1) && (
+                            {(plan.highlight && normalPlans.length > 1) && (
                                 <div className="absolute -top-3 lg:-top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-black font-bold px-3 py-1 rounded-full text-xs lg:text-sm uppercase tracking-wider shadow-lg whitespace-nowrap">
                                     Más Popular
                                 </div>
@@ -168,18 +182,90 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
 
                             {status !== 'pagado' && (
                                 <a
-                                    href={getLink(plan.link)}
+                                    href={plan.isContact ? plan.link : getLink(plan.link)}
+                                    target={plan.isContact ? "_blank" : undefined}
+                                    rel={plan.isContact ? "noopener noreferrer" : undefined}
                                     className={`
                                             block w-full py-3 lg:py-4 rounded-xl font-black text-center text-[10px] lg:text-xs uppercase tracking-wide transition-all
                                             bg-zinc-800 text-white hover:bg-amber-500 hover:text-black shadow-lg
                                         `}
                                 >
-                                    {user ? 'Seleccionar Plan' : 'Empezar prueba gratis de 7 días'}
+                                    {plan.isContact ? 'Contactar' : (user ? 'Seleccionar Plan' : 'Empezar prueba gratis de 7 días')}
                                 </a>
                             )}
                         </div>
                     ))}
                 </div>
+
+                {/* Tarjeta Exclusiva: IA Personalizada */}
+                {iaPlan && (
+                    <div className={`mt-8 lg:mt-12 w-full mx-auto ${isSection ? 'max-w-3xl' : 'max-w-4xl'}`}>
+                        <div className={`
+                            relative border transition-all duration-300 group flex flex-col lg:flex-row items-center bg-zinc-900/60 border-amber-500/30 hover:border-amber-500/60 shadow-2xl overflow-hidden
+                            ${isSection ? 'p-6 gap-6 rounded-3xl' : 'p-6 lg:p-10 gap-8 lg:gap-12 rounded-[2rem]'}
+                        `}>
+                            {/* Brillo de fondo sutil */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-transparent opacity-50 pointer-events-none" />
+
+                            <div className="flex-1 text-center lg:text-left relative z-10 w-full">
+                                <div className={`flex flex-col lg:flex-row lg:items-center mb-6 ${isSection ? 'gap-4' : 'gap-4 lg:gap-6'}`}>
+                                    <div className={`mx-auto lg:mx-0 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 text-amber-500 border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.2)] ${isSection ? 'p-3' : 'p-4'}`}>
+                                        <iaPlan.icon className={`${isSection ? 'w-6 h-6 lg:w-8 lg:h-8' : 'w-8 h-8 lg:w-10 lg:h-10'}`} />
+                                    </div>
+                                    <div>
+                                        <h3 className={`font-black text-white uppercase tracking-tight flex flex-col lg:flex-row items-center gap-2 ${isSection ? 'text-xl lg:text-2xl' : 'text-2xl lg:text-3xl'}`}>
+                                            {iaPlan.name}
+                                            <span className="text-[10px] lg:text-xs bg-amber-500 text-black px-2 py-1 rounded-full uppercase tracking-widest self-center lg:self-auto mt-2 lg:mt-0">
+                                                Exclusivo
+                                            </span>
+                                        </h3>
+                                        <div className="mt-2 flex items-baseline justify-center lg:justify-start gap-1">
+                                            <span className={`font-black text-white ${isSection ? 'text-2xl lg:text-3xl' : 'text-3xl lg:text-4xl'}`}>{iaPlan.price}</span>
+                                            <span className={`font-medium text-zinc-500 ${isSection ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}`}>{iaPlan.period}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p className={`text-zinc-300 leading-relaxed max-w-2xl mx-auto lg:mx-0 border-l-2 border-amber-500/30 pl-4 italic mb-6 ${isSection ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}`}>
+                                    "{iaPlan.description}"
+                                </p>
+
+                                <ul className={`grid gap-3 lg:gap-4 mb-8 lg:mb-0 text-left ${isSection ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+                                    {iaPlan.features.map((feature, i) => (
+                                        <li key={i} className={`flex items-start gap-3 ${isSection ? 'text-[10px] lg:text-xs' : 'text-xs lg:text-sm'}`}>
+                                            <Check className={`shrink-0 text-amber-500 mt-0.5 ${isSection ? 'w-3 h-3 lg:w-4 lg:h-4' : 'w-4 h-4 lg:w-5 lg:h-5'}`} />
+                                            <span className="leading-tight text-zinc-300 font-medium">
+                                                {feature}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+
+                            <div className={`w-full shrink-0 relative z-10 flex flex-col justify-center ${isSection ? 'lg:w-48' : 'lg:w-72'}`}>
+                                {status !== 'pagado' && (
+                                    <a
+                                        href={iaPlan.link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`
+                                            block w-full rounded-2xl font-black text-center uppercase tracking-widest transition-all bg-amber-500 text-black hover:bg-amber-400 hover:shadow-[0_0_40px_rgba(245,158,11,0.4)] hover:scale-105
+                                            ${isSection ? 'py-3 lg:py-4 text-[10px] lg:text-xs' : 'py-4 lg:py-5 text-xs lg:text-sm'}
+                                        `}
+                                    >
+                                        Contactar con Ventas
+                                    </a>
+                                )}
+                                <p className={`text-zinc-500 text-center mt-4 font-medium uppercase tracking-widest ${isSection ? 'text-[8px]' : 'text-[10px]'}`}>
+                                    Requiere Evaluación Previa
+                                </p>
+                            </div>
+                        </div>
+                        <p className={`text-center font-bold mt-6 text-amber-500/80 hover:text-amber-500 transition-colors ${isSection ? 'text-sm' : 'text-base lg:text-lg'}`}>
+                            ¿Tienes una cadena de barberías o franquicia? <a href="https://wa.me/34623064127" target="_blank" rel="noopener noreferrer" className="underline decoration-amber-500/50 underline-offset-4 hover:decoration-amber-500 transition-colors cursor-pointer">Contáctanos para una solución a medida.</a>
+                        </p>
+                    </div>
+                )}
 
                 {/* Persuasive Sections for Pricing Variant */}
                 {!isLock && (
@@ -253,7 +339,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
 
                 {(variant === 'pricing' || variant === 'lock') && user && (
                     <div className="mt-12 flex justify-center">
-                        <ManageSubscriptionButton 
+                        <ManageSubscriptionButton
                             className="bg-zinc-900/50 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 hover:bg-zinc-800 transition-all text-xs font-bold uppercase tracking-widest px-6 py-6 rounded-xl"
                             variant="outline"
                         />

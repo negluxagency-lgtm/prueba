@@ -12,7 +12,7 @@ const StaticBookingPreview = dynamic(() => import('@/components/landing/StaticBo
 const DemoStaffVisual = dynamic(() => import('@/components/landing/DemoStaffVisual'));
 
 export const metadata = {
-    title: 'NeluxBarber - El Mejor Software para Barberos y App de Barberías con IA',
+    title: 'NeluxBarber - El mejor Software para Barberos y Barberías en España',
     description: 'La app para barberías líder con software para barberos. Agenda citas automáticamente con IA, facturación adaptada a Veri*factu 2026, comisiones y gestión total.',
 };
 
@@ -68,9 +68,9 @@ export default function InicioPage() {
 
                 {/* Headline */}
                 <h1 className="relative z-10 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-center text-white leading-tight max-w-4xl">
-                    El Software para Barberos con{' '}
+                    El mejor Software para Barberos y Barberías en{' '}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">
-                        Automatización IA
+                        España
                     </span>
                 </h1>
 
@@ -690,8 +690,19 @@ export default function InicioPage() {
 
             <footer className="border-t border-zinc-800 py-8 px-4 md:px-8 lg:px-6">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-zinc-500 text-sm">
-                    <p>© 2026 Nelux. El software #1 para barberías. Todos los derechos reservados.</p>
-                    <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6">
+                    <div className="flex flex-col items-center md:items-start gap-1">
+                        <p>© 2026 Nelux. El software #1 para barberías. Todos los derechos reservados.</p>
+                        <p className="flex items-center gap-3 text-xs mt-2 md:mt-1">
+                            <a href="tel:+34623064127" className="hover:text-white transition-colors flex items-center gap-1">
+                                <Smartphone className="w-3 h-3" /> +34 623 064 127
+                            </a>
+                            <span>|</span>
+                            <a href="mailto:contacto@nelux.es" className="hover:text-white transition-colors">
+                                contacto@nelux.es
+                            </a>
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap justify-center md:justify-end items-center gap-4 md:gap-6 mt-4 md:mt-0">
                         <Link href="/" className="hover:text-white transition-colors" title="El mejor Software para Barberos">Software para Barberos</Link>
                         <Link href="/pricing" className="hover:text-white transition-colors">Planes y Precios</Link>
                         <Link href="/login" className="hover:text-white transition-colors">Iniciar sesión en la App</Link>
