@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
 import { ResetPasswordButton } from '@/components/ResetPasswordButton'
 import ManageSubscriptionButton from '@/components/ManageSubscriptionButton'
-import { ShopScheduleManager } from '@/components/management/ShopScheduleManager'
+
 import { BarberManager } from '@/components/management/BarberManager'
 import { AvatarUpload } from '@/components/AvatarUpload'
 import { BannerUpload } from '@/components/BannerUpload'
@@ -376,7 +376,7 @@ export default function PerfilPage() {
                             {/* Botón Cambiar Datos */}
                             <div className="pt-4 border-t border-zinc-800/50">
                                 <Link
-                                    href="/configuracion"
+                                    href="/ajustes"
                                     className="inline-flex items-center gap-2 px-3 py-2 lg:px-4 lg:py-2.5 bg-zinc-800 hover:bg-zinc-700 
                                          text-white text-[10px] lg:text-sm font-bold uppercase tracking-widest rounded-xl 
                                          border border-zinc-700 hover:border-zinc-600 transition-all active:scale-95"
@@ -389,25 +389,14 @@ export default function PerfilPage() {
                     </div>
                 </div>
 
-                {/* Sección de Gestión Operativa (NUEVO) */}
-                <div className={cn(
-                    "grid grid-cols-1 gap-6",
-                    perfil.plan === 'Básico' ? "lg:grid-cols-2" : "lg:grid-cols-3"
-                )}>
+                {/* Sección de Gestión Operativa */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Tarjeta: Gestión de Equipo */}
                     {perfil.plan !== 'Básico' && (
-                        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit">
+                        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
                             <BarberManager perfilId={userId} />
                         </div>
                     )}
-
-                    {/* Tarjeta: Horario de Apertura */}
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit text-sm">
-                        <ShopScheduleManager
-                            perfilId={userId}
-                            initialSchedule={perfil.horario_semanal}
-                        />
-                    </div>
 
                     {/* Tarjeta: Gestión de Cierres y Vacaciones (NUEVO) */}
                     <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit flex flex-col justify-between space-y-4">

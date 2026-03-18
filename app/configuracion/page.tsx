@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
-    Clock, MapPin, Phone, Scissors, Loader2, User, DollarSign,
+    MapPin, Phone, Scissors, Loader2, User, DollarSign,
     Target, Plus, Trash2, ChevronRight, ChevronLeft, Check,
     Building2, Sparkles, X
 } from 'lucide-react';
@@ -15,22 +15,6 @@ import { AvatarUpload } from '@/components/AvatarUpload';
 import { getProxiedUrl } from '@/utils/url-helper';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface TimeRange {
-    desde: string;
-    hasta: string;
-}
-
-interface WeeklySchedule {
-    lunes: TimeRange[];
-    martes: TimeRange[];
-    miércoles: TimeRange[];
-    jueves: TimeRange[];
-    viernes: TimeRange[];
-    sábado: TimeRange[];
-    domingo: TimeRange[];
-    [key: string]: TimeRange[];
-}
 
 interface BarberDaySchedule {
     dia: number;
@@ -62,21 +46,14 @@ interface AddressFields {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const INITIAL_SCHEDULE: WeeklySchedule = {
-    lunes: [], martes: [], miércoles: [], jueves: [],
-    viernes: [], sábado: [], domingo: []
-};
-
-const ORDERED_DAYS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 const STEPS = [
     { num: 1, label: 'Información', icon: User },
     { num: 2, label: 'Dirección', icon: MapPin },
     { num: 3, label: 'Equipo', icon: Scissors },
-    { num: 4, label: 'Horario', icon: Clock },
-    { num: 5, label: 'Servicios', icon: Sparkles },
-    { num: 6, label: 'Metas', icon: Target },
+    { num: 4, label: 'Servicios', icon: Sparkles },
+    { num: 5, label: 'Metas', icon: Target },
 ];
 
 // ─── Slide variants ───────────────────────────────────────────────────────────
@@ -108,7 +85,6 @@ export default function ConfigurationPage() {
         objetivo_ingresos: '',
         objetivo_cortes: '',
         objetivo_productos: '',
-        capacidad_slots: '1',
         Autonomo: false,
     });
 
@@ -132,9 +108,7 @@ export default function ConfigurationPage() {
     const [deletedBarberIds, setDeletedBarberIds] = useState<string[]>([]);
     const [isAddingBarber, setIsAddingBarber] = useState(false);
 
-    // Shop schedule
-    const [shopSchedule, setShopSchedule] = useState<WeeklySchedule>(INITIAL_SCHEDULE);
-    const [editingDay, setEditingDay] = useState<string | null>(null);
+
 
     // ─── Load user & data ──────────────────────────────────────────────────────
 
@@ -168,7 +142,6 @@ export default function ConfigurationPage() {
                     objetivo_ingresos: String(profile.objetivo_ingresos || ''),
                     objetivo_cortes: String(profile.objetivo_cortes || ''),
                     objetivo_productos: String(profile.objetivo_productos || ''),
-                    capacidad_slots: String(profile.capacidad_slots || '1'),
                     Autonomo: !!profile.Autonomo,
                 });
                 // Intentar precarga de la dirección guardada en el primer campo
@@ -177,9 +150,7 @@ export default function ConfigurationPage() {
                 }
                 setCurrentAvatarUrl(getProxiedUrl(profile.logo_url) || null);
 
-                if (profile.horario_semanal && !Array.isArray(profile.horario_semanal)) {
-                    setShopSchedule(profile.horario_semanal);
-                }
+
             }
 
             const { data: barbersData } = await supabase
@@ -201,26 +172,7 @@ export default function ConfigurationPage() {
 
 
 
-    // ─── Shop schedule helpers ────────────────────────────────────────────────
 
-    const isDayOpen = (k: string) => shopSchedule[k]?.length > 0;
-    const toggleDay = (k: string) => {
-        setShopSchedule(p => ({
-            ...p, [k]: isDayOpen(k) ? [] : [{ desde: '09:00', hasta: '20:00' }]
-        }));
-    };
-    const updateRange = (k: string, i: number, f: 'desde' | 'hasta', v: string) => {
-        const ranges = [...shopSchedule[k]];
-        ranges[i] = { ...ranges[i], [f]: v };
-        setShopSchedule(p => ({ ...p, [k]: ranges }));
-    };
-    const addRange = (k: string) =>
-        setShopSchedule(p => ({ ...p, [k]: [...p[k], { desde: '14:00', hasta: '18:00' }] }));
-    const removeRange = (k: string, i: number) => {
-        const ranges = [...shopSchedule[k]];
-        ranges.splice(i, 1);
-        setShopSchedule(p => ({ ...p, [k]: ranges }));
-    };
 
     // ─── Barber handlers ──────────────────────────────────────────────────────
 
@@ -344,8 +296,6 @@ export default function ConfigurationPage() {
                 objetivo_ingresos: parseFloat(formData.objetivo_ingresos) || 0,
                 objetivo_cortes: parseInt(formData.objetivo_cortes) || 0,
                 objetivo_productos: parseInt(formData.objetivo_productos) || 0,
-                capacidad_slots: parseInt(formData.capacidad_slots) || 1,
-                horario_semanal: shopSchedule,
                 onboarding_completado: true,
                 Autonomo: formData.Autonomo,
             }, { onConflict: 'id' });
@@ -402,7 +352,7 @@ export default function ConfigurationPage() {
     const goNext = () => {
         if (!validateStep()) return;
         setDirection(1);
-        setStep(s => Math.min(s + 1, 6));
+        setStep(s => Math.min(s + 1, 5));
     };
 
     const goPrev = () => {
@@ -489,14 +439,6 @@ export default function ConfigurationPage() {
                                 />
                             )}
                             {step === 4 && (
-                                <Step4
-                                    shopSchedule={shopSchedule}
-                                    isDayOpen={isDayOpen}
-                                    toggleDay={toggleDay}
-                                    onEditDay={(day: string) => setEditingDay(day)}
-                                />
-                            )}
-                            {step === 5 && (
                                 <Step5
                                     servicesList={servicesList}
                                     newService={newService}
@@ -505,7 +447,7 @@ export default function ConfigurationPage() {
                                     handleDeleteService={handleDeleteService}
                                 />
                             )}
-                            {step === 6 && (
+                            {step === 5 && (
                                 <Step6
                                     formData={formData}
                                     handleChange={handleChange}
@@ -527,7 +469,7 @@ export default function ConfigurationPage() {
                                 Atrás
                             </button>
                         )}
-                        {step < 6 ? (
+                        {step < 5 ? (
                             <button
                                 type="button"
                                 onClick={goNext}
@@ -560,19 +502,7 @@ export default function ConfigurationPage() {
                 </div>
             </motion.div>
 
-            {/* Hours Modal */}
-            <AnimatePresence>
-                {editingDay && (
-                    <HoursModal
-                        dayKey={editingDay}
-                        ranges={shopSchedule[editingDay]}
-                        onClose={() => setEditingDay(null)}
-                        onUpdate={(newRanges: TimeRange[]) => {
-                            setShopSchedule(p => ({ ...p, [editingDay]: newRanges }));
-                        }}
-                    />
-                )}
-            </AnimatePresence>
+
         </div>
     );
 }
@@ -921,166 +851,7 @@ function Step3({ barbers, newBarber, setNewBarber, isAddingBarber, setIsAddingBa
     );
 }
 
-// ─── Step 4: Horario barbería ─────────────────────────────────────────────────
 
-function Step4({ shopSchedule, isDayOpen, toggleDay, onEditDay }: any) {
-    const ORDERED = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-
-    return (
-        <div className="space-y-6">
-            <div className="text-center space-y-2 mb-4">
-                <StepTitle icon={Clock} title="Horario de apertura" subtitle="¿Cuándo pueden reservar tus clientes?" />
-            </div>
-
-            <div className="divide-y divide-zinc-800 border-y border-zinc-800">
-                {ORDERED.map(dayKey => {
-                    const isOpen = isDayOpen(dayKey);
-                    const ranges = shopSchedule[dayKey] || [];
-
-                    return (
-                        <div key={dayKey} className="flex items-center justify-between py-4 group">
-                            <div className="flex items-center gap-4">
-                                <Toggle
-                                    checked={isOpen}
-                                    onChange={() => toggleDay(dayKey)}
-                                />
-                                <span className={cn(
-                                    "font-bold text-sm capitalize transition-colors",
-                                    isOpen ? "text-white" : "text-zinc-600"
-                                )}>
-                                    {dayKey}
-                                </span>
-                            </div>
-
-                            <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                    {isOpen ? (
-                                        <div className="space-y-0.5">
-                                            {ranges.map((r: any, i: number) => (
-                                                <div key={i} className="text-xs font-bold text-amber-500/80">
-                                                    {r.desde} - {r.hasta}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <span className="text-xs font-bold text-zinc-600 uppercase italic">Cerrado</span>
-                                    )}
-                                </div>
-
-                                {isOpen && (
-                                    <button
-                                        type="button"
-                                        onClick={() => onEditDay(dayKey)}
-                                        className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
-                                    >
-                                        <ChevronRight className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
-
-function HoursModal({ dayKey, ranges, onClose, onUpdate }: any) {
-    const localRanges = [...ranges];
-
-    const handleUpdate = (idx: number, field: string, value: string) => {
-        const newRanges = [...localRanges];
-        newRanges[idx] = { ...newRanges[idx], [field]: value };
-        onUpdate(newRanges);
-    };
-
-    const handleAdd = () => {
-        onUpdate([...localRanges, { desde: '16:00', hasta: '20:00' }]);
-    };
-
-    const handleRemove = (idx: number) => {
-        const newRanges = localRanges.filter((_, i) => i !== idx);
-        onUpdate(newRanges);
-    };
-
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-[32px] p-6 shadow-2xl"
-            >
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-black uppercase italic tracking-tighter text-white">
-                        Editar <span className="text-amber-500">{dayKey}</span>
-                    </h3>
-                    <button onClick={onClose} className="text-zinc-500 hover:text-white p-2">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <div className="space-y-4 mb-6">
-                    {localRanges.map((range, idx) => (
-                        <div key={idx} className="bg-zinc-800/50 p-4 rounded-2xl border border-zinc-700/50 space-y-3">
-                            <div className="flex justify-between items-center">
-                                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Turno {idx + 1}</span>
-                                {localRanges.length > 1 && (
-                                    <button onClick={() => handleRemove(idx)} className="text-red-500/60 hover:text-red-500 text-xs font-bold uppercase">
-                                        Eliminar
-                                    </button>
-                                )}
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] text-zinc-500 font-bold uppercase ml-1">Inicio</label>
-                                    <input
-                                        type="time"
-                                        value={range.desde}
-                                        onChange={(e) => handleUpdate(idx, 'desde', e.target.value)}
-                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:border-amber-500 outline-none"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] text-zinc-500 font-bold uppercase ml-1">Fin</label>
-                                    <input
-                                        type="time"
-                                        value={range.hasta}
-                                        onChange={(e) => handleUpdate(idx, 'fin', e.target.value)}
-                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:border-amber-500 outline-none"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {localRanges.length < 2 && (
-                    <button
-                        onClick={handleAdd}
-                        className="w-full py-3 mb-6 rounded-xl border border-dashed border-zinc-700 text-zinc-500 text-xs font-bold uppercase hover:bg-zinc-800 transition-all flex items-center justify-center gap-2"
-                    >
-                        <Plus className="w-4 h-4" /> Añadir otro turno
-                    </button>
-                )}
-
-                <button
-                    onClick={onClose}
-                    className="w-full py-4 rounded-2xl bg-amber-500 text-black font-black uppercase italic tracking-wider hover:bg-amber-400 transition-all"
-                >
-                    Listo
-                </button>
-            </motion.div>
-        </div>
-    );
-}
 
 // ─── Step 5: Servicios ────────────────────────────────────────────────────────
 

@@ -226,14 +226,28 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
         </div>
     );
 
+    const getInitials = (name: string) =>
+        name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+    const activeDayNames = (barber: Barber) =>
+        barber.horario_semanal
+            .filter(d => d.activo)
+            .map(d => ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'][d.dia]);
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-amber-500/10 rounded-lg">
                         <User className="w-5 h-5 text-amber-500" />
                     </div>
-                    <h2 className="text-lg font-semibold text-white">Gestion de Equipo</h2>
+                    <div>
+                        <h2 className="text-lg font-semibold text-white leading-tight">Gestión de Equipo</h2>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
+                            {barbers.length} {barbers.length === 1 ? 'barbero' : 'barberos'} registrados
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -250,12 +264,13 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                         placeholder="Nombre completo"
                         value={newBarberName}
                         onChange={(e) => setNewBarberName(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-sm text-white focus:border-amber-500 outline-none"
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddBarber()}
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-white focus:border-amber-500 outline-none"
                     />
                     <button
                         onClick={handleAddBarber}
                         disabled={saving === 'new'}
-                        className="w-full py-2 bg-amber-500 text-black font-bold text-sm rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
+                        className="w-full py-2.5 bg-amber-500 text-black font-bold text-sm rounded-lg hover:bg-amber-400 transition-colors disabled:opacity-50"
                     >
                         {saving === 'new' ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirmar Registro'}
                     </button>
@@ -264,30 +279,45 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
 
             <div className="space-y-3">
                 {barbers.length === 0 ? (
-                    <p className="text-zinc-500 text-center py-4 text-sm italic">
-                        No hay barberos registrados.
-                    </p>
+                    <div className="text-center py-8 space-y-2">
+                        <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto">
+                            <User className="w-5 h-5 text-zinc-600" />
+                        </div>
+                        <p className="text-zinc-500 text-sm">Sin barberos registrados</p>
+                        <p className="text-zinc-600 text-xs">Añade a tu equipo para gestionar sus horarios</p>
+                    </div>
                 ) : (
                     barbers.map((barber) => (
-                        <div key={barber.id} className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden">
+                        <div key={barber.id} className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-colors">
                             <div className="p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
-                                        <User className="w-5 h-5 text-zinc-400" />
+                                <div className="flex items-center gap-3 min-w-0">
+                                    {/* Avatar con iniciales */}
+                                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                                        <span className="text-xs font-black text-amber-400">{getInitials(barber.nombre)}</span>
                                     </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <h3 className="text-white font-bold text-sm">{barber.nombre}</h3>
                                             {barber['jefe/dueño'] && (
-                                                <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm">Dueño</span>
+                                                <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm shrink-0">Dueño</span>
                                             )}
                                         </div>
-                                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                                            {barber.horario_semanal.filter(d => d.activo).length} días activos
-                                        </p>
+                                        {/* Chips de días activos */}
+                                        <div className="flex gap-1 mt-1.5 flex-wrap">
+                                            {activeDayNames(barber).length > 0 ? (
+                                                activeDayNames(barber).map(d => (
+                                                    <span key={d} className="text-[9px] font-bold bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded uppercase">{d}</span>
+                                                ))
+                                            ) : (
+                                                <span className="text-[9px] font-bold text-zinc-600 uppercase">Sin días activos</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 shrink-0 ml-2">
+                                    {saving === barber.id && (
+                                        <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                                    )}
                                     <button
                                         onClick={() => setExpandedBarberId(expandedBarberId === barber.id ? null : barber.id)}
                                         className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
@@ -309,15 +339,7 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                                         <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                                             <Calendar className="w-3 h-3" /> Horario Individual
                                         </span>
-                                        <div className="text-[10px] font-black uppercase tracking-widest">
-                                            {saving === barber.id ? (
-                                                <span className="text-amber-500 flex items-center gap-1">
-                                                    <Loader2 className="w-3 h-3 animate-spin" /> Guardando...
-                                                </span>
-                                            ) : (
-                                                <span className="text-emerald-500/80">✓ Sincronizado</span>
-                                            )}
-                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500/80">✓ Auto-guardado</span>
                                     </div>
 
                                     {/* Ajustes de Salario removidos */}
@@ -437,10 +459,10 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                 {!showAddForm && (
                     <button
                         onClick={() => setShowAddForm(true)}
-                        className="w-full flex items-center justify-center gap-2 py-3 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-bold uppercase rounded-xl border border-zinc-800 border-dashed transition-all mt-2"
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-zinc-900/50 hover:bg-amber-500/10 text-zinc-400 hover:text-amber-400 text-xs font-bold uppercase rounded-xl border border-zinc-800 border-dashed hover:border-amber-500/30 transition-all mt-2"
                     >
                         <Plus className="w-4 h-4" />
-                        Añadir Nuevo Barbero
+                        Añadir Barbero
                     </button>
                 )}
             </div>

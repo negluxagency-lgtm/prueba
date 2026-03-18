@@ -170,7 +170,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             <td className="px-2 py-1 lg:px-4 lg:py-3 text-xs lg:text-base font-black text-amber-500/90 text-center">{cita.Precio || 0}€</td>
                                             <td className="px-2 py-1 lg:px-4 lg:py-3 text-center">
                                                 {cita.Telefono ? (
-                                                    (userPlan === 'Premium' || userPlan === 'Profesional') ? (
+                                                    userPlan === 'IA Personalizada' ? (
                                                         <Link
                                                             href={`/mensajes?tlf=${String(cita.Telefono).replace(/\+/g, '')}`}
                                                             className="inline-flex items-center gap-1 lg:gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-green-500 px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-sm lg:rounded-lg text-[7px] lg:text-xs transition-all border border-zinc-700/50"
@@ -180,9 +180,9 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                                         </Link>
                                                     ) : (
                                                         <div
-                                                            className="inline-flex items-center gap-1 lg:gap-2 bg-zinc-800 text-zinc-300 px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-sm lg:rounded-lg text-[7px] lg:text-xs transition-all border border-zinc-700/50"
+                                                            className="inline-flex items-center gap-1 lg:gap-2 bg-zinc-800 text-zinc-400 px-1.5 py-0.5 lg:px-3 lg:py-1.5 rounded-sm lg:rounded-lg text-[7px] lg:text-xs border border-zinc-800/50 cursor-default"
                                                         >
-                                                            <MessageCircle className="w-2 h-2 lg:w-3 lg:h-3" />
+                                                            <MessageCircle className="w-2 h-2 lg:w-3 lg:h-3 opacity-50" />
                                                             {cita.Telefono}
                                                         </div>
                                                     )

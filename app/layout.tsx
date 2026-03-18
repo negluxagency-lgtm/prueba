@@ -18,10 +18,27 @@ export const viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://nelux.es'),
   title: 'NeluxBarber | Software para Barberos y App de Reservas',
-  description: 'El mejor software de gestión para barberías. Automatiza citas con IA, controla tu facturación (Veri*factu 2026), barberos y stock en una sola app.',
+  description: 'El mejor software de gestión para barberías en España. Automatiza citas con IA, controla tu facturación Verifactu 2026, barberos y stock en una sola app.',
+  keywords: [
+    'software para barberos', 'app para barberías', 'gestión barbería', 'programa para barberías',
+    'agenda citas barbería', 'software barbería España', 'app citas barbero', 'NeluxBarber',
+    'verifactu barbería', 'bot whatsapp barbería', 'gestión equipo barberos', 'facturación barbería',
+  ],
+  authors: [{ name: 'Nelux', url: 'https://nelux.es' }],
+  creator: 'Nelux',
+  publisher: 'Nelux',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-snippet': -1, 'max-image-preview': 'large' },
+  },
+  alternates: {
+    canonical: 'https://nelux.es',
+    languages: { 'es-ES': 'https://nelux.es' },
+  },
   openGraph: {
-    title: 'NeluxBarber | El Software Líder para Barberos',
-    description: 'Automatiza tu barbería con IA. Agenda de citas, facturación y gestión en una misma app.',
+    title: 'NeluxBarber | El Software Líder para Barberos en España',
+    description: 'Automatiza tu barbería con IA. Agenda de citas, facturación Verifactu 2026 y gestión total en una misma app. Prueba gratis 7 días.',
     url: 'https://nelux.es',
     siteName: 'NeluxBarber',
     images: [
@@ -29,11 +46,19 @@ export const metadata: Metadata = {
         url: 'https://nelux.es/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Software de gestión y panel de control NeluxBarber',
+        alt: 'Software NeluxBarber — Panel de control para barberías',
       },
     ],
     locale: 'es_ES',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NeluxBarber | Software #1 para Barberos en España',
+    description: 'Gestiona citas, facturación y equipo desde una sola app. Powered by AI. Prueba gratuita de 7 días.',
+    images: ['https://nelux.es/og-image.jpg'],
+    site: '@neluxbarber',
+    creator: '@neluxbarber',
   },
   appleWebApp: {
     title: 'NeluxBarber',
@@ -99,17 +124,71 @@ export default function RootLayout({
                "name": "NeluxBarber",
                "operatingSystem": "Web, iOS, Android",
                "applicationCategory": "BusinessApplication",
-               "description": "Software integral para barberías y peluquerías. Automatización de citas con Inteligencia Artificial y cumplimiento legal Verifactu.",
-               "aggregateRating": {
-                 "@type": "AggregateRating",
-                 "ratingValue": "4.9",
-                 "ratingCount": "142"
-               },
+               "description": "Software integral para barberías y peluquerías en España. Automatización de citas con Inteligencia Artificial, cumplimiento legal Verifactu 2026 y gestión completa de equipo.",
+               "url": "https://nelux.es",
+               "inLanguage": "es-ES",
                "offers": {
                  "@type": "AggregateOffer",
                  "lowPrice": "19.00",
-                 "highPrice": "55.00",
-                 "priceCurrency": "EUR"
+                 "highPrice": "149.00",
+                 "priceCurrency": "EUR",
+                 "offerCount": "4"
+               },
+               "aggregateRating": {
+                 "@type": "AggregateRating",
+                 "ratingValue": "4.9",
+                 "ratingCount": "142",
+                 "bestRating": "5"
+               },
+               "featureList": [
+                 "Agenda de citas automática",
+                 "Bot WhatsApp con IA",
+                 "Facturación Verifactu 2026",
+                 "Gestión de barberos y fichajes",
+                 "Control de stock de productos",
+                 "Portal de reservas personalizado"
+               ]
+             })
+          }}
+        />
+        <Script
+          id="schema-org"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+             __html: JSON.stringify({
+               "@context": "https://schema.org",
+               "@type": "Organization",
+               "name": "Nelux",
+               "url": "https://nelux.es",
+               "logo": "https://nelux.es/favicon-96x96.png",
+               "description": "Empresa española de software de gestión para barberías y peluquerías.",
+               "email": "contacto@nelux.es",
+               "telephone": "+34623064127",
+               "address": {
+                 "@type": "PostalAddress",
+                 "addressCountry": "ES",
+                 "addressLocality": "España"
+               },
+               "sameAs": [
+                 "https://nelux.es"
+               ]
+             })
+          }}
+        />
+        <Script
+          id="schema-website"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+             __html: JSON.stringify({
+               "@context": "https://schema.org",
+               "@type": "WebSite",
+               "name": "NeluxBarber",
+               "url": "https://nelux.es",
+               "description": "El mejor software para barberos y barberías en España.",
+               "potentialAction": {
+                 "@type": "SearchAction",
+                 "target": "https://nelux.es/?q={search_term_string}",
+                 "query-input": "required name=search_term_string"
                }
              })
           }}

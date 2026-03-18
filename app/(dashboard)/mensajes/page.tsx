@@ -195,7 +195,7 @@ export default function MensajesPage() {
         );
     }
 
-    if (plan?.toLowerCase() !== 'premium') {
+    if (plan?.toLowerCase() !== 'ia personalizada') {
         return <Paywall variant="lock" />;
     }
 

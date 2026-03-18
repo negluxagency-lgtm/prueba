@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Script from 'next/script';
 import { Bot, TrendingUp, Zap, ArrowRight, CheckCircle2, MessageCircle, Package, Power, Smartphone, BrainCircuit, QrCode } from 'lucide-react';
 import { Users, Clock, Receipt, Banknote } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -12,12 +13,27 @@ const StaticBookingPreview = dynamic(() => import('@/components/landing/StaticBo
 const DemoStaffVisual = dynamic(() => import('@/components/landing/DemoStaffVisual'));
 
 export const metadata = {
-    title: 'NeluxBarber - El mejor Software para Barberos y Barberías en España',
-    description: 'La app para barberías líder con software para barberos. Agenda citas automáticamente con IA, facturación adaptada a Veri*factu 2026, comisiones y gestión total.',
+    title: 'NeluxBarber - Software para Barberos y Barberías en España | Gestión con IA',
+    description: 'NeluxBarber: software de gestión para barberías y barberos en España. Agenda citas con IA, facturación Verifactu 2026, app de reservas sin descarga y control total de tu equipo. Prueba 7 días gratis.',
+    keywords: [
+        'software para barberos', 'app para barberías', 'gestión barbería España',
+        'programa barbería', 'agenda citas automatica barberia', 'software barberia gratis',
+        'verifactu barberia', 'bot whatsapp barberia ia', 'app reservas barbería sin descargar',
+    ],
+    alternates: {
+        canonical: 'https://nelux.es',
+    },
+    openGraph: {
+        title: 'NeluxBarber - El Software #1 para Barberos en España',
+        description: 'Gestiona tu barbería con IA: citas automáticas, facturación Verifactu, control de equipo y productos. Prueba gratis 7 días. Sin tarjeta.',
+        url: 'https://nelux.es',
+        type: 'website',
+    },
 };
 
 export default function InicioPage() {
     return (
+        <>
         <main className="min-h-screen bg-zinc-950 overflow-x-hidden pt-6 md:pt-0 text-white">
             {/* Navigation */}
             <nav className="fixed top-0 left-0 right-0 z-[100] border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl">
@@ -645,6 +661,82 @@ export default function InicioPage() {
             </section>
 
             {/* ═══════════════════════════════════════════════════════════════════════
+                SECTION FAQ
+            ═══════════════════════════════════════════════════════════════════════ */}
+            <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6 bg-zinc-950" aria-label="Preguntas frecuentes sobre NeluxBarber">
+                <div className="max-w-4xl mx-auto">
+                    <div className="text-center mb-12 md:mb-20">
+                        <span className="text-amber-500 text-sm font-bold uppercase tracking-wider">FAQ</span>
+                        <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-white mt-3 mb-4 leading-tight">
+                            Preguntas <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">Frecuentes</span>
+                        </h2>
+                        <p className="text-zinc-400 text-base md:text-lg max-w-2xl mx-auto">
+                            Todo lo que necesitas saber sobre el software de gestión para barberías de NeluxBarber.
+                        </p>
+                    </div>
+
+                    <div className="space-y-4" itemScope itemType="https://schema.org/FAQPage">
+                        {[
+                            {
+                                q: '¿Cuánto cuesta el software para barberos NeluxBarber?',
+                                a: 'NeluxBarber tiene 4 planes: Básico desde 19€/mes, Profesional desde 49€/mes, Premium desde 99€/mes y el plan IA Personalizada desde 149€/mes. Todos incluyen una prueba gratuita de 7 días sin tarjeta de crédito.'
+                            },
+                            {
+                                q: '¿Necesito descargar una app para que mis clientes reserven citas?',
+                                a: 'No. Tus clientes reservan directamente desde una página web personalizada (app.nelux.es/tu_barberia). No necesitan descargarse ninguna aplicación ni crearse una cuenta. Solo seleccionan el servicio, el barbero y la fecha en segundos.'
+                            },
+                            {
+                                q: '¿NeluxBarber cumple con la normativa Verifactu 2026?',
+                                a: 'Sí. NeluxBarber incluye facturación adaptada a la normativa Verifactu 2026, obligatoria para todos los autónomos y pequeñas empresas en España. Genera facturas legales, las exporta en PDF y lleva un registro auditado de todas tus operaciones.'
+                            },
+                            {
+                                q: '¿Cómo funciona el bot de WhatsApp con IA?',
+                                a: 'El bot de IA de NeluxBarber (disponible en el plan IA Personalizada) se conecta a tu número de WhatsApp Business y responde automáticamente a los clientes, agenda citas, confirma reservas y envía recordatorios las 24 horas del día, los 7 días de la semana. Puedes intervenir en cualquier conversación cuando quieras.'
+                            },
+                            {
+                                q: '¿Puedo gestionar varios barberos con NeluxBarber?',
+                                a: 'Sí. Los planes Profesional y Premium incluyen gestión completa de equipo: registro de barberos, control de presencia (fichajes entrada/salida), cálculo de comisiones, gestión de horarios y un portal exclusivo para que cada barbero vea su agenda y sus métricas.'
+                            },
+                            {
+                                q: '¿Puedo probar NeluxBarber gratis antes de suscribirme?',
+                                a: 'Sí. NeluxBarber ofrece una prueba gratuita de 7 días completamente funcional, sin necesidad de tarjeta de crédito. Puedes configurar tu barbería, importar clientes y probar todas las funcionalidades antes de comprometerte con cualquier plan.'
+                            },
+                        ].map((item, i) => (
+                            <div
+                                key={i}
+                                className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden"
+                                itemScope
+                                itemProp="mainEntity"
+                                itemType="https://schema.org/Question"
+                            >
+                                <details className="group">
+                                    <summary className="flex items-center justify-between p-6 cursor-pointer list-none hover:bg-zinc-800/50 transition-colors">
+                                        <h3
+                                            className="text-white font-bold text-sm md:text-base pr-4"
+                                            itemProp="name"
+                                        >
+                                            {item.q}
+                                        </h3>
+                                        <div className="shrink-0 w-6 h-6 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 font-bold text-lg group-open:rotate-45 transition-transform">
+                                            +
+                                        </div>
+                                    </summary>
+                                    <div
+                                        className="px-6 pb-6 text-zinc-400 text-sm md:text-base leading-relaxed border-t border-zinc-800 pt-4"
+                                        itemScope
+                                        itemProp="acceptedAnswer"
+                                        itemType="https://schema.org/Answer"
+                                    >
+                                        <p itemProp="text">{item.a}</p>
+                                    </div>
+                                </details>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══════════════════════════════════════════════════════════════════════
                 CTA FOOTER SECTION
             ═══════════════════════════════════════════════════════════════════════ */}
             <section className="relative py-16 md:py-24 lg:py-32 px-4 md:px-8 lg:px-6">
@@ -711,5 +803,66 @@ export default function InicioPage() {
                 </div>
             </footer>
         </main>
+        <Script
+          id="schema-faq"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "\u00bfCu\u00e1nto cuesta el software para barberos NeluxBarber?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "NeluxBarber tiene 4 planes: B\u00e1sico desde 19\u20ac/mes, Profesional desde 49\u20ac/mes, Premium desde 99\u20ac/mes y el plan IA Personalizada desde 149\u20ac/mes. Todos incluyen una prueba gratuita de 7 d\u00edas sin tarjeta de cr\u00e9dito."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "\u00bfNecesito descargar una app para que mis clientes reserven citas?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "No. Tus clientes reservan directamente desde una p\u00e1gina web personalizada. No necesitan descargarse ninguna aplicaci\u00f3n ni crearse una cuenta."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "\u00bfNeluxBarber cumple con la normativa Verifactu 2026?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "S\u00ed. NeluxBarber incluye facturaci\u00f3n adaptada a la normativa Verifactu 2026, obligatoria para todos los aut\u00f3nomos y peque\u00f1as empresas en Espa\u00f1a. Genera facturas legales, las exporta en PDF y lleva un registro auditado de todas tus operaciones."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "\u00bfC\u00f3mo funciona el bot de WhatsApp con IA?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "El bot de IA se conecta a tu n\u00famero de WhatsApp Business y responde autom\u00e1ticamente a los clientes, agenda citas, confirma reservas y env\u00eda recordatorios las 24 horas del d\u00eda, los 7 d\u00edas de la semana."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "\u00bfPuedo gestionar varios barberos con NeluxBarber?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "S\u00ed. Los planes Profesional y Premium incluyen gesti\u00f3n completa de equipo: registro de barberos, control de presencia, c\u00e1lculo de comisiones, gesti\u00f3n de horarios y un portal exclusivo para cada barbero."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "\u00bfPuedo probar NeluxBarber gratis antes de suscribirme?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "S\u00ed. NeluxBarber ofrece una prueba gratuita de 7 d\u00edas completamente funcional, sin necesidad de tarjeta de cr\u00e9dito."
+                  }
+                }
+              ]
+            })
+          }}
+        />
+        </>
     );
 }

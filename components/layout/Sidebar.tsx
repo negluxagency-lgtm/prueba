@@ -39,7 +39,7 @@ export function Sidebar() {
                     <Package className={`${isActive("/productos")} hover:text-amber-500 transition-colors cursor-pointer`} size={mounted && window.innerWidth < 1024 ? 22 : 26} />
                 </Link>
 
-                {plan?.toLowerCase() === 'premium' && (
+                {plan?.toLowerCase() === 'ia personalizada' && (
                     <Link href="/mensajes" className="p-2 lg:p-4">
                         <MessageSquare className={`${isActive("/mensajes")} hover:text-amber-500 transition-colors cursor-pointer`} size={mounted && window.innerWidth < 1024 ? 22 : 26} />
                     </Link>

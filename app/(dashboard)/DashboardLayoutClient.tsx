@@ -75,7 +75,7 @@ export default function DashboardLayoutClient({
 
     // 2. CASO ACCESO PERMITIDO (PAGADO o PRUEBA)
     return (
-        <div className="flex h-screen overflow-hidden flex-col lg:flex-row">
+        <div className="flex h-[100dvh] overflow-hidden flex-col lg:flex-row">
             <Sidebar />
 
             <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">

@@ -267,8 +267,8 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                     </div>
                 )}
 
-                {/* Persuasive Sections for Pricing Variant */}
-                {!isLock && (
+                {/* Persuasive Sections for Pricing Variant (solo en página completa, no embebida) */}
+                {!isLock && !isSection && (
                     <div className="mt-6 lg:mt-16 border-t border-zinc-800/50 pt-8">
                         <div className="text-center mb-16">
                             <h2 className="text-2xl lg:text-4xl font-black italic uppercase tracking-tighter text-white mb-4">
@@ -337,7 +337,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                     </div>
                 )}
 
-                {(variant === 'pricing' || variant === 'lock') && user && (
+                {(variant === 'pricing' || variant === 'lock') && !isSection && user && (
                     <div className="mt-12 flex justify-center">
                         <ManageSubscriptionButton
                             className="bg-zinc-900/50 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 hover:bg-zinc-800 transition-all text-xs font-bold uppercase tracking-widest px-6 py-6 rounded-xl"
@@ -360,7 +360,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                     </div>
                 )}
 
-                <p className="text-center text-zinc-600 text-[10px] lg:text-xs mt-8 lg:mt-12 pb-8 lg:pb-0">
+                <p className={`text-center text-zinc-600 text-[10px] lg:text-xs ${isSection ? 'mt-4' : 'mt-8 lg:mt-12 pb-8 lg:pb-0'}`}>
                     🔒 Pagos procesados de forma segura por Stripe. Puedes cancelar en cualquier momento.
                 </p>
             </div>
