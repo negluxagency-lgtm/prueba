@@ -1,169 +1,114 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { MessageRow, Conversation, ChatMessage } from "@/types";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import useSWR from "swr";
 
 export function useChat() {
-    const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
-    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [userId, setUserId] = useState<string | null>(null);
     const [selectedTlf, setSelectedTlf] = useState<string | null>(null);
     const searchParams = useSearchParams();
 
-    // Deep Linking: Check URL param on mount
     useEffect(() => {
-        const tlfParam = searchParams.get('tlf');
-        if (tlfParam) {
-            setSelectedTlf(tlfParam);
-        }
+        supabase.auth.getUser().then(({ data }) => {
+            if (data.user) setUserId(data.user.id);
+        });
+    }, []);
 
-        // Fetch User and Profile info
-        const getUserData = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                const currentUser = session.user;
-                setUser(currentUser);
+    // Fetcher for SWR
+    const fetchChatData = async () => {
+        if (!userId) return [];
 
-                // Also fetch the profile to get the definitive barberia name
-                const { data: profile } = await supabase
-                    .from('perfiles')
-                    .select('nombre_barberia')
-                    .eq('id', currentUser.id)
-                    .single();
+        // 1. Fetch messages and names in parallel
+        const [messagesResult, namesResult] = await Promise.all([
+            supabase.from('Mensajes')
+                .select('*')
+                .eq('barberia_id', userId)
+                .order('numero', { ascending: true }),
+            supabase.from('citas')
+                .select('Nombre, Telefono')
+                .eq('barberia_id', userId)
+        ]);
 
-                if (profile) {
-                    const fullUser = { ...currentUser, profile_barberia: profile.nombre_barberia };
-                    setUser(fullUser);
-                    // Fetch messages immediately once we have the barberia name
-                    fetchMessages(fullUser);
-                } else {
-                    fetchMessages(currentUser);
+        if (messagesResult.error) throw messagesResult.error;
+
+        // 2. Build Name Lookup
+        const nameMap: Record<string, string> = {};
+        if (namesResult.data) {
+            namesResult.data.forEach((row: any) => {
+                if (row.Telefono && row.Nombre) {
+                    const cleanTlf = String(row.Telefono).replace(/\+/g, '').replace(/\s/g, '').trim();
+                    nameMap[cleanTlf] = row.Nombre;
+                    nameMap[String(row.Telefono).trim()] = row.Nombre;
                 }
-            }
-        };
-        getUserData();
-    }, [searchParams]);
-
-    const fetchMessages = async (forceUser?: any) => {
-        try {
-            const currentUser = forceUser || user;
-            if (!currentUser) return;
-
-            // Only show loader on initial fetch if empty
-            if (conversations.length === 0) setLoading(true);
-
-            // 🚀 ESTÁNDAR UUID: Filtrar por barberia_id
-            let messagesQuery = supabase.from('Mensajes').select('*').order('numero', { ascending: true });
-            messagesQuery = messagesQuery.eq('barberia_id', currentUser.id);
-
-            const [messagesResult, namesResult] = await Promise.all([
-                messagesQuery,
-                supabase.from('citas').select('Nombre, Telefono') // RLS se encarga del filtrado por barbería aquí
-            ]);
-
-            const { data: messagesData, error: messagesError } = messagesResult;
-            const { data: namesData, error: namesError } = namesResult;
-
-            if (messagesError) throw messagesError;
-            if (namesError) console.error("Error fetching names:", namesError);
-
-            // Create Name Lookup Map
-            const nameMap: Record<string, string> = {};
-            if (namesData) {
-                namesData.forEach((row: any) => {
-                    if (row.Telefono && row.Nombre) {
-                        // Normalize: remove spaces and + signs
-                        const cleanTlf = String(row.Telefono).replace(/\+/g, '').replace(/\s/g, '').trim();
-                        nameMap[cleanTlf] = row.Nombre;
-
-                        // Also map raw value just in case
-                        nameMap[String(row.Telefono).trim()] = row.Nombre;
-                    }
-                });
-            }
-
-            if (messagesData) {
-                processMessages(messagesData as MessageRow[], nameMap);
-            }
-        } catch (err: any) {
-            console.error("Error fetching chat data:", err.message || err);
-        } finally {
-            setLoading(false);
+            });
         }
-    };
 
-    const processMessages = (rows: MessageRow[], nameMap: Record<string, string> = {}) => {
+        // 3. Process Messages
         const grouped: Record<string, ChatMessage[]> = {};
-
-        rows.forEach(row => {
-            // Robust check for Tlf (handle 0 or valid numbers)
+        (messagesResult.data as MessageRow[]).forEach(row => {
             if (row.Tlf === null || row.Tlf === undefined) return;
-            const tlfStr = String(row.Tlf); // Normalize to string
-
+            const tlfStr = String(row.Tlf);
             const content = row.mensaje_enviado || row.mensaje_recibido;
             if (!content) return;
 
-            const isMine = !!row.mensaje_enviado;
-
-            // Fallback for timestamp: prefer 'fecha', then 'created_at', then current time
-            const timestamp = row.fecha || row.created_at || new Date().toISOString();
-
-            // Debug: Log first few messages to see what values are coming from DB
-            if (Object.keys(grouped).length === 0 && grouped[tlfStr] === undefined) {
-                console.log('🔍 First message - fecha:', row.fecha, '| created_at:', row.created_at, '| using:', timestamp);
-            }
-
-            if (!grouped[tlfStr]) {
-                grouped[tlfStr] = [];
-            }
-
+            if (!grouped[tlfStr]) grouped[tlfStr] = [];
             grouped[tlfStr].push({
                 id: row.numero,
                 content: content,
-                isMine: isMine,
-                timestamp: timestamp
+                isMine: !!row.mensaje_enviado,
+                timestamp: row.fecha || row.created_at || new Date().toISOString()
             });
         });
 
-        // Convert to array and sort conversations by latest message ID (numero)
-        const convos: Conversation[] = Object.keys(grouped).map(tlf => {
-            const msgs = grouped[tlf].sort((a, b) => a.id - b.id); // Ensure messages inside are sorted by numero (asc)
+        // 4. Map to Conversations
+        return Object.keys(grouped).map(tlf => {
+            const msgs = grouped[tlf].sort((a, b) => a.id - b.id);
             const last = msgs[msgs.length - 1];
-
-            // Try to look up name using raw or cleaned phone
             const cleanTlf = tlf.replace(/\+/g, '').replace(/\s/g, '').trim();
-            const clientName = nameMap[tlf] || nameMap[cleanTlf];
-
-            // Debug: Log lastTimestamp for each conversation
-            console.log('📊 Conversation:', tlf, '| lastTimestamp:', last.timestamp, '| lastId:', last.id);
-
             return {
                 tlf,
                 messages: msgs,
                 lastMessage: last.content,
                 lastTimestamp: last.timestamp,
                 lastId: last.id,
-                clientName: clientName
+                clientName: nameMap[tlf] || nameMap[cleanTlf]
             };
         }).sort((a, b) => b.lastId - a.lastId);
-
-        // console.log("Processed Conversations:", convos); 
-        setConversations(convos);
-
-        // If deep link set a TLF but we have data, we're good. 
-        // If NO deep link and no selection, select first by default ONLY ON DESKTOP
-        if (!searchParams.get('tlf') && !selectedTlf && convos.length > 0) {
-            const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
-            if (isDesktop) {
-                setSelectedTlf(convos[0].tlf);
-            }
-        }
     };
 
-    const sendMessage = async (text: string) => {
-        if (!selectedTlf || !text.trim()) return;
+    const { 
+        data: conversations = [], 
+        error, 
+        isLoading, 
+        mutate 
+    } = useSWR(
+        userId ? ['chat-conversations', userId] : null,
+        fetchChatData,
+        {
+            revalidateOnFocus: true,
+            onError: (err) => {
+                console.error("Error fetching chat data:", err);
+                toast.error("Error al cargar el chat");
+            }
+        }
+    );
 
-        // Optimistic update: Add message to UI immediately
+    // Deep Linking & Initial Selection
+    useEffect(() => {
+        const tlfParam = searchParams.get('tlf');
+        if (tlfParam) {
+            setSelectedTlf(tlfParam);
+        } else if (!selectedTlf && conversations.length > 0) {
+            const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768;
+            if (isDesktop) setSelectedTlf(conversations[0].tlf);
+        }
+    }, [searchParams, conversations]);
+
+    const sendMessage = async (text: string) => {
+        if (!selectedTlf || !text.trim() || !userId) return;
+
         const tempId = Date.now();
         const optimisticMessage: ChatMessage = {
             id: tempId,
@@ -172,8 +117,8 @@ export function useChat() {
             timestamp: new Date().toISOString()
         };
 
-        // Update local state immediately for instant feedback
-        setConversations(prev => prev.map(conv => {
+        // Optimistic Update
+        const updatedConversations = conversations.map(conv => {
             if (conv.tlf === selectedTlf) {
                 return {
                     ...conv,
@@ -184,74 +129,55 @@ export function useChat() {
                 };
             }
             return conv;
-        }));
+        });
 
         try {
+            mutate(updatedConversations, false);
+
             const { error } = await supabase
                 .from('Mensajes')
                 .insert({
                     Tlf: selectedTlf,
                     mensaje_enviado: text,
-                    mensaje_recibido: null,
                     manual: true,
                     fecha: new Date().toISOString(),
-                    barberia_id: user.id
+                    barberia_id: userId
                 });
 
-            if (error) {
-                console.error("Error original de Supabase (Mensajes):", JSON.stringify(error, null, 2));
-                console.error("Detalles del error (Mensajes):", error.details);
-                console.error("Código de error (Mensajes):", error.code);
-                console.error("Pista (Mensajes):", error.hint);
-                throw error;
-            }
-
-            // Fetch immediately to replace optimistic message with real one
-            await fetchMessages();
+            if (error) throw error;
+            mutate();
         } catch (err) {
-            console.error("Error sending message:", err);
-            // Revert optimistic update on error
-            setConversations(prev => prev.map(conv => {
-                if (conv.tlf === selectedTlf) {
-                    return {
-                        ...conv,
-                        messages: conv.messages.filter(m => m.id !== tempId)
-                    };
-                }
-                return conv;
-            }));
+            mutate();
+            toast.error("Error al enviar el mensaje");
             throw err;
         }
     };
 
+    // Realtime Sync
     useEffect(() => {
-        if (user) {
-            fetchMessages();
-        }
+        if (!userId) return;
 
-        // Realtime Subscription
         const channel = supabase
-            .channel('mensajes-realtime')
+            .channel(`chat-${userId}`)
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
-                table: 'Mensajes'
-            }, (payload) => {
-                console.log('🔔 Cambio en Mensajes:', payload.eventType, payload);
-                fetchMessages();
-            })
-            .subscribe((status, err) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log('✅ Subscripción Realtime activa para Mensajes');
-                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                    console.error('❌ Error en Subscripción Realtime:', status, err);
-                }
-            });
+                table: 'Mensajes',
+                filter: `barberia_id=eq.${userId}`
+            }, () => mutate())
+            .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, []);
+    }, [userId, mutate]);
 
-    return { loading, conversations, selectedTlf, setSelectedTlf, sendMessage };
+    return { 
+        loading: isLoading, 
+        conversations, 
+        selectedTlf, 
+        setSelectedTlf, 
+        sendMessage 
+    };
 }
+

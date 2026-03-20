@@ -5,6 +5,7 @@ import { Plus, Trash2, Search, Filter, Loader2, DollarSign, Wallet, CheckCircle2
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import useSWR from 'swr'
 
 interface Gasto {
     id: number
@@ -14,17 +15,61 @@ interface Gasto {
     categoria: string
     metodo_pago: string
     deducible: boolean
-    factura_id?: string | number // NEW: para saber si tiene factura vinculada
-    factura_uuid?: string // NEW: para redirigir de forma segura sin exponer el ID
+    factura_id?: string | number
+    factura_uuid?: string
 }
 
 interface ExpensesSectionProps {
-    selectedMonth?: string // YYYY-MM
+    selectedMonth?: string
 }
 
 export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps) {
-    const [gastos, setGastos] = useState<Gasto[]>([])
-    const [loading, setLoading] = useState(true)
+    const targetMonth = selectedMonth || new Date().toISOString().substring(0, 7)
+
+    // --- SWR ---
+    const { 
+        data: gastos = [], 
+        mutate, 
+        isLoading: loading 
+    } = useSWR(['expenses', targetMonth], async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return []
+
+        const [year, month] = targetMonth.split('-').map(Number)
+        const startDate = `${targetMonth}-01`
+        const nextMonthDate = new Date(year, month, 1)
+        const endDate = nextMonthDate.toISOString().split('T')[0]
+
+        const [gRes, fRes] = await Promise.all([
+            supabase.from('gastos').select('*').eq('barberia_id', user.id).gte('fecha', startDate).lt('fecha', endDate).order('fecha', { ascending: false }),
+            supabase.from('facturas').select('id, titulo, fecha_documento, archivo_url').eq('barberia_id', user.id).gte('fecha_documento', startDate).lt('fecha_documento', endDate)
+        ])
+
+        if (gRes.error) throw gRes.error
+
+        return (gRes.data || []).map((g: any) => {
+            const facturaVinculada = fRes.data?.find(f => f.titulo === g.concepto && f.fecha_documento === g.fecha)
+            let parsedUuid = undefined
+            if (facturaVinculada?.archivo_url) {
+                try {
+                    const parts = facturaVinculada.archivo_url.split('/facturas/');
+                    if (parts.length > 1) parsedUuid = encodeURIComponent(parts[1]);
+                } catch (e) {}
+            }
+            return { ...g, factura_id: facturaVinculada?.id, factura_uuid: parsedUuid }
+        })
+    })
+
+    // --- REALTIME ---
+    useEffect(() => {
+        const channel = supabase
+            .channel('realtime-expenses')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, () => mutate())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'facturas' }, () => mutate())
+            .subscribe()
+        return () => { supabase.removeChannel(channel) }
+    }, [mutate])
+
     const [showAdd, setShowAdd] = useState(false)
     const [newGasto, setNewGasto] = useState({
         concepto: '',
@@ -36,83 +81,6 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
     })
     const [file, setFile] = useState<File | null>(null)
     const [saving, setSaving] = useState(false)
-
-    const targetMonth = selectedMonth || new Date().toISOString().substring(0, 7)
-
-    useEffect(() => {
-        fetchGastos()
-    }, [targetMonth])
-
-    const fetchGastos = async () => {
-        setLoading(true)
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
-
-        let query = supabase
-            .from('gastos')
-            .select('*')
-            .eq('barberia_id', user.id)
-            .order('fecha', { ascending: false })
-
-        if (targetMonth) {
-            const [year, month] = targetMonth.split('-').map(Number)
-            const startDate = `${targetMonth}-01`
-            const nextMonthDate = new Date(year, month, 1)
-            const endDate = nextMonthDate.toISOString().split('T')[0]
-            query = query.gte('fecha', startDate).lt('fecha', endDate)
-        }
-
-        const { data: gastosData, error: gastosError } = await query
-
-        if (gastosError) {
-            toast.error('Error al cargar gastos')
-            setLoading(false)
-            return
-        }
-
-        // Fetch facturas del mismo mes para cruzar datos
-        let facturasQuery = supabase
-            .from('facturas')
-            .select('id, titulo, fecha_documento, archivo_url')
-            .eq('barberia_id', user.id)
-
-        if (targetMonth) {
-            const [year, month] = targetMonth.split('-').map(Number)
-            const startDate = `${targetMonth}-01`
-            const nextMonthDate = new Date(year, month, 1)
-            const endDate = nextMonthDate.toISOString().split('T')[0]
-            facturasQuery = facturasQuery.gte('fecha_documento', startDate).lt('fecha_documento', endDate)
-        }
-
-        const { data: facturasData } = await facturasQuery
-
-        // Unir datos virtualmente basados en concepto y fecha
-        const gastosConFactura = (gastosData || []).map(g => {
-            const facturaVinculada = facturasData?.find(f => f.titulo === g.concepto && f.fecha_documento === g.fecha)
-            let parsedUuid = undefined;
-
-            if (facturaVinculada?.archivo_url) {
-                try {
-                    const urlObj = new URL(facturaVinculada.archivo_url);
-                    const pathParts = urlObj.pathname.split('/facturas/');
-                    if (pathParts.length > 1) {
-                        parsedUuid = encodeURIComponent(pathParts[1]);
-                    }
-                } catch (e) {
-                    console.warn('Could not parse file UUID:', e);
-                }
-            }
-
-            return {
-                ...g,
-                factura_id: facturaVinculada?.id,
-                factura_uuid: parsedUuid
-            }
-        })
-
-        setGastos(gastosConFactura)
-        setLoading(false)
-    }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -138,7 +106,6 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
         try {
             let facturaUrl = null
 
-            // Si hay un archivo, lo subimos a facturas y creamos el registro en la tabla facturas
             if (file) {
                 const fileExt = file.name.split('.').pop()
                 const fileName = `${user.id}/${Date.now()}_${newGasto.concepto.replace(/[^a-zA-Z0-9]/g, '_')}.${fileExt}`
@@ -189,7 +156,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
             })
             setFile(null)
             setShowAdd(false)
-            fetchGastos()
+            mutate()
 
         } catch (error: any) {
             console.error('Error procesando gasto/factura:', error)
@@ -204,13 +171,13 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
         if (error) {
             toast.error('Error al eliminar')
         } else {
-            setGastos(gastos.filter(g => g.id !== id))
+            mutate()
             toast.success('Gasto eliminado')
         }
     }
 
-    const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0)
-    const totalDeducible = gastos.filter(g => g.deducible).reduce((sum, g) => sum + g.monto, 0)
+    const totalGastos = gastos.reduce((sum: number, g: Gasto) => sum + g.monto, 0)
+    const totalDeducible = gastos.filter((g: Gasto) => g.deducible).reduce((sum: number, g: Gasto) => sum + g.monto, 0)
 
     return (
         <div className="space-y-6">
@@ -369,7 +336,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                                     </td>
                                 </tr>
                             ) : (
-                                gastos.map((g) => (
+                                gastos.map((g: Gasto) => (
                                     <tr key={g.id} className="hover:bg-zinc-800/20 transition-colors group">
                                         <td className="px-6 py-5">
                                             <div className="flex flex-col">
@@ -441,7 +408,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                             </div>
                         </div>
                     ) : (
-                        gastos.map((g) => (
+                        gastos.map((g: Gasto) => (
                             <div key={g.id} className="p-3 flex flex-col gap-2 group bg-zinc-950/20">
                                 <div className="flex items-start justify-between">
                                     <div className="flex flex-col gap-1">

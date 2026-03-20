@@ -9,13 +9,19 @@ import { useBarberStats } from '@/hooks/useBarberStats';
 import { MetricType } from '@/components/trends/DetailedRevenueChart';
 import { MonthlyTrends } from '@/components/dashboard/MonthlyTrends';
 import BarberRankingCard from '@/components/trends/BarberRankingCard';
+import useSWR from 'swr';
 
 export default function TrendsPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().substring(0, 7));
-  const { loading, chartData, metrics, previousMetrics, range, setRange } = useTrends(selectedMonth);
   const [activeMetric, setActiveMetric] = React.useState<MetricType>('revenue');
 
-  // Barber stats: use selected month for the ranking card
+  // 1. Tendencias dinámicas para el gráfico y cards superiores
+  const { loading, chartData, metrics, previousMetrics, range, setRange } = useTrends(selectedMonth);
+
+  // 2. Tendencias fijas del mes para el pie de página (siempre 'month')
+  const { metrics: monthlyMetrics, loading: loadingMonthly } = useTrends(selectedMonth, 'month');
+
+  // 3. Estadísticas de barberos para el ranking (ya ligadas al mes seleccionado)
   const { stats: barberStats, loading: barberLoading } = useBarberStats(selectedMonth);
 
   const getFormattedMonth = () => {
@@ -30,37 +36,28 @@ export default function TrendsPage() {
   };
   const selectedMonthText = getFormattedMonth();
 
-  const [objectives, setObjectives] = useState({
-    ingresos: 0,
-    cortes: 0,
-    productos: 0
+  // --- SWR FOR OBJECTIVES ---
+  const { 
+    data: profileData, 
+    isLoading: loadingObjectives 
+  } = useSWR('user-objectives', async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data: profile } = await supabase
+      .from('perfiles')
+      .select('objetivo_ingresos, objetivo_cortes, objetivo_productos, Autonomo')
+      .eq('id', user.id)
+      .single();
+    return profile;
   });
-  const [loadingObjectives, setLoadingObjectives] = useState(true);
-  const [isAutonomo, setIsAutonomo] = useState<boolean>(false);
 
-  React.useEffect(() => {
-    const fetchObjectives = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const objectives = {
+    ingresos: Number(profileData?.objetivo_ingresos) || 0,
+    cortes: Number(profileData?.objetivo_cortes) || 0,
+    productos: Number(profileData?.objetivo_productos) || 0
+  };
+  const isAutonomo = !!profileData?.Autonomo;
 
-      const { data: profile } = await supabase
-        .from('perfiles')
-        .select('objetivo_ingresos, objetivo_cortes, objetivo_productos, Autonomo')
-        .eq('id', user.id)
-        .single();
-
-      if (profile) {
-        setObjectives({
-          ingresos: Number(profile.objetivo_ingresos) || 0,
-          cortes: Number(profile.objetivo_cortes) || 0,
-          productos: Number(profile.objetivo_productos) || 0
-        });
-        setIsAutonomo(!!profile.Autonomo);
-      }
-      setLoadingObjectives(false);
-    };
-    fetchObjectives();
-  }, []);
 
   return (
     <main className="flex-1 p-2 lg:p-10 max-w-4xl lg:max-w-6xl mx-auto w-full pb-24 lg:pb-10">
@@ -99,7 +96,7 @@ export default function TrendsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 lg:mb-12">
         {[
           { id: 'revenue' as MetricType, label: 'Ingresos', val: `${metrics.totalRevenue}€`, icon: DollarSign, trend: range, color: 'text-green-500' },
-          { id: 'clients' as MetricType, label: 'Citas', val: metrics.totalCuts, icon: Calendar, trend: range, color: 'text-amber-500' },
+          { id: 'clients' as MetricType, label: 'Citas', val: metrics.totalClients, icon: Calendar, trend: range, color: 'text-amber-500' },
           { id: 'avgTicket' as MetricType, label: 'Ticket Medio', val: `${metrics.avgTicket}€`, icon: TrendingUp, trend: 'Avg', color: 'text-blue-500' },
           { id: 'noShows' as MetricType, label: 'No-Shows', val: metrics.noShows, icon: Users, trend: range, color: 'text-red-500' },
         ].map((stat, i) => (
@@ -144,13 +141,15 @@ export default function TrendsPage() {
 
       <div className="mt-8">
         <MonthlyTrends
-          revenue={metrics.totalRevenue}
-          cuts={metrics.totalCuts}
-          products={metrics.totalProducts}
+          revenue={monthlyMetrics.totalRevenue}
+          cuts={monthlyMetrics.totalCuts}
+          cutsRevenue={monthlyMetrics.revenueCuts}
+          products={monthlyMetrics.totalProducts}
+          productsRevenue={monthlyMetrics.revenueProducts}
           objRevenue={objectives.ingresos}
           objCuts={objectives.cortes}
           objProducts={objectives.productos}
-          loading={loadingObjectives}
+          loading={loadingMonthly || loadingObjectives}
           selectedMonthText={selectedMonthText}
         />
       </div>

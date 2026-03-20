@@ -1,13 +1,14 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { TrendingUp, TrendingDown, Wallet, DollarSign, ArrowUpRight, ArrowDownRight, Info, Calculator, Clock } from 'lucide-react'
+import React, { useEffect } from 'react'
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, Info, Calculator, Clock } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useBarberStats } from '@/hooks/useBarberStats'
 import { cn } from '@/lib/utils'
+import useSWR from 'swr'
 
 interface AccountingSummaryProps {
-    selectedMonth?: string // YYYY-MM
+    selectedMonth?: string
     onNetIncomeCalculated?: (netIncome: number) => void
     isAutonomo?: boolean
     barberCount?: number
@@ -27,69 +28,68 @@ export default function AccountingSummary({
 }: AccountingSummaryProps) {
     const targetMonth = selectedMonth || new Date().toISOString().substring(0, 7)
     const { stats, loading: loadingStats } = useBarberStats(targetMonth)
-    const [expensesData, setExpensesData] = useState({ total: 0, deducible: 0 })
-    const [loadingExpenses, setLoading] = useState(true)
-    const [shopName, setShopName] = useState('Mi Barbería')
 
-    useEffect(() => {
-        fetchExpenses()
-    }, [targetMonth])
+    // --- SWR ---
+    const { 
+        data: summaryData, 
+        isLoading: loadingContabilidad,
+        mutate 
+    } = useSWR(['accounting-summary', targetMonth], async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return null
 
-    const fetchExpenses = async () => {
-        setLoading(true)
-        try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            // Get Shop Name
-            const { data: profile } = await supabase.from('perfiles').select('nombre_barberia').eq('id', user.id).single()
-            if (profile?.nombre_barberia) setShopName(profile.nombre_barberia)
-
-            const [year, month] = targetMonth.split('-').map(Number)
-            const startOfMonth = `${targetMonth}-01`
-            const nextMonthDate = new Date(year, month, 1) // First day of next month
-            const endDate = nextMonthDate.toISOString().split('T')[0]
-
-            // 1. Fetch Summary Expenses
-            const { data: gastos, error: gastosErr } = await supabase
-                .from('gastos')
-                .select('*')
+        const [pRes, mRes] = await Promise.all([
+            supabase.from('perfiles').select('nombre_barberia').eq('id', user.id).single(),
+            supabase.from('metricas_contabilidad_mensual')
+                .select('ingresos_servicios, ingresos_productos, gastos, gastos_deducibles')
                 .eq('barberia_id', user.id)
-                .gte('fecha', startOfMonth)
-                .lt('fecha', endDate)
-                .order('fecha', { ascending: true })
+                .eq('mes', targetMonth)
+                .maybeSingle()
+        ])
 
-            if (gastosErr) throw gastosErr
-
-            const totals = (gastos || []).reduce((acc, current) => {
-                acc.total += Number(current.monto)
-                if (current.deducible) acc.deducible += Number(current.monto)
-                return acc
-            }, { total: 0, deducible: 0 })
-
-            setExpensesData(totals)
-
-            // 2. We no longer need to process detailed entries for reports here
-            // as they are handled in the main page.tsx
-        } catch (err) {
-            console.error('Error fetching summary expenses:', err)
-        } finally {
-            setLoading(false)
+        if (mRes.error) {
+            console.error('Error fetching metricas_contabilidad_mensual:', mRes.error)
         }
-    }
 
-    const totalIncome = stats.reduce((sum, barber) => sum + barber.totalRevenue, 0)
-    const totalExpenses = expensesData.total
-    const balance = totalIncome - totalExpenses
-    const deductibleAmount = expensesData.deducible
+        const rec: any = mRes.data || {}
+        const inc = (Number(rec.ingresos_servicios) || 0) + (Number(rec.ingresos_productos) || 0)
+        const gst = Number(rec.gastos) || 0
+        const ded = Number(rec.gastos_deducibles) || 0
+        const bal = inc - gst
+
+        return {
+            shopName: pRes.data?.nombre_barberia || 'Mi Barbería',
+            ingresos: inc,
+            gastos: gst,
+            deducibles: ded,
+            balance: bal
+        }
+    })
+
+    // --- REALTIME ---
+    useEffect(() => {
+        const channel = supabase
+            .channel('realtime-summary')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'metricas_contabilidad_mensual' }, () => mutate())
+            .subscribe()
+        return () => { supabase.removeChannel(channel) }
+    }, [mutate])
+
+    const contabilidadData = summaryData || { ingresos: 0, gastos: 0, balance: 0, deducibles: 0 }
+    // const shopName = summaryData?.shopName || 'Mi Barbería'
+
+    const totalIncome = contabilidadData.ingresos
+    const totalExpenses = contabilidadData.gastos
+    const balance = contabilidadData.balance
+    // const deductibleAmount = contabilidadData.deducibles
 
     useEffect(() => {
-        if (!loadingStats && !loadingExpenses && onNetIncomeCalculated) {
+        if (!loadingStats && !loadingContabilidad && onNetIncomeCalculated) {
             onNetIncomeCalculated(balance)
         }
-    }, [balance, loadingStats, loadingExpenses, onNetIncomeCalculated])
+    }, [balance, loadingStats, loadingContabilidad, onNetIncomeCalculated])
 
-    const isLoading = loadingStats || loadingExpenses
+    const isLoading = loadingStats || loadingContabilidad
 
     const getAutonomoQuota = (income: number) => {
         if (income <= 670) return "~230€"
@@ -98,7 +98,7 @@ export default function AccountingSummary({
         return "~460€ - 530€"
     }
 
-    const showAutonomoQuota = isAutonomo && (barberCount || 0) === 1
+    // const showAutonomoQuota = isAutonomo && (barberCount || 0) === 1
 
     if (isLoading) {
         return (
@@ -112,7 +112,7 @@ export default function AccountingSummary({
 
     return (
         <div className="space-y-6 mb-10">
-            {/* 1. BALANCES GRID — 3 cols always on mobile for compact display */}
+            {/* 1. BALANCES GRID */}
             <div className="grid grid-cols-3 gap-2 md:gap-6">
                 {/* INGRESOS */}
                 <div className="relative overflow-hidden group bg-zinc-900 border border-zinc-800 p-3 md:p-6 rounded-[1.5rem] md:rounded-[2.5rem] hover:border-emerald-500/30 transition-all shadow-xl">
@@ -183,7 +183,7 @@ export default function AccountingSummary({
                                 <div className="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center">
                                     <Info className="w-7 h-7 text-amber-500" />
                                 </div>
-                                <div>
+                                <div className="overflow-hidden">
                                     <h3 className="font-black uppercase italic text-lg leading-tight text-white">Cuota de Autónomos</h3>
                                     <p className="text-zinc-500 text-[10px] font-bold">Estimación según ingresos personales del dueño</p>
                                 </div>
@@ -192,7 +192,7 @@ export default function AccountingSummary({
                                 <span className="text-[10px] text-amber-500/70 font-black uppercase tracking-widest block mb-0.5 leading-none">Tramo actual</span>
                                 <span className="text-xl font-black text-amber-500 tracking-tighter tabular-nums leading-tight">
                                     {(() => {
-                                        const owner = stats.find(s => s.isOwner);
+                                        const owner = stats.find((s: any) => s.isOwner);
                                         const quotaBasis = owner ? (owner.totalRevenue - totalExpenses) : balance;
                                         return getAutonomoQuota(quotaBasis);
                                     })()}
@@ -235,4 +235,3 @@ export default function AccountingSummary({
         </div>
     )
 }
-

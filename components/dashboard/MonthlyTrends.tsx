@@ -18,10 +18,11 @@ interface TrendItemProps {
     bgColor: string;
     barColor: string;
     unit?: string;
+    subValue?: string;
 }
 
 const TrendItem: React.FC<TrendItemProps> = ({
-    label, actual, objetivo, icon, color, bgColor, barColor, unit = ''
+    label, actual, objetivo, icon, color, bgColor, barColor, unit = '', subValue
 }) => {
     const percentage = objetivo > 0 ? Math.min(Math.round((actual / objetivo) * 100), 100) : 0;
     const realPercentage = objetivo > 0 ? Math.round((actual / objetivo) * 100) : 0;
@@ -37,9 +38,14 @@ const TrendItem: React.FC<TrendItemProps> = ({
                     </div>
                     <div>
                         <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{label}</p>
-                        <h4 className="text-xl font-bold text-white">
-                            {actual.toLocaleString()}{unit}
-                        </h4>
+                        <div className="flex items-baseline gap-2">
+                            <h4 className="text-xl font-bold text-white">
+                                {actual.toLocaleString()}{unit}
+                            </h4>
+                            {subValue && (
+                                <span className="text-xs text-zinc-400 font-bold">({subValue})</span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <div className={cn("flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800/50 font-bold text-xs", color)}>
@@ -67,7 +73,9 @@ const TrendItem: React.FC<TrendItemProps> = ({
 interface MonthlyTrendsProps {
     revenue: number;
     cuts: number;
+    cutsRevenue?: number;
     products: number;
+    productsRevenue?: number;
     objRevenue?: number;
     objCuts?: number;
     objProducts?: number;
@@ -78,7 +86,9 @@ interface MonthlyTrendsProps {
 export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({
     revenue,
     cuts,
+    cutsRevenue,
     products,
+    productsRevenue,
     objRevenue = 25000,
     objCuts = 1000,
     objProducts = 40,
@@ -115,6 +125,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({
                 <TrendItem
                     label="Cortes Realizados"
                     actual={cuts}
+                    subValue={cutsRevenue !== undefined && cutsRevenue > 0 ? `${cutsRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2 })}€` : undefined}
                     objetivo={objCuts}
                     icon={<Scissors />}
                     color="text-[#007AFF]"
@@ -124,6 +135,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({
                 <TrendItem
                     label="Productos Vendidos"
                     actual={products}
+                    subValue={productsRevenue !== undefined && productsRevenue > 0 ? `${productsRevenue.toLocaleString('es-ES', { minimumFractionDigits: 2 })}€` : undefined}
                     objetivo={objProducts}
                     icon={<ShoppingBag />}
                     color="text-[#FF3B30]"

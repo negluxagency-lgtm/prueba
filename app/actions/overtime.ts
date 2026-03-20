@@ -1,11 +1,6 @@
 'use server'
 
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { createClient } from '@/utils/supabase/server'
 
 export interface HorasExtraRow {
     id: string
@@ -33,11 +28,14 @@ export async function getBarberOvertimeFromSchedule(
     month: string // YYYY-MM
 ): Promise<BarberOvertimeResult | null> {
     try {
-        const [year, m] = month.split('-').map(Number)
-        const startDate = `${month}-01`
-        const endDate = new Date(year, m, 0).toISOString().split('T')[0]
+        const supabase = await createClient()
 
-        const { data, error } = await supabaseAdmin
+        const [year, m] = month.split('-').map(Number)
+        const lastDay = new Date(year, m, 0).getDate()
+        const startDate = `${month}-01`
+        const endDate = `${month}-${String(lastDay).padStart(2, '0')}`
+
+        const { data, error } = await supabase
             .from('horas_extra')
             .select('*')
             .eq('barbero_id', barberoId)
@@ -75,12 +73,15 @@ export async function getAllBarbersOvertimeFromSchedule(
     month: string
 ): Promise<BarberOvertimeResult[]> {
     try {
+        const supabase = await createClient()
+
         const [year, m] = month.split('-').map(Number)
+        const lastDay = new Date(year, m, 0).getDate()
         const startDate = `${month}-01`
-        const endDate = new Date(year, m, 0).toISOString().split('T')[0]
+        const endDate = `${month}-${String(lastDay).padStart(2, '0')}`
 
         // Step 1: Get all barber IDs for this shop
-        const { data: barberos, error: barbError } = await supabaseAdmin
+        const { data: barberos, error: barbError } = await supabase
             .from('barberos')
             .select('id')
             .eq('barberia_id', barberiaId)
@@ -90,7 +91,7 @@ export async function getAllBarbersOvertimeFromSchedule(
         const barberIds = barberos.map(b => b.id)
 
         // Step 2: Single batch query for ALL barbers instead of N+1
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabase
             .from('horas_extra')
             .select('*')
             .in('barbero_id', barberIds)

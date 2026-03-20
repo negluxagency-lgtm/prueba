@@ -137,9 +137,9 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
         }
 
         // 7. CRITICAL: Validate no duplicate booking
-        const validationBarber = barberName || (barberId ? String(barberId) : null)
+        if (barberId) {
+            const targetId = String(barberId).trim().toLowerCase()
 
-        if (validationBarber) {
             const { data: dayAppointments } = await supabase
                 .from('citas')
                 .select('Hora, duracion, barbero, barbero_id, Dia, id, cancelada')
@@ -149,16 +149,8 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
             if (dayAppointments && dayAppointments.length > 0) {
                 const conflictingAppointments = dayAppointments.filter((apt: any) => {
                     if (apt.cancelada) return false;
-                    const dbName = String(apt.barbero || '').trim().toLowerCase()
                     const dbId = String(apt.barbero_id || '').trim().toLowerCase()
-                    const targetName = String(barberName || '').trim().toLowerCase()
-                    const targetId = String(barberId || '').trim().toLowerCase()
-
-                    const matchId = targetId && dbId === targetId
-                    const matchName = targetName && dbName === targetName
-                    const matchLegacyId = targetId && dbName === targetId
-
-                    return matchId || matchName || matchLegacyId;
+                    return dbId === targetId;
                 })
 
                 const hasConflict = conflictingAppointments.some((apt: any) => {
@@ -222,16 +214,10 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
 
                 const availableBarbers = shopBarbers.filter((barber: any) => {
                     const hasConflict = allAppointments?.some((apt: any) => {
-                        const dbName = String(apt.barbero || '').trim().toLowerCase()
                         const dbId = String(apt.barbero_id || '').trim().toLowerCase()
-                        const targetName = String(barber.nombre || '').trim().toLowerCase()
                         const targetId = String(barber.id || '').trim().toLowerCase()
 
-                        const matchId = targetId && dbId === targetId
-                        const matchName = targetName && dbName === targetName
-                        const matchLegacyId = targetId && dbName === targetId
-
-                        if (!(matchId || matchName || matchLegacyId)) return false
+                        if (!targetId || dbId !== targetId) return false;
 
                         // Check time overlap
                         const [aptHour, aptMin] = apt.Hora.split(':').map(Number)

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Appointment } from "@/types";
+import { toast } from "sonner";
+import useSWR from "swr";
 
 export interface ChartDataPoint {
     name: string;
@@ -17,7 +18,9 @@ export interface TrendsMetrics {
     totalRevenue: number;
     totalClients: number;
     totalCuts: number;
+    revenueCuts: number;
     totalProducts: number;
+    revenueProducts: number;
     avgTicket: number;
     retentionRate: number;
     noShows: number;
@@ -25,363 +28,294 @@ export interface TrendsMetrics {
 
 export type TimeRange = 'week' | 'month' | 'year';
 
-export function useTrends(referenceDate?: string) {
-    const [loading, setLoading] = useState(true);
-    const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-    const [range, setRange] = useState<TimeRange>('month');
-    const [metrics, setMetrics] = useState<TrendsMetrics>({
-        totalRevenue: 0,
-        totalClients: 0,
-        totalCuts: 0,
-        totalProducts: 0,
-        avgTicket: 0,
-        retentionRate: 0,
-        noShows: 0,
-    });
-    const [previousMetrics, setPreviousMetrics] = useState<TrendsMetrics>({
-        totalRevenue: 0,
-        totalClients: 0,
-        totalCuts: 0,
-        totalProducts: 0,
-        avgTicket: 0,
-        retentionRate: 0,
-        noShows: 0,
-    });
+const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const DAYS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-    const getLabel = (dateString: string, currentRange: TimeRange) => {
-        if (!dateString) return '';
+const EMPTY_METRICS: TrendsMetrics = {
+    totalRevenue: 0,
+    totalClients: 0,
+    totalCuts: 0,
+    revenueCuts: 0,
+    totalProducts: 0,
+    revenueProducts: 0,
+    avgTicket: 0,
+    retentionRate: 0,
+    noShows: 0,
+};
 
-        // Parsing robusto asumiendo formato YYYY-MM-DD procedente de la DB
-        const parts = dateString.split('-');
-        if (parts.length < 3) return dateString; // Fallback si el formato no es estándar
-
-        const year = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1; // Meses 0-indexados
-        const day = parseInt(parts[2], 10);
-
-        // Usamos UTC para evitar que la hora local afecte al día de la semana
-        const date = new Date(Date.UTC(year, month, day));
-
-        if (currentRange === 'week') {
-            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-            return days[date.getUTCDay()];
-        }
-        if (currentRange === 'month') {
-            return date.getUTCDate().toString();
-        }
-        if (currentRange === 'year') {
-            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-            return months[date.getUTCMonth()];
-        }
-        return dateString;
-    };
-
-    const formatDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
-    const calculateMetrics = (appointments: Appointment[], productSales: any[]): TrendsMetrics => {
-        // Caja Real: Solo citas confirmadas
-        const appointmentRevenue = appointments.reduce((sum, item) =>
-            sum + (item.confirmada ? (Number(item.Precio) || 0) : 0), 0
-        );
-
-        // Ingresos de productos
-        const productRevenue = productSales.reduce((sum, sale) =>
-            sum + (Number(sale.precio) || 0), 0
-        );
-
-        const totalRev = appointmentRevenue + productRevenue;
-
-        // Clientes: Solo citas confirmadas
-        const totalCli = appointments.filter(a => a.confirmada).length;
-
-        // Total Cuts: SOLO citas confirmadas (no productos)
-        const totalCuts = appointments.filter(a => a.confirmada).length;
-
-        // Products: Sumar cantidad de productos vendidos
-        const totalProducts = productSales.reduce((sum, sale) =>
-            sum + (Number(sale.cantidad) || 0), 0
-        );
-
-        // Ticket medio = ingresos totales / transacciones totales (citas + ventas de producto)
-        // Cada venta de producto cuenta como 1 transacción independiente
-        const totalTransactions = totalCli + productSales.length;
-        const avgTkt = totalTransactions > 0 ? Math.round(totalRev / totalTransactions) : 0;
-        const totalNoShows = appointments.filter(cita => cita.cancelada).length;
-
-        return {
-            totalRevenue: totalRev,
-            totalClients: totalCli,
-            totalCuts,
-            totalProducts,
-            avgTicket: avgTkt,
-            retentionRate: 0,
-            noShows: totalNoShows,
-        };
-    };
-
-    const fetchTrends = async () => {
-        try {
-            setLoading(true);
-
-            // 0. SEGURIDAD: Obtener ID Barbería
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return; // Silent fail o manejar error
-
-            // 1. Current Period Dates
-            // Para 'week' ("Esta Semana"), forzamos siempre la fecha actual (ignorar mes seleccionado)
-            const refDate = (range === 'week' || !referenceDate) ? new Date() : new Date(referenceDate);
-            let startDate = new Date(refDate);
-            let endDate = new Date(refDate);
-
-            if (range === 'week') {
-                // Últimos 7 días incluyendo hoy
-                startDate.setDate(refDate.getDate() - 6);
-            }
-            if (range === 'month') {
-                startDate = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
-                endDate = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0);
-            }
-            if (range === 'year') {
-                startDate.setFullYear(refDate.getFullYear(), 0, 1);
-                endDate.setFullYear(refDate.getFullYear(), 11, 31);
-            }
-
-            // 2. Previous Period Dates
-            let prevStartDate = new Date(startDate);
-            let prevEndDate = new Date(startDate);
-
-            if (range === 'week') {
-                prevStartDate.setDate(startDate.getDate() - 7);
-                prevEndDate.setDate(startDate.getDate() - 1);
-            }
-            if (range === 'month') {
-                prevStartDate.setMonth(startDate.getMonth() - 1);
-                prevEndDate = new Date(startDate.getFullYear(), startDate.getMonth(), 0);
-            }
-            if (range === 'year') {
-                prevStartDate.setFullYear(startDate.getFullYear() - 1);
-                prevEndDate.setFullYear(startDate.getFullYear() - 1, 11, 31);
-            }
-
-            const currentStartStr = formatDate(startDate);
-            const currentEndStr = formatDate(endDate);
-            const prevStartStr = formatDate(prevStartDate);
-            const prevEndStr = formatDate(prevEndDate);
-
-            // 3. Parallel Queries (CITAS + VENTAS_PRODUCTOS)
-            const currentCitasQuery = supabase
-                .from('citas')
-                .select('*')
-                .eq('barberia_id', user.id)
-                .gte('Dia', currentStartStr)
-                .lte('Dia', currentEndStr)
-                .order('Dia', { ascending: true });
-
-            const previousCitasQuery = supabase
-                .from('citas')
-                .select('*')
-                .eq('barberia_id', user.id)
-                .gte('Dia', prevStartStr)
-                .lte('Dia', prevEndStr);
-
-            // Fetch product sales for current period
-            const currentSalesQuery = supabase
-                .from('ventas_productos')
-                .select('*')
-                .eq('barberia_id', user.id)
-                .gte('created_at', currentStartStr + ' 00:00:00')
-                .lte('created_at', currentEndStr + ' 23:59:59');
-
-            // Fetch product sales for previous period
-            const previousSalesQuery = supabase
-                .from('ventas_productos')
-                .select('*')
-                .eq('barberia_id', user.id)
-                .gte('created_at', prevStartStr + ' 00:00:00')
-                .lte('created_at', prevEndStr + ' 23:59:59');
-
-            const [currentCitasRes, prevCitasRes, currentSalesRes, prevSalesRes] = await Promise.all([
-                currentCitasQuery,
-                previousCitasQuery,
-                currentSalesQuery,
-                previousSalesQuery
-            ]);
-
-            if (currentCitasRes.error) throw currentCitasRes.error;
-            if (prevCitasRes.error) throw prevCitasRes.error;
-
-            // 4. Map ventas_productos to Appointment format and merge
-            const mapSalesToAppointments = (sales: any[]): Appointment[] => {
-                return sales.map((venta: any) => ({
-                    id: venta.id,
-                    created_at: venta.created_at,
-                    Nombre: venta.nombre_producto,
-                    Servicio: venta.nombre_producto,
-                    Dia: venta.created_at.split('T')[0], // Extract YYYY-MM-DD
-                    Hora: venta.created_at.split('T')[1]?.substring(0, 5) || '00:00',
-                    Telefono: String(venta.cantidad),
-                    Precio: venta.precio,
-                    confirmada: true,
-                    _isProductSale: true, // Internal marker
-                } as any));
-            };
-
-            // DON'T merge sales with appointments - keep them separate!
-            const currentAppointments = currentCitasRes.data || [];
-            const previousAppointments = prevCitasRes.data || [];
-            const currentSales = currentSalesRes.data || [];
-            const prevSales = prevSalesRes.data || [];
-
-            // 5. Process metrics with separate data
-            if (currentAppointments) {
-                processMetrics(currentAppointments as Appointment[], currentSales, refDate);
-            }
-            if (previousAppointments) {
-                setPreviousMetrics(calculateMetrics(previousAppointments as Appointment[], prevSales));
-            }
-
-        } catch (err) {
-            console.error("Error fetching trends:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const processMetrics = (appointments: Appointment[], productSales: any[], refDate: Date) => {
-        // Set Current Metrics
-        setMetrics(calculateMetrics(appointments, productSales));
-
-        // Prepare Chart Data (Filling Gaps)
-        const dataMap: Record<string, { rev: number; cli: number; no: number; cuts: number; prods: number; prodTxns: number }> = {};
-        const start = range === 'week' ? new Date(new Date(refDate).setDate(refDate.getDate() - 6))
-            : range === 'month' ? new Date(refDate.getFullYear(), refDate.getMonth(), 1)
-                : new Date(refDate.getFullYear(), 0, 1);
-
-        const end = range === 'week' ? new Date(refDate)
-            : range === 'month' ? new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0)
-                : new Date(refDate.getFullYear(), 11, 31);
-
-        const current = new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()));
-        const finalEnd = new Date(Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()));
-
-        // Process appointments (citas)
-        appointments.forEach(app => {
-            const groupKey = range === 'year' ? app.Dia.substring(0, 7) : app.Dia;
-            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0, prodTxns: 0 };
-
-            if (app.confirmada) {
-                // Solo contar citas confirmadas
-                dataMap[groupKey].cuts += 1;
-                dataMap[groupKey].rev += (Number(app.Precio) || 0);
-                dataMap[groupKey].cli += 1;
-            }
-            if (app.cancelada) dataMap[groupKey].no += 1;
-        });
-
-        // Process product sales separately
-        productSales.forEach(sale => {
-            const dateStr = sale.created_at.split('T')[0];
-            const groupKey = range === 'year' ? dateStr.substring(0, 7) : dateStr;
-            if (!dataMap[groupKey]) dataMap[groupKey] = { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0, prodTxns: 0 };
-
-            // Sumar ingresos de productos
-            dataMap[groupKey].rev += (Number(sale.precio) || 0);
-            // Sumar cantidad de productos vendidos
-            dataMap[groupKey].prods += (Number(sale.cantidad) || 0);
-            // Contar cada venta como 1 transacción
-            (dataMap[groupKey] as any).prodTxns = ((dataMap[groupKey] as any).prodTxns || 0) + 1;
-        });
-
-        const finalData: ChartDataPoint[] = [];
-
-        if (range === 'year') {
-            const startOfYear = new Date(refDate.getFullYear(), 0, 1);
-            const iterDate = new Date(startOfYear);
-
-            while (iterDate.getFullYear() === refDate.getFullYear()) {
-                const monthKey = iterDate.toISOString().substring(0, 7);
-                const item = dataMap[monthKey] || { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
-
-                const totalTxns = item.cli + (item.prodTxns || 0);
-                finalData.push({
-                    name: getLabel(`${monthKey}-01`, 'year'),
-                    date: monthKey,
-                    revenue: item.rev,
-                    clients: item.cli,
-                    cuts: item.cuts,
-                    products: item.prods,
-                    avgTicket: totalTxns > 0 ? Math.round(item.rev / totalTxns) : 0,
-                    noShows: item.no
-                });
-
-                iterDate.setMonth(iterDate.getMonth() + 1);
-                if (iterDate.getFullYear() > refDate.getFullYear()) break;
-            }
-        } else {
-            while (current <= finalEnd) {
-                const isoDate = current.toISOString().split('T')[0];
-                const item = dataMap[isoDate] || { rev: 0, cli: 0, no: 0, cuts: 0, prods: 0 };
-
-                const totalTxns = item.cli + (item.prodTxns || 0);
-                finalData.push({
-                    name: getLabel(isoDate, range),
-                    date: isoDate,
-                    revenue: item.rev,
-                    clients: item.cli,
-                    cuts: item.cuts,
-                    products: item.prods,
-                    avgTicket: totalTxns > 0 ? Math.round(item.rev / totalTxns) : 0,
-                    noShows: item.no
-                });
-
-                current.setDate(current.getDate() + 1);
-            }
-        }
-        setChartData(finalData);
-    };
+export function useTrends(referenceDate?: string, initialRange: TimeRange = 'month') {
+    const [userId, setUserId] = useState<string | null>(null);
+    const [range, setRange] = useState<TimeRange>(initialRange);
 
     useEffect(() => {
-        let channel: any;
+        supabase.auth.getUser().then(({ data }) => {
+            if (data.user) setUserId(data.user.id);
+        });
+    }, []);
 
-        const setupRealtime = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+    const { 
+        data, 
+        error, 
+        isLoading, 
+        mutate 
+    } = useSWR(
+        userId ? ['trends', range, referenceDate, userId] : null,
+        async () => {
+            const refDate = (range === 'week' || !referenceDate) ? new Date() : new Date(referenceDate + 'T12:00:00');
+            const fmt = (d: Date) => d.toISOString().split('T')[0];
 
-            fetchTrends();
+            let result = {
+                chartData: [] as ChartDataPoint[],
+                metrics: { ...EMPTY_METRICS },
+                previousMetrics: { ...EMPTY_METRICS }
+            };
 
-            // Suscripción FILTRADA para citas 🔒
-            channel = supabase
-                .channel('trends-realtime')
-                .on('postgres_changes', {
-                    event: '*',
-                    schema: 'public',
-                    table: 'citas',
-                    filter: `barberia_id=eq.${user.id}`
-                }, () => {
-                    fetchTrends();
-                })
-                .on('postgres_changes', {
-                    event: '*',
-                    schema: 'public',
-                    table: 'ventas_productos',
-                    filter: `barberia_id=eq.${user.id}`
-                }, () => {
-                    fetchTrends();
-                })
-                .subscribe();
-        };
+            // === WEEKLY VIEW ===
+            if (range === 'week') {
+                const endDate = new Date(refDate);
+                const startDate = new Date(refDate);
+                startDate.setDate(startDate.getDate() - 6);
 
-        setupRealtime();
+                const { data: diarias } = await supabase
+                    .from('metricas_diarias')
+                    .select('dia, ingresos, cortes, productos, citas, no_shows')
+                    .eq('barberia_id', userId)
+                    .gte('dia', fmt(startDate))
+                    .lte('dia', fmt(endDate))
+                    .order('dia', { ascending: true });
+
+                const dataMap: Record<string, any> = {};
+                (diarias || []).forEach(r => { dataMap[r.dia] = r; });
+
+                const cursor = new Date(startDate);
+                while (cursor <= endDate) {
+                    const key = fmt(cursor);
+                    const d = dataMap[key] || {};
+                    const rev = Number(d.ingresos) || 0;
+                    const cuts = Number(d.cortes) || 0;
+                    const prods = Number(d.productos) || 0;
+                    const citas = Number(d.citas) || 0;
+                    const noShows = Number(d.no_shows) || 0;
+
+                    result.metrics.totalRevenue += rev;
+                    result.metrics.totalCuts += cuts;
+                    result.metrics.totalProducts += prods;
+                    result.metrics.totalClients += citas;
+                    result.metrics.noShows += noShows;
+
+                    result.chartData.push({
+                        name: DAYS_SHORT[cursor.getDay()],
+                        date: key,
+                        revenue: rev,
+                        clients: citas,
+                        cuts,
+                        products: prods,
+                        avgTicket: cuts > 0 ? Math.round(rev / cuts) : 0,
+                        noShows,
+                    });
+                    cursor.setDate(cursor.getDate() + 1);
+                }
+                result.metrics.avgTicket = result.metrics.totalCuts > 0 ? Math.round(result.metrics.totalRevenue / result.metrics.totalCuts) : 0;
+            }
+
+            // === MONTHLY VIEW ===
+            else if (range === 'month') {
+                const year = refDate.getFullYear();
+                const month = refDate.getMonth();
+                const mesStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+                const lastDay = new Date(year, month + 1, 0).getDate();
+                const prevMes = month === 0 ? `${year - 1}-12` : `${year}-${String(month).padStart(2, '0')}`;
+
+                const [
+                    { data: diarias }, 
+                    { data: currentMensual },
+                    { data: prevMensual },
+                    { data: currentContabilidad }
+                ] = await Promise.all([
+                    supabase.from('metricas_diarias')
+                        .select('dia, ingresos, cortes, productos, citas, no_shows')
+                        .eq('barberia_id', userId)
+                        .gte('dia', `${mesStr}-01`)
+                        .lte('dia', `${mesStr}-${String(lastDay).padStart(2, '0')}`)
+                        .order('dia', { ascending: true }),
+                    supabase.from('metricas_mensuales')
+                        .select('ingresos, cortes, productos, citas, ticket_medio, no_shows')
+                        .eq('barberia_id', userId)
+                        .eq('mes', mesStr)
+                        .single(),
+                    supabase.from('metricas_mensuales')
+                        .select('ingresos, cortes, productos, citas, ticket_medio, no_shows')
+                        .eq('barberia_id', userId)
+                        .eq('mes', prevMes)
+                        .single(),
+                    supabase.from('metricas_contabilidad_mensual')
+                        .select('ingresos_servicios, ingresos_productos')
+                        .eq('barberia_id', userId)
+                        .eq('mes', mesStr)
+                        .maybeSingle(),
+                ]);
+
+                // 1. Usar métricas oficiales del mes si existen (KPI Cards)
+                if (currentMensual) {
+                    result.metrics = {
+                        totalRevenue: Number(currentMensual.ingresos) || 0,
+                        totalCuts: Number(currentMensual.cortes) || 0,
+                        revenueCuts: Number(currentContabilidad?.ingresos_servicios) || 0,
+                        totalProducts: Number(currentMensual.productos) || 0,
+                        revenueProducts: Number(currentContabilidad?.ingresos_productos) || 0,
+                        totalClients: Number(currentMensual.citas) || 0,
+                        avgTicket: Number(currentMensual.ticket_medio) || 0,
+                        retentionRate: 0,
+                        noShows: Number(currentMensual.no_shows) || 0,
+                    };
+                }
+
+                // 2. Mapear datos diarios para el gráfico
+                const dataMap: Record<string, any> = {};
+                (diarias || []).forEach(r => {
+                    dataMap[r.dia] = r;
+                    // Solo sumamos si no tenemos record mensual (fallback)
+                    if (!currentMensual) {
+                        result.metrics.totalRevenue += Number(r.ingresos) || 0;
+                        result.metrics.totalCuts += Number(r.cortes) || 0;
+                        result.metrics.totalProducts += Number(r.productos) || 0;
+                        result.metrics.totalClients += Number(r.citas) || 0;
+                        result.metrics.noShows += Number(r.no_shows) || 0;
+                    }
+                });
+
+                for (let d = 1; d <= lastDay; d++) {
+                    const key = `${mesStr}-${String(d).padStart(2, '0')}`;
+                    const item = dataMap[key] || {};
+                    result.chartData.push({
+                        name: String(d),
+                        date: key,
+                        revenue: Number(item.ingresos) || 0,
+                        clients: Number(item.citas) || 0,
+                        cuts: Number(item.cortes) || 0,
+                        products: Number(item.productos) || 0,
+                        avgTicket: Number(item.cortes) > 0 ? Math.round(Number(item.ingresos) / Number(item.cortes)) : 0,
+                        noShows: Number(item.no_shows) || 0,
+                    });
+                }
+
+                if (!currentMensual) {
+                    result.metrics.avgTicket = result.metrics.totalCuts > 0 ? Math.round(result.metrics.totalRevenue / result.metrics.totalCuts) : 0;
+                }
+
+                if (prevMensual) {
+                    result.previousMetrics = {
+                        totalRevenue: Number(prevMensual.ingresos) || 0,
+                        totalClients: Number(prevMensual.citas) || 0,
+                        totalCuts: Number(prevMensual.cortes) || 0,
+                        revenueCuts: 0,
+                        totalProducts: Number(prevMensual.productos) || 0,
+                        revenueProducts: 0,
+                        avgTicket: Number(prevMensual.ticket_medio) || 0,
+                        retentionRate: 0,
+                        noShows: Number(prevMensual.no_shows) || 0,
+                    };
+                }
+            }
+
+
+            // === YEARLY VIEW ===
+            else if (range === 'year') {
+                const year = refDate.getFullYear();
+                const prevYear = year - 1;
+
+                const [{ data: anuales }, { data: anualesPrev }] = await Promise.all([
+                    supabase.from('metricas_anuales')
+                        .select('mes, ingresos, citas, ticket_medio, no_shows')
+                        .eq('barberia_id', userId)
+                        .gte('mes', `${year}-01`)
+                        .lte('mes', `${year}-12`)
+                        .order('mes', { ascending: true }),
+                    supabase.from('metricas_anuales')
+                        .select('ingresos, citas, ticket_medio, no_shows')
+                        .eq('barberia_id', userId)
+                        .gte('mes', `${prevYear}-01`)
+                        .lte('mes', `${prevYear}-12`),
+                ]);
+
+                const dataMap: Record<string, any> = {};
+                (anuales || []).forEach(r => {
+                    dataMap[r.mes] = r;
+                    result.metrics.totalRevenue += Number(r.ingresos) || 0;
+                    result.metrics.totalClients += Number(r.citas) || 0;
+                    result.metrics.noShows += Number(r.no_shows) || 0;
+                });
+
+                for (let m = 1; m <= 12; m++) {
+                    const mesKey = `${year}-${String(m).padStart(2, '0')}`;
+                    const item = dataMap[mesKey] || {};
+                    result.chartData.push({
+                        name: MONTHS_SHORT[m - 1],
+                        date: mesKey,
+                        revenue: Number(item.ingresos) || 0,
+                        clients: Number(item.citas) || 0,
+                        cuts: Number(item.citas) || 0,
+                        products: 0,
+                        avgTicket: Number(item.ticket_medio) || 0,
+                        noShows: Number(item.no_shows) || 0,
+                    });
+                }
+                result.metrics.totalCuts = result.metrics.totalClients;
+                result.metrics.avgTicket = result.metrics.totalClients > 0 ? Math.round(result.metrics.totalRevenue / result.metrics.totalClients) : 0;
+
+
+                const prevTotals = (anualesPrev || []).reduce((acc, r) => ({
+                    rev: acc.rev + (Number(r.ingresos) || 0),
+                    cli: acc.cli + (Number(r.citas) || 0),
+                    no: acc.no + (Number(r.no_shows) || 0),
+                }), { rev: 0, cli: 0, no: 0 });
+
+                result.previousMetrics = {
+                    totalRevenue: prevTotals.rev,
+                    totalClients: prevTotals.cli,
+                    totalCuts: prevTotals.cli,
+                    revenueCuts: 0,
+                    totalProducts: 0,
+                    revenueProducts: 0,
+                    avgTicket: prevTotals.cli > 0 ? Math.round(prevTotals.rev / prevTotals.cli) : 0,
+                    retentionRate: 0,
+                    noShows: prevTotals.no,
+                };
+            }
+
+            return result;
+        },
+        {
+            onError: (err) => {
+                console.error("Error fetching trends:", err);
+                toast.error("Error al cargar las tendencias del negocio");
+            }
+        }
+    );
+
+    // Realtime Sync
+    useEffect(() => {
+        if (!userId) return;
+
+        const channel = supabase
+            .channel(`trends-${userId}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'metricas_diarias', filter: `barberia_id=eq.${userId}` }, () => mutate())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'metricas_mensuales', filter: `barberia_id=eq.${userId}` }, () => mutate())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'metricas_anuales', filter: `barberia_id=eq.${userId}` }, () => mutate())
+            .subscribe();
 
         return () => {
-            if (channel) supabase.removeChannel(channel);
+            supabase.removeChannel(channel);
         };
-    }, [range, referenceDate]); // Refetch when range OR referenceDate changes
+    }, [userId, mutate]);
 
-    return { loading, chartData, metrics, previousMetrics, range, setRange };
+    return { 
+        loading: isLoading, 
+        chartData: data?.chartData || [], 
+        metrics: data?.metrics || EMPTY_METRICS, 
+        previousMetrics: data?.previousMetrics || EMPTY_METRICS, 
+        range, 
+        setRange 
+    };
 }
+

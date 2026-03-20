@@ -39,27 +39,18 @@ function hasOverlap(
     slotDuration: number,
     appointments: Appointment[],
     barberId: string,
-    barberName: string, // Changed signature to accept name
     defaultDuration: number
 ): boolean {
     const slotStartMin = toMinutes(slotStart)
     const slotEndMin = slotStartMin + slotDuration
 
     return appointments.some(app => {
-        // Robust comparison: Check against Name (primary) OR ID (fallback)
-        const dbBarberName = String(app.barbero || '').trim().toLowerCase()
+        // Robust comparison: Check against ID exclusively
         const dbBarberId = String(app.barbero_id || '').trim().toLowerCase()
-        const targetName = String(barberName || '').trim().toLowerCase()
         const targetId = String(barberId || '').trim().toLowerCase()
 
-        // Match if ID matches OR Name matches (legacy)
-        const matchId = targetId && dbBarberId === targetId
-        const matchName = targetName && dbBarberName === targetName
-        
-        // Special case: if db holds ID in name column
-        const matchLegacyId = targetId && dbBarberName === targetId
-
-        if (!matchId && !matchName && !matchLegacyId) return false
+        // Match if ID matches
+        if (!targetId || dbBarberId !== targetId) return false
 
         const appStartMin = toMinutes(app.Hora)
         const appDuration = app.duracion || defaultDuration
@@ -69,7 +60,7 @@ function hasOverlap(
         const isOverlapping = slotStartMin < appEndMin && slotEndMin > appStartMin
 
         if (isOverlapping) {
-            console.log(`    ⛔ COLLISION: Slot ${slotStartMin}-${slotEndMin} overlaps with App ${appStartMin}-${appEndMin} (${dbBarberName})`)
+            console.log(`    ⛔ COLLISION: Slot ${slotStartMin}-${slotEndMin} overlaps with App ${appStartMin}-${appEndMin} (${dbBarberId})`)
         }
 
         return isOverlapping
@@ -263,7 +254,6 @@ export async function getAvailableSlots({
                         serviceDuration,
                         appointmentList,
                         String(barber.id),
-                        barber.nombre, // Pass name to hasOverlap
                         serviceDuration
                     )
 

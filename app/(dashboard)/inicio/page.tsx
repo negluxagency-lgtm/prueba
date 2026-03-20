@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAppointments } from "@/hooks/useAppointments";
 import { useTrends } from "@/hooks/useTrends";
+import { useShopData } from "@/hooks/useShopData";
 import { Appointment, AppointmentFormData } from "@/types";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
@@ -15,178 +16,132 @@ import { ProductSalesTable } from '@/components/dashboard/ProductSalesTable';
 import { EditProductSaleModal } from '@/components/dashboard/EditProductSaleModal';
 import ObjectiveRings from "@/components/dashboard/ObjectiveRings";
 import MonthlyGoalsChart from "@/components/dashboard/MonthlyGoalsChart";
+import CadenaStatsChart from '@/components/dashboard/CadenaStatsChart';
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ObjectiveRingsSkeleton, TableSkeleton } from "@/components/ui/SkeletonLoader";
+import useSWR from "swr";
 
 export default function Dashboard() {
-    const router = useRouter(); // Asegúrate de tener esto si no lo tienes
+    const router = useRouter();
     const searchParams = useSearchParams();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [objectives, setObjectives] = useState({
-        ingresos: 0,
-        cortes: 0,
-        productos: 0
-    });
-    const [loadingObjectives, setLoadingObjectives] = useState(true);
 
-    const [sales, setSales] = useState<Appointment[]>([]);
-    const [services, setServices] = useState<any[]>([]); // State for services
-    const [barbers, setBarbers] = useState<any[]>([]); // State for barbers (objects)
-    const [shopData, setShopData] = useState<any>(null); // State for shop profile info
-    const [user, setUser] = useState<any>(null); // State for current auth user
-
+    // --- SWR HOOKS ---
     const {
         appointments: dailyCitas,
-        monthlyRevenue,
         userPlan,
         loading: appointmentsLoading,
         deleteCita,
         saveCita,
-        updateAppointmentStatus
+        updateAppointmentStatus,
+        refreshAppointments
     } = useAppointments(selectedDate);
 
-    // Fetch Services for Dropdown
-    React.useEffect(() => {
-        const fetchServices = async () => {
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            if (!currentUser) return;
-            setUser(currentUser);
+    const { 
+        shopData: { services, barbers, profile: shopProfile }, 
+        loading: shopLoading,
+        refreshShopData
+    } = useShopData();
 
-            // Link perfiles.id with servicios.barberia_id
-            const { data: servicesData } = await supabase
-                .from('servicios')
-                .select('id, nombre, precio')
-                .eq('barberia_id', currentUser.id);
+    const userId = shopProfile?.id;
 
-            if (servicesData) {
-                setServices(servicesData);
-            }
-
-            // Fetch barbers list
-            const { data: barbersData } = await supabase
-                .from('barberos')
-                .select('id, nombre') // Fetch ID too
-                .eq('barberia_id', currentUser.id);
-
-            if (barbersData) {
-                setBarbers(barbersData);
-            }
-
-            // Fetch shop profile data
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia, Direccion, telefono, correo, "CIF/NIF"')
-                .eq('id', currentUser.id)
+    // SWR for daily metrics/objectives (metricas_diarias)
+    const { 
+        data: metricsData, 
+        mutate: mutateMetrics, 
+        isLoading: loadingMetrics 
+    } = useSWR(
+        userId ? ['dashboard-metrics', selectedDate, userId] : null,
+        async () => {
+            const { data: metrics } = await supabase
+                .from('metricas_diarias')
+                .select('*')
+                .eq('barberia_id', userId)
+                .eq('dia', selectedDate)
                 .single();
 
-            if (profile) {
-                setShopData({
-                    name: profile.nombre_barberia || currentUser.user_metadata?.barberia_nombre || 'Mi Barbería',
-                    address: profile.Direccion || '',
-                    phone: profile.telefono || '',
-                    email: profile.correo || currentUser.email || '',
-                    cif: profile['CIF/NIF'] || ''
-                });
-            } else {
-                // Fallback to metadata if profile record is missing for some reason
-                setShopData({
-                    name: currentUser.user_metadata?.barberia_nombre || 'Mi Barbería',
-                    address: '',
-                    phone: '',
-                    email: currentUser.email || '',
-                    cif: ''
-                });
-            }
-        };
-        fetchServices();
-    }, []);
+            const objectives = {
+                ingresos: Number(shopProfile?.ingresos_dia) || 0,
+                cortes: Number(shopProfile?.cortes_dia) || 0,
+                productos: Number(shopProfile?.productos_dia) || 0
+            };
 
-    // Fetch Ventas Productos (New Logic)
-    React.useEffect(() => {
-        // ... existing fetchSales code ...
-        const fetchSales = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            return { metrics, objectives };
+        }
+    );
 
-            // Date range for the selected day
+    // SWR for Product Sales (Ventas Productos)
+    const {
+        data: productSalesRaw = [],
+        mutate: mutateSales,
+        isLoading: loadingSales
+    } = useSWR(
+        userId ? ['product-sales', selectedDate, userId] : null,
+        async () => {
             const startOfDay = `${selectedDate} 00:00:00`;
             const endOfDay = `${selectedDate} 23:59:59`;
 
-            const { data: salesData, error } = await supabase
+            const { data } = await supabase
                 .from('ventas_productos')
                 .select('*')
-                .eq('barberia_id', user.id) // Filter by UUID
+                .eq('barberia_id', userId)
                 .gte('created_at', startOfDay)
                 .lte('created_at', endOfDay);
 
-            if (salesData && !error) {
-                // Map to Appointment Interface to match existing UI
-                // Using _isProductSale as internal marker (not stored in DB)
-                const mappedSales: (Appointment & { _isProductSale?: boolean })[] = salesData.map((venta: any) => ({
-                    id: venta.id,
-                    created_at: venta.created_at,
-                    Nombre: venta.nombre_producto,
-                    Dia: selectedDate,
-                    Hora: venta.created_at.split('T')[1].substring(0, 5), // 'HH:MM'
-                    Telefono: String(venta.cantidad), // Used for quantity count in existing logic
-                    Precio: venta.precio,
-                    pago: venta.metodo_pago,
-                    confirmada: true,
-                    _isProductSale: true, // Internal marker
-                }));
-                setSales(mappedSales);
-            }
-        };
-
-        fetchSales();
-    }, [selectedDate]);
-
-    // Merge Citas + Ventas
-    const allAppointments = [...dailyCitas, ...sales].sort((a, b) => {
-        // Sort by time/created_at if needed, but UI seems to handle tables separately
-        return a.Hora.localeCompare(b.Hora);
-    });
-
-    const { chartData, loading: trendsLoading, setRange } = useTrends(selectedDate);
-
-    // Function to update CIF in perfiles
-    const updateShopCIF = async (newCIF: string) => {
-        if (!user) return;
-
-        const { error } = await supabase
-            .from('perfiles')
-            .update({ 'CIF/NIF': newCIF })
-            .eq('id', user.id);
-
-        if (!error) {
-            setShopData((prev: any) => ({ ...prev, cif: newCIF }));
+            return (data || []).map((venta: any) => ({
+                id: venta.id,
+                created_at: venta.created_at,
+                Nombre: venta.nombre_producto,
+                Dia: selectedDate,
+                Hora: venta.created_at.split('T')[1].substring(0, 5),
+                Telefono: String(venta.cantidad),
+                Precio: venta.precio,
+                pago: venta.metodo_pago,
+                confirmada: true,
+                _isProductSale: true,
+            }));
         }
+    );
+
+    const { chartData, loading: trendsLoading } = useTrends(selectedDate);
+
+    // --- REALTIME ---
+    useEffect(() => {
+        if (!userId) return;
+        const channel = supabase
+            .channel(`dashboard-realtime-${userId}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'metricas_diarias', filter: `barberia_id=eq.${userId}` }, () => mutateMetrics())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas_productos', filter: `barberia_id=eq.${userId}` }, () => mutateSales())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'citas', filter: `barberia_id=eq.${userId}` }, () => refreshAppointments())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'barberos', filter: `barberia_id=eq.${userId}` }, () => refreshShopData())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'servicios', filter: `barberia_id=eq.${userId}` }, () => refreshShopData())
+            .subscribe();
+        return () => { supabase.removeChannel(channel) };
+    }, [userId, mutateMetrics, mutateSales, refreshAppointments, refreshShopData]);
+
+    // --- CALCULATED PROPERTIES ---
+    const metricasDia = metricsData?.metrics || { ingresos: 0, cortes: 0, productos: 0, citas: 0, caja_esperada: 0, caja_real: 0 };
+    const objectives = metricsData?.objectives || { ingresos: 0, cortes: 0, productos: 0 };
+    
+    const allAppointments = useMemo(() => {
+        return [...dailyCitas, ...productSalesRaw].sort((a, b) => a.Hora.localeCompare(b.Hora));
+    }, [dailyCitas, productSalesRaw]);
+
+    const stats = {
+        ingresos: { actual: metricasDia.ingresos, objetivo: objectives.ingresos, label: 'Ingresos del Día' },
+        cortes: { actual: metricasDia.cortes, objetivo: objectives.cortes, label: 'Cortes Realizados' },
+        productos: { actual: metricasDia.productos, objetivo: objectives.productos, label: 'Ventas Productos' }
     };
 
-    // Fetch Objetivos de Perfil
-    React.useEffect(() => {
-        const fetchObjectives = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+    const isCadena = shopProfile?.cadena === true;
+    const cadenaIds = shopProfile?.barberias_cadena_id ? (
+        typeof shopProfile.barberias_cadena_id === 'string' 
+            ? JSON.parse(shopProfile.barberias_cadena_id) 
+            : shopProfile.barberias_cadena_id
+    ) : [];
 
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('ingresos_dia, cortes_dia, productos_dia')
-                .eq('id', user.id)
-                .single();
-
-            if (profile) {
-                setObjectives({
-                    ingresos: Number(profile.ingresos_dia) || 0,
-                    cortes: Number(profile.cortes_dia) || 0,
-                    productos: Number(profile.productos_dia) || 0
-                });
-            }
-            setLoadingObjectives(false);
-        };
-        fetchObjectives();
-    }, []);
-
+    // --- MODAL STATE ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCita, setEditingCita] = useState<Appointment | null>(null);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -195,29 +150,7 @@ export default function Dashboard() {
     const [editingProductSale, setEditingProductSale] = useState<any>(null);
     const [appointmentLinkUuid, setAppointmentLinkUuid] = useState<string | null>(null);
 
-    // Separar citas de ventas usando el marcador interno
-    const productSales = allAppointments.filter(a => (a as any)._isProductSale);
-    const appointments = allAppointments.filter(a => !(a as any)._isProductSale);
-
-    // Cálculos para ObjectiveRings
-    const stats = {
-        ingresos: {
-            actual: allAppointments.filter(a => a.confirmada).reduce((sum, a) => sum + (Number(a.Precio) || 0), 0),
-            objetivo: objectives.ingresos,
-            label: 'Ingresos del Día'
-        },
-        cortes: {
-            actual: appointments.filter(a => a.confirmada).length,
-            objetivo: objectives.cortes,
-            label: 'Cortes Realizados'
-        },
-        productos: {
-            actual: productSales.reduce((sum, a) => sum + (Number(a.Telefono) || 0), 0),
-            objetivo: objectives.productos,
-            label: 'Ventas Productos'
-        }
-    };
-
+    // --- HANDLERS ---
     const handleEdit = (item: Appointment) => {
         if ((item as any)._isProductSale) {
             setEditingProductSale(item);
@@ -230,22 +163,15 @@ export default function Dashboard() {
 
     const handleDelete = async (item: Appointment) => {
         const isProductSale = (item as any)._isProductSale;
-
         let promise: Promise<any>;
+
         if (isProductSale) {
-            // Delete from ventas_productos table (UUID id)
-            promise = supabase
-                .from('ventas_productos')
-                .delete()
-                .eq('id', item.id)
-                .then(({ error }) => {
-                    if (error) return { success: false, error: error.message };
-                    // Remove from local sales state
-                    setSales(prev => prev.filter(s => s.id !== item.id));
-                    return { success: true };
-                }) as any as Promise<any>;
+            promise = supabase.from('ventas_productos').delete().eq('id', item.id).then(({ error }) => {
+                if (error) return { success: false, error: error.message };
+                mutateSales();
+                return { success: true };
+            }) as any;
         } else {
-            // Delete from citas table (bigint id)
             promise = deleteCita(item.id);
         }
 
@@ -269,10 +195,7 @@ export default function Dashboard() {
                 if (!result.success) throw new Error(result.error);
                 setIsModalOpen(false);
                 setEditingCita(null);
-                // Show link modal only for new appointments that returned a uuid
-                if (isNew && result.uuid) {
-                    setAppointmentLinkUuid(result.uuid);
-                }
+                if (isNew && result.uuid) setAppointmentLinkUuid(result.uuid);
                 return 'Registro guardado correctamente';
             },
             error: (err) => `Error: ${err}`
@@ -280,38 +203,22 @@ export default function Dashboard() {
     };
 
     const handleSaveProductSale = async (data: { cantidad: number; precioTotal: number; metodoPago: string }) => {
-        if (!editingProductSale || !user) return;
+        if (!editingProductSale || !userId) return;
 
-        const updateData = async () => {
-            const { data: updatedData, error } = await supabase
+        const updateAction = async () => {
+            const { error } = await supabase
                 .from('ventas_productos')
-                .update({
-                    cantidad: data.cantidad,
-                    precio: data.precioTotal,
-                    metodo_pago: data.metodoPago
-                })
+                .update({ cantidad: data.cantidad, precio: data.precioTotal, metodo_pago: data.metodoPago })
                 .eq('id', editingProductSale.id)
-                .eq('barberia_id', user.id) // Security: ensure it belongs to this shop
-                .select();
-
+                .eq('barberia_id', userId);
             if (error) throw error;
-            if (!updatedData || updatedData.length === 0) {
-                throw new Error('No se pudo encontrar la venta para actualizar o no tienes permisos.');
-            }
-
-            // Update local state
-            setSales(prev => prev.map(s => s.id === editingProductSale.id ? {
-                ...s,
-                Telefono: String(data.cantidad),
-                Precio: data.precioTotal,
-                pago: data.metodoPago
-            } : s));
+            mutateSales();
             return { success: true };
         };
 
-        toast.promise(updateData(), {
+        toast.promise(updateAction(), {
             success: 'Venta actualizada correctamente',
-            error: (err) => `Error: ${err.message || 'No se pudo actualizar la venta'}`
+            error: (err) => `Error: ${err.message || 'Error al actualizar'}`
         });
     };
 
@@ -320,12 +227,7 @@ export default function Dashboard() {
             if (!res.success) throw new Error(res.error);
             return res;
         });
-
-        toast.promise(promise, {
-            loading: 'Actualizando estado...',
-            success: 'Estado actualizado',
-            error: (err) => `Error: ${err.message}`
-        });
+        toast.promise(promise, { loading: 'Actualizando estado...', success: 'Estado actualizado', error: (err) => `Error: ${err.message}` });
     };
 
     const handleGenerateInvoice = (cita: Appointment) => {
@@ -334,139 +236,88 @@ export default function Dashboard() {
     };
 
     const handleGenerateProductInvoice = (sale: Appointment) => {
-        // Map product sale fields so InvoiceModal can render them correctly
-        const saleAsAppointment = {
-            ...sale,
-            servicio: sale.Nombre,       // product name shows as service description
-            Nombre: '',                  // client name starts blank for the user to fill
-            Telefono: '',                // phone starts blank
-            Dia: sale.Dia || new Date().toISOString().split('T')[0],
-        };
-        setInvoiceAppointment(saleAsAppointment as any);
+        setInvoiceAppointment({ ...sale, servicio: sale.Nombre, Nombre: '', Telefono: '', Dia: sale.Dia || selectedDate } as any);
         setIsInvoiceModalOpen(true);
+    };
+
+    const updateShopCIF = async (newCIF: string) => {
+        if (!userId) return;
+        const { error } = await supabase.from('perfiles').update({ 'CIF/NIF': newCIF }).eq('id', userId);
+        if (!error) refreshShopData?.();
     };
 
     return (
         <main className="flex-1 p-4 lg:p-10 max-w-7xl mx-auto w-full pb-24 lg:pb-10">
-            <DashboardHeader
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-            />
+            <DashboardHeader selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
 
             <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 mb-6 lg:mb-10 items-stretch justify-start">
                 <div className="flex flex-row gap-0 w-full lg:flex-1 items-stretch min-h-[160px] lg:min-h-0">
                     <div className="w-[75%] lg:w-full">
-                        <ObjectiveRings
-                            ingresos={stats.ingresos}
-                            cortes={stats.cortes}
-                            productos={stats.productos}
-                            loading={loadingObjectives}
-                        />
+                        <ObjectiveRings {...stats} loading={loadingMetrics || shopLoading} />
                     </div>
                     <div className="w-[25%] lg:hidden flex justify-end">
-                        <DashboardStats
-                            appointments={appointments}
-                            monthlyRevenue={stats.ingresos.actual}
-                            onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
+                        <DashboardStats 
+                            citas={metricasDia.citas || dailyCitas.length} 
+                            cajaEsperada={metricasDia.caja_esperada} 
+                            cajaReal={metricasDia.caja_real}
+                            onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }} 
                         />
                     </div>
                 </div>
-
                 <div className="w-full lg:flex-1 hidden lg:flex flex-col gap-6 items-end">
                     <div className="w-full">
-                        <MonthlyGoalsChart
-                            data={chartData}
-                            loading={trendsLoading}
-                        />
+                        <MonthlyGoalsChart data={chartData} loading={trendsLoading} />
                     </div>
                 </div>
             </div>
 
-            {/* Stats row for Desktop (Hidden on mobile AND tablet) */}
             <div className="hidden lg:flex mb-6 lg:mb-10 lg:px-4">
-                <DashboardStats
-                    appointments={appointments}
-                    monthlyRevenue={stats.ingresos.actual}
-                    onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }}
+                <DashboardStats 
+                    citas={metricasDia.citas || dailyCitas.length} 
+                    cajaEsperada={metricasDia.caja_esperada} 
+                    cajaReal={metricasDia.caja_real}
+                    onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }} 
                 />
             </div>
 
             <div className="space-y-4 lg:space-y-10">
-                <AppointmentTable
-                    appointments={appointments}
-                    selectedDate={selectedDate}
-                    userPlan={userPlan}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onUpdateStatus={handleUpdateStatus}
-                    onGenerateInvoice={handleGenerateInvoice}
-                    loading={appointmentsLoading}
-                    barbers={barbers} // Pass barbers for name lookup
-                />
-
-                <ProductSalesTable
-                    sales={productSales}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onGenerateInvoice={handleGenerateProductInvoice}
-                    loading={appointmentsLoading}
-                />
-
+                {isCadena ? (
+                    <CadenaStatsChart barberiasIds={cadenaIds} selectedDate={selectedDate} />
+                ) : (
+                    <>
+                        <AppointmentTable 
+                            appointments={dailyCitas} selectedDate={selectedDate} userPlan={userPlan}
+                            onEdit={handleEdit} onDelete={handleDelete} onUpdateStatus={handleUpdateStatus}
+                            onGenerateInvoice={handleGenerateInvoice} loading={appointmentsLoading} barbers={barbers}
+                        />
+                        <ProductSalesTable 
+                            sales={productSalesRaw} onEdit={handleEdit} onDelete={handleDelete}
+                            onGenerateInvoice={handleGenerateProductInvoice} loading={loadingSales}
+                        />
+                    </>
+                )}
             </div>
 
             <AppointmentModal
-                isOpen={isModalOpen}
-                onClose={() => { setIsModalOpen(false); setEditingCita(null); }}
-                onSave={handleSave}
-                services={services} // Pass services to modal
-                barbers={barbers} // Pass barbers to modal
-                initialData={editingCita ? {
-                    Nombre: editingCita.Nombre,
-                    servicio: editingCita.servicio,
-                    barbero: editingCita.barbero,
-                    barbero_id: editingCita.barbero_id,
-                    Dia: editingCita.Dia,
-                    Hora: editingCita.Hora,
-                    Telefono: String(editingCita.Telefono),
-                    Precio: String(editingCita.Precio),
-                    confirmada: !!editingCita.confirmada,
-                    pago: editingCita.pago,
-                } : {
-                    Nombre: '',
-                    servicio: '',
-                    barbero: '',
-                    barbero_id: '',
-                    Dia: selectedDate,
-                    Hora: '',
-                    Telefono: '',
-                    Precio: '',
-                    confirmada: false
+                isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingCita(null); }}
+                onSave={handleSave} services={services} barbers={barbers} isEditing={!!editingCita}
+                initialData={editingCita ? { ...editingCita, Telefono: String(editingCita.Telefono), Precio: String(editingCita.Precio) } as any : {
+                    Nombre: '', servicio: '', barbero: '', barbero_id: '', Dia: selectedDate, Hora: '', Telefono: '', Precio: '', confirmada: false
                 }}
-                isEditing={!!editingCita}
             />
 
             <InvoiceModal
-                isOpen={isInvoiceModalOpen}
-                onClose={() => { setIsInvoiceModalOpen(false); setInvoiceAppointment(null); }}
-                appointment={invoiceAppointment}
-                shopData={shopData || { name: user?.user_metadata?.barberia_nombre || 'Mi Barbería', cif: '' }}
+                isOpen={isInvoiceModalOpen} onClose={() => { setIsInvoiceModalOpen(false); setInvoiceAppointment(null); }}
+                appointment={invoiceAppointment} shopData={shopProfile ? { name: shopProfile.nombre_barberia || 'Mi Barbería', cif: shopProfile["CIF/NIF"] || '' } : { name: 'Mi Barbería', cif: '' }}
                 onUpdateCIF={updateShopCIF}
             />
 
             <EditProductSaleModal
-                isOpen={isProductEditModalOpen}
-                onClose={() => { setIsProductEditModalOpen(false); setEditingProductSale(null); }}
-                onSave={handleSaveProductSale}
-                sale={editingProductSale}
+                isOpen={isProductEditModalOpen} onClose={() => { setIsProductEditModalOpen(false); setEditingProductSale(null); }}
+                onSave={handleSaveProductSale} sale={editingProductSale}
             />
 
-            {appointmentLinkUuid && (
-                <AppointmentLinkModal
-                    uuid={appointmentLinkUuid}
-                    onClose={() => setAppointmentLinkUuid(null)}
-                />
-            )}
-
+            {appointmentLinkUuid && <AppointmentLinkModal uuid={appointmentLinkUuid} onClose={() => setAppointmentLinkUuid(null)} />}
         </main>
     );
 }

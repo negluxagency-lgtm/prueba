@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import useSWR from 'swr';
 
 export type SubscriptionStatus = 'pagado' | 'prueba' | 'impago';
 
@@ -15,132 +17,107 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const TRIAL_DAYS = 7;
 
 export function useSubscription() {
-    const [state, setState] = useState<SubscriptionState>({
-        status: null,
-        plan: null,
-        loading: true,
-        daysRemaining: 0,
-        isProfileComplete: false // Por defecto false para validar configuración
-    });
+    const [userId, setUserId] = useState<string | null>(null);
+    const [loadingSession, setLoadingSession] = useState(true);
 
     useEffect(() => {
-        async function checkSubscription() {
-            setState(prev => ({ ...prev, loading: true }));
+        supabase.auth.getUser().then(({ data }) => {
+            if (data.user) setUserId(data.user.id);
+            setLoadingSession(false);
+        });
 
-            // Obtener usuario manualmente
-            const { data: { session } } = await supabase.auth.getSession();
-            const user = session?.user;
-
-            // Logger condicional (Auditoría Punto 6)
-            const isDev = process.env.NODE_ENV === 'development';
-            if (isDev) console.log("useSubscription: User session check", { userId: user?.id });
-
-            if (!user) {
-                console.log("useSubscription: No user found, stopping.");
-                setState({
-                    status: null,
-                    plan: null,
-                    loading: false,
-                    daysRemaining: 0,
-                    isProfileComplete: false
-                });
-                return;
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+                setUserId(session?.user?.id || null);
+            } else if (event === 'SIGNED_OUT') {
+                setUserId(null);
             }
+            setLoadingSession(false);
+        });
 
-            try {
-                const { data: profile, error } = await supabase
-                    .from('perfiles')
-                    .select('estado, plan, created_at, nombre_barberia, telefono, onboarding_completado')
-                    .eq('id', user.id)
-                    .single();
+        return () => subscription.unsubscribe();
+    }, []);
 
-                if (isDev) console.log("useSubscription: Profile fetch result", { hasProfile: !!profile, error });
+    const { 
+        data: state, 
+        error, 
+        isLoading,
+        mutate
+    } = useSWR(
+        userId ? ['subscription', userId] : null,
+        async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return null;
 
-                if (error && error.code !== 'PGRST116') {
-                    throw error;
-                }
+            const { data: profile, error } = await supabase
+                .from('perfiles')
+                .select('estado, plan, created_at, nombre_barberia, telefono, onboarding_completado')
+                .eq('id', user.id)
+                .single();
 
-                if (!profile) {
-                    console.log("useSubscription: No profile found (new user). Calculating trial from auth metadata.");
+            if (error && error.code !== 'PGRST116') throw error;
 
-                    const userCreatedAt = new Date(user.created_at).getTime();
-                    const now = Date.now();
-                    const diffMs = now - userCreatedAt;
-                    const daysPassed = Math.floor(diffMs / ONE_DAY_MS);
-                    const isTrial = daysPassed < TRIAL_DAYS;
-                    const daysRemaining = Math.max(0, TRIAL_DAYS - daysPassed);
+            const isProfileComplete = profile?.onboarding_completado === true;
 
-                    setState({
-                        status: isTrial ? 'prueba' : 'impago',
-                        plan: null,
-                        loading: false,
-                        daysRemaining,
-                        isProfileComplete: false
-                    });
-                    return;
-                }
-
-                const isProfileComplete = profile.onboarding_completado === true;
-
-                // 1. Caso PAGADO
-                if (profile?.estado === 'pagado') {
-                    setState({
-                        status: 'pagado',
-                        plan: profile?.plan || null,
-                        loading: false,
-                        daysRemaining: 0,
-                        isProfileComplete
-                    });
-                    return;
-                }
-
-                // 2. Calcular tiempo para PRUEBA vs IMPAGO
-                const createdAt = new Date(profile?.created_at || new Date()).getTime();
+            // 1. New user or no profile yet
+            if (!profile) {
+                const userCreatedAt = new Date(user.created_at).getTime();
                 const now = Date.now();
-                const diffMs = now - createdAt;
+                const diffMs = now - userCreatedAt;
                 const daysPassed = Math.floor(diffMs / ONE_DAY_MS);
-
                 const isTrial = daysPassed < TRIAL_DAYS;
                 const daysRemaining = Math.max(0, TRIAL_DAYS - daysPassed);
 
-                console.log("useSubscription: Setting test/unpaid status for existing profile", { isTrial, daysRemaining, isProfileComplete });
-
-                setState({
-                    status: isTrial ? 'prueba' : 'impago',
+                return {
+                    status: isTrial ? 'prueba' : 'impago' as SubscriptionStatus,
                     plan: null,
-                    loading: false,
                     daysRemaining,
-                    isProfileComplete
-                });
+                    isProfileComplete: false
+                };
+            }
 
-            } catch (error: any) {
-                console.error('CRITICAL: Error checking subscription:', error.message || error);
-                setState(prev => ({ ...prev, loading: false, status: 'impago' }));
+            // 2. Paid status
+            if (profile.estado === 'pagado') {
+                return {
+                    status: 'pagado' as SubscriptionStatus,
+                    plan: profile.plan || null,
+                    daysRemaining: 0,
+                    isProfileComplete
+                };
+            }
+
+            // 3. Trial or Unpaid calculation
+            const createdAt = new Date(profile.created_at || new Date()).getTime();
+            const now = Date.now();
+            const diffMs = now - createdAt;
+            const daysPassed = Math.floor(diffMs / ONE_DAY_MS);
+
+            const isTrial = daysPassed < TRIAL_DAYS;
+            return {
+                status: (isTrial ? 'prueba' : 'impago') as SubscriptionStatus,
+                plan: null,
+                daysRemaining: Math.max(0, TRIAL_DAYS - daysPassed),
+                isProfileComplete
+            };
+        },
+        {
+            revalidateOnFocus: true,
+            dedupingInterval: 10000, // 10s for auth data is fine
+            onError: (err) => {
+                console.error('Error checking subscription:', err);
+                toast.error('Error al verificar suscripción');
             }
         }
+    );
 
-        checkSubscription();
-
-        // Escuchar cambios de autenticación
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log("useSubscription: Auth state change detected", event);
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                checkSubscription();
-            } else if (event === 'SIGNED_OUT') {
-                setState({
-                    status: null,
-                    plan: null,
-                    loading: false,
-                    daysRemaining: 0,
-                    isProfileComplete: false
-                });
-            }
-        });
-
-        return () => {
-            subscription.unsubscribe();
-        };
-    }, []);
-
-    return state;
+    return {
+        status: state?.status || null,
+        plan: state?.plan || null,
+        loading: isLoading || loadingSession,
+        daysRemaining: state?.daysRemaining || 0,
+        isProfileComplete: state?.isProfileComplete || false,
+        refresh: () => mutate()
+    };
 }
+
+

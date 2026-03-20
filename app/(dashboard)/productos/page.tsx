@@ -11,56 +11,47 @@ import { SellProductModal } from '@/components/productos/SellProductModal';
 import { AddProductModal } from '@/components/productos/AddProductModal';
 import { EditProductModal } from '@/components/productos/EditProductModal';
 import { toast } from 'sonner';
+import useSWR from 'swr';
 
 export default function ProductosPage() {
-    const [productos, setProductos] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isSellModalOpen, setIsSellModalOpen] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-    const fetchProductos = async () => {
-        try {
-            setLoading(true);
+    // --- SWR ---
+    const { 
+        data: productos = [], 
+        mutate, 
+        isLoading: loading 
+    } = useSWR('productos-list', async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+        const { data, error } = await supabase
+            .from('productos')
+            .select('*')
+            .eq('barberia_id', user.id)
+            .order('nombre', { ascending: true });
+        if (error) throw error;
+        return data || [];
+    });
 
-            // 1. Obtener perfil para saber qué barbería filtrar
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia')
-                .eq('id', user.id)
-                .single();
-
-            if (!profile?.nombre_barberia) {
-                console.warn('No se encontró nombre de barbería en el perfil');
-                setProductos([]);
-                return;
-            }
-
-            // 2. Traer solo los productos de esta barbería
-            const { data, error } = await supabase
-                .from('productos')
-                .select('*')
-                .eq('barberia_id', user.id)
-                .order('nombre', { ascending: true });
-
-            if (error) throw error;
-            setProductos(data || []);
-        } catch (error: any) {
-            console.error('Error fetching products:', error.message || error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // --- REALTIME ---
+    useEffect(() => {
+        const channel = supabase
+            .channel('realtime-productos')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, () => {
+                mutate();
+            })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [mutate]);
 
     const handleAddProduct = async (nombre: string, precio: number, stock: number, file: File | null) => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
-                toast.error('Sesión no encontrada. Por favor, inicia sesión.');
+                toast.error('Sesión no encontrada.');
                 return;
             }
 
@@ -68,63 +59,29 @@ export default function ProductosPage() {
             if (file) {
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-                const { error: uploadError } = await supabase.storage
-                    .from('productos')
-                    .upload(fileName, file);
-
-                if (uploadError) {
-                    console.error('ERROR STORAGE:', uploadError);
-                    throw new Error(`Error subiendo imagen: ${uploadError.message}`);
-                }
-
-                const { data } = supabase.storage
-                    .from('productos')
-                    .getPublicUrl(fileName);
-                
-                // Transformar URL de Supabase a URL de Proxy propio
-                // De: https://...supabase.co/storage/v1/object/public/productos/path
-                // A: /i/productos/path
+                const { error: uploadError } = await supabase.storage.from('productos').upload(fileName, file);
+                if (uploadError) throw new Error(`Error subiendo imagen: ${uploadError.message}`);
                 publicUrl = `/i/productos/${fileName}`;
             }
 
-            // Obtener el nombre de la barbería del perfil
-            const { data: profile, error: profileError } = await supabase
-                .from('perfiles')
-                .select('nombre_barberia')
-                .eq('id', user.id)
-                .single();
-
-            if (profileError || !profile?.nombre_barberia) {
-                toast.error('No se pudo identificar tu barbería. Revisa tu perfil.');
+            const { data: profile } = await supabase.from('perfiles').select('nombre_barberia').eq('id', user.id).single();
+            if (!profile?.nombre_barberia) {
+                toast.error('No se pudo identificar tu barbería.');
                 return;
             }
 
-            console.log('Intentando añadir producto a la barbería:', profile.nombre_barberia);
+            const { error: dbError } = await supabase.from('productos').insert([{
+                nombre, precio, venta: 0, stock, foto: publicUrl,
+                barberia: profile.nombre_barberia,
+                barberia_id: user.id
+            }]);
 
-            const { error: dbError } = await supabase
-                .from('productos')
-                .insert([{
-                    nombre,
-                    precio,
-                    venta: 0,
-                    stock,
-                    foto: publicUrl,
-                    barberia: profile.nombre_barberia, // Usamos 'barberia' como matching (legacy)
-                    barberia_id: user.id // Usamos UUID para el nuevo matching seguro
-                }]);
-
-            if (dbError) {
-                console.error('ERROR DATABASE:', dbError);
-                throw dbError;
-            }
+            if (dbError) throw dbError;
 
             toast.success(`Producto añadido: ${nombre}`);
-            fetchProductos();
+            mutate();
         } catch (error: any) {
-            console.error('Error completo añadiendo producto:', error);
-            const msg = error.message || 'Error desconocido';
-            toast.error(`Error al añadir el producto: ${msg}`);
+            toast.error(`Error al añadir: ${error.message || 'Error desconocido'}`);
         }
     };
 
@@ -135,74 +92,46 @@ export default function ProductosPage() {
 
             let publicUrl = undefined;
             if (file) {
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-                const { error: uploadError } = await supabase.storage
-                    .from('productos')
-                    .upload(fileName, file);
-
-                if (uploadError) throw uploadError;
-
-                const { data } = supabase.storage
-                    .from('productos')
-                    .getPublicUrl(fileName);
-                
-                // Transformar URL de Supabase a URL de Proxy propio
+                const fileName = `${user.id}/${Date.now()}.${file.name.split('.').pop()}`;
+                const { error: ue } = await supabase.storage.from('productos').upload(fileName, file);
+                if (ue) throw ue;
                 publicUrl = `/i/productos/${fileName}`;
             }
 
             const updateData: any = { nombre, precio, stock };
             if (publicUrl) updateData.foto = publicUrl;
 
-            const { error } = await supabase
-                .from('productos')
-                .update(updateData)
-                .eq('id', id);
-
+            const { error } = await supabase.from('productos').update(updateData).eq('id', id);
             if (error) throw error;
 
             toast.success(`Producto actualizado: ${nombre}`);
-            fetchProductos();
+            mutate();
         } catch (error: any) {
-            console.error('Error actualizando producto:', error);
             toast.error('Error al actualizar el producto');
         }
     };
 
     const handleDeleteProduct = async (id: number) => {
         if (!window.confirm('¿Estás seguro de que quieres eliminar este producto?')) return;
-
         try {
-            const { error } = await supabase
-                .from('productos')
-                .delete()
-                .eq('id', id);
-
+            const { error } = await supabase.from('productos').delete().eq('id', id);
             if (error) throw error;
-
             toast.success('Producto eliminado');
-            fetchProductos();
+            mutate();
         } catch (error: any) {
-            console.error('Error eliminando producto:', error);
             toast.error('Error al eliminar el producto');
         }
     };
 
     const handleSellProduct = async (cantidad: number, metodoPago: string) => {
         if (!selectedProduct) return;
-
-        // Validar Stock
         if ((selectedProduct.stock || 0) < cantidad) {
-            toast.error(`Stock insuficiente. Solo quedan ${selectedProduct.stock || 0} unidades.`);
+            toast.error(`Stock insuficiente.`);
             return;
         }
-
         const totalPrecio = Number(selectedProduct.precio) * cantidad;
-
         try {
             const { registerProductSale } = await import('@/app/actions/register-product-sale');
-
             const result = await registerProductSale({
                 productoId: selectedProduct.id,
                 nombreProducto: selectedProduct.nombre,
@@ -210,24 +139,14 @@ export default function ProductosPage() {
                 cantidad: cantidad,
                 metodoPago: metodoPago
             });
-
-            if (!result.success) {
-                throw new Error(result.error || 'Error desconocido');
-            }
-
+            if (!result.success) throw new Error(result.error || 'Error desconocido');
             toast.success(`Venta registrada: ${cantidad}x ${selectedProduct.nombre}`);
-            fetchProductos();
+            mutate();
             setIsSellModalOpen(false);
         } catch (error: any) {
-            console.error('Error completo en handleSellProduct:', error);
-            const errorMsg = error.message || (typeof error === 'string' ? error : 'Error desconocido');
-            toast.error(`No se pudo registrar la venta: ${errorMsg}`);
+            toast.error(`No se pudo registrar la venta: ${error.message || 'Error'}`);
         }
     };
-
-    useEffect(() => {
-        fetchProductos();
-    }, []);
 
     return (
         <main className="flex-1 p-4 lg:p-10 max-w-4xl lg:max-w-6xl mx-auto w-full pb-24 lg:pb-10">

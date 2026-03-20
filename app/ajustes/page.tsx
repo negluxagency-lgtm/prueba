@@ -225,22 +225,14 @@ export default function AjustesPage() {
                 <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
                     <Link
                         href="/perfil"
-                        className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors text-sm font-bold"
+                        className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors text-sm font-bold shrink-0"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        Volver
+                        <span className="hidden sm:inline">Volver</span>
                     </Link>
-                    <h1 className="text-sm font-black uppercase tracking-widest text-white">
+                    <h1 className="text-sm font-black uppercase tracking-widest text-white flex-1 text-center pr-8 sm:pr-20">
                         Ajustes de la <span className="text-amber-500">Barbería</span>
                     </h1>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={saving || uploadingLogo}
-                        className="flex items-center gap-2 px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs uppercase tracking-wide rounded-xl transition-all shadow-[0_4px_16px_-4px_rgba(245,158,11,0.5)] disabled:opacity-60 disabled:cursor-wait"
-                    >
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                        Guardar
-                    </button>
                 </div>
             </div>
 
@@ -251,7 +243,7 @@ export default function AjustesPage() {
                 <SectionCard title="Información básica" icon={User}>
                     {/* Logo */}
                     <div className="flex items-start gap-6">
-                        <div className="flex flex-col items-center gap-2 shrink-0">
+                        <div className="hidden sm:flex flex-col items-center gap-2 shrink-0">
                             <AvatarUpload
                                 currentImageUrl={currentAvatarUrl}
                                 onFileSelect={setAvatarFile}
@@ -487,7 +479,7 @@ export default function AjustesPage() {
                 </SectionCard>
 
                 {/* ── Save button (bottom) ── */}
-                <div className="flex justify-end pb-8">
+                <div className="flex justify-center pb-8">
                     <button
                         onClick={handleSubmit}
                         disabled={saving || uploadingLogo}

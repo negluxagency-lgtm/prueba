@@ -5,6 +5,7 @@ import { Plus, Trash2, Receipt, FileText, Loader2, ExternalLink, Upload, Calenda
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import useSWR from 'swr'
 
 interface Factura {
     id: string | number
@@ -16,41 +17,29 @@ interface Factura {
 }
 
 interface InvoicesSectionProps {
-    initialMonth?: string // YYYY-MM
+    initialMonth?: string
 }
 
 export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) {
-    const [facturas, setFacturas] = useState<Factura[]>([])
-    const [loading, setLoading] = useState(true)
-    const [showAdd, setShowAdd] = useState(false)
     const [selectedMonth, setSelectedMonth] = useState<string>(initialMonth || '')
     const [selectedType, setSelectedType] = useState<string>('')
-    const [newFactura, setNewFactura] = useState({
-        titulo: '',
-        tipo: 'otros',
-        fecha_documento: new Date().toISOString().split('T')[0]
-    })
-    const [file, setFile] = useState<File | null>(null)
-    const [saving, setSaving] = useState(false)
 
-    // Update internal state when prop changes, but allow local override if needed
-    // (though in this case keeping it synchronized is better)
+    // Update internal state when prop changes
     useEffect(() => {
         if (initialMonth !== undefined) {
             setSelectedMonth(initialMonth)
         }
     }, [initialMonth])
 
-    useEffect(() => {
-        fetchFacturas()
-    }, [selectedMonth, selectedType])
-
-    const fetchFacturas = async () => {
-        setLoading(true)
+    // --- SWR ---
+    const { 
+        data: facturas = [], 
+        isLoading: loading, 
+        mutate 
+    } = useSWR(['invoices', selectedMonth, selectedType], async () => {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        if (!user) return []
 
-        // Solo consultar facturas externas (tabla 'facturas')
         let query = supabase
             .from('facturas')
             .select('*')
@@ -61,7 +50,6 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
             const [year, month] = selectedMonth.split('-').map(Number)
             const nextMonthDate = new Date(year, month, 1)
             const endDate = nextMonthDate.toISOString().split('T')[0]
-
             query = query.gte('fecha_documento', startDate).lt('fecha_documento', endDate)
         }
 
@@ -70,14 +58,27 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
         }
 
         const { data, error } = await query.order('fecha_documento', { ascending: false })
+        if (error) throw error
+        return data || []
+    })
 
-        if (error) {
-            toast.error('Error al cargar facturas')
-        }
+    // --- REALTIME ---
+    useEffect(() => {
+        const channel = supabase
+            .channel('realtime-invoices')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'facturas' }, () => mutate())
+            .subscribe()
+        return () => { supabase.removeChannel(channel) }
+    }, [mutate])
 
-        setFacturas(data || [])
-        setLoading(false)
-    }
+    const [showAdd, setShowAdd] = useState(false)
+    const [newFactura, setNewFactura] = useState({
+        titulo: '',
+        tipo: 'otros',
+        fecha_documento: new Date().toISOString().split('T')[0]
+    })
+    const [file, setFile] = useState<File | null>(null)
+    const [saving, setSaving] = useState(false)
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -133,7 +134,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
             setNewFactura({ titulo: '', tipo: 'otros', fecha_documento: new Date().toISOString().split('T')[0] })
             setFile(null)
             setShowAdd(false)
-            fetchFacturas()
+            mutate()
         } catch (error: any) {
             console.error('Error uploading invoice:', error)
             toast.error('Error al procesar la factura')
@@ -161,8 +162,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                 console.warn('Could not delete file from storage:', e)
             }
         }
-
-        setFacturas(facturas.filter(f => f.id !== id))
+        mutate()
         toast.success('Factura eliminada')
     }
 
@@ -172,9 +172,6 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
             const urlObj = new URL(url);
             const pathParts = urlObj.pathname.split('/facturas/');
             if (pathParts.length > 1) {
-                // Return the full relative path inside the bucket (UUID/filename)
-                // However, since we want to mask it fully, we can just use the user_id UUID
-                // or the first part of the storage path.
                 const storagePath = pathParts[1];
                 return encodeURIComponent(storagePath); 
             }
@@ -183,7 +180,6 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
         }
         return null;
     }
-
 
     return (
         <div className="space-y-6">
@@ -338,7 +334,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                         )}
                     </div>
                 ) : (
-                    facturas.map((f) => (
+                    facturas.map((f: Factura) => (
                         <div key={f.id} className="group relative bg-zinc-900 border border-zinc-800 p-5 rounded-[2rem] hover:border-amber-500/30 transition-all shadow-xl hover:shadow-amber-500/5 overflow-hidden">
                             <div className="flex items-start justify-between mb-4">
                                 <div className="flex items-center gap-4">

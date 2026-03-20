@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/utils/supabase/server'
 
 /**
  * Genera una URL firmada (Signed URL) para descargar una factura de forma segura.
@@ -8,9 +8,7 @@ import { createClient } from '@supabase/supabase-js'
  */
 export async function getInvoiceSignedUrl(invoiceId: string) {
     try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-        const supabase = createClient(supabaseUrl, supabaseKey)
+        const supabase = await createClient()
 
         // 1. Obtener la ruta del storage de la factura legal
         const { data: factura, error: fetchError } = await supabase

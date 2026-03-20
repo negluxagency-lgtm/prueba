@@ -82,6 +82,8 @@ export const metadata: Metadata = {
   }
 };
 
+import { SWRProvider } from "@/components/providers/SWRProvider";
+
 export default function RootLayout({
   children,
 }: {
@@ -107,7 +109,9 @@ export default function RootLayout({
             gtag('config', 'G-JPTSPNH3EW');
           `}
         </Script>
-        {children}
+        <SWRProvider>
+            {children}
+        </SWRProvider>
         <Toaster
           position="top-right"
           toastOptions={{

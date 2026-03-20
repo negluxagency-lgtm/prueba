@@ -85,8 +85,8 @@ export function DetailedRevenueChart({ data, activeMetric, loading, range, setRa
                     onChange={(e) => setRange(e.target.value as TimeRange)}
                     className="w-full sm:w-auto bg-zinc-800 text-zinc-300 text-[10px] md:text-xs font-bold py-2 px-4 rounded-xl border border-zinc-700 outline-none hover:bg-zinc-700 cursor-pointer transition-colors"
                 >
-                    <option value="week">Esta Semana</option>
-                    <option value="month">Este Mes</option>
+                    <option value="week">Última Semana</option>
+                    <option value="month">Mes Seleccionado</option>
                     <option value="year">Este Año</option>
                 </select>
             </div>

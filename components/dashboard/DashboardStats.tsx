@@ -1,32 +1,29 @@
 import React from 'react';
-import { Plus, TrendingUp } from 'lucide-react';
-import { Appointment } from '@/types';
+import { Plus } from 'lucide-react';
 
 interface DashboardStatsProps {
-    appointments: Appointment[];
-    monthlyRevenue: number;
+    citas: number;           // Total de citas del día (desde metricas_diarias)
+    cajaEsperada: number;    // Caja Esperada del día (desde metricas_diarias)
+    cajaReal: number;        // Caja Real del día (desde metricas_diarias)
     onNewAppointment: () => void;
 }
 
-export const DashboardStats: React.FC<DashboardStatsProps> = ({ appointments, monthlyRevenue, onNewAppointment }) => {
-    const totalGanancias = appointments.reduce((total, cita) => total + (Number(cita.Precio) || 0), 0);
-
+export const DashboardStats: React.FC<DashboardStatsProps> = ({ citas, cajaEsperada, cajaReal, onNewAppointment }) => {
     return (
         <div className="flex flex-col lg:flex-row items-end lg:items-center gap-2 h-full w-full">
             <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 w-full h-full">
                 <div className="bg-zinc-900/80 border border-zinc-800 p-2.5 lg:p-6 rounded-xl lg:rounded-3xl flex-1 flex flex-col justify-center">
                     <p className="text-[7px] lg:text-[10px] text-zinc-500 uppercase font-black mb-0.5 lg:mb-1">Citas</p>
-                    <p className="text-base lg:text-3xl font-bold">{appointments.length}</p>
+                    <p className="text-base lg:text-3xl font-bold">{citas}</p>
                 </div>
                 <div className="bg-zinc-900/80 border border-zinc-800 p-2.5 lg:p-6 rounded-xl lg:rounded-3xl flex-1 border-l-2 lg:border-l-4 border-l-amber-500 shadow-xl flex flex-col justify-center">
                     <p className="text-[7px] lg:text-[10px] text-zinc-500 uppercase font-black mb-0.5 lg:mb-1">Caja Esperada</p>
-                    <p className="text-base lg:text-3xl font-bold text-amber-500">{totalGanancias}€</p>
+                    <p className="text-base lg:text-3xl font-bold text-amber-500">{cajaEsperada}€</p>
                 </div>
-                {/* CAJA REAL (SOLO CONFIRMADAS) */}
                 <div className="bg-zinc-900/80 border border-zinc-800 p-2.5 lg:p-6 rounded-xl lg:rounded-3xl flex-1 border-l-2 lg:border-l-4 border-l-emerald-500 shadow-xl flex flex-col justify-center">
                     <p className="text-[7px] lg:text-[10px] text-zinc-500 uppercase font-black mb-0.5 lg:mb-1">Caja Real</p>
                     <p className="text-base lg:text-3xl font-bold text-emerald-500">
-                        {monthlyRevenue}€
+                        {cajaReal}€
                     </p>
                 </div>
             </div>

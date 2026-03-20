@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/utils/supabase/server'
 
 // Simple definition to keep the response typed
 type ActionResponse = {
@@ -14,10 +14,7 @@ export async function setBarberPin(barberId: string, pin: string): Promise<Actio
     }
 
     try {
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        )
+        const supabase = await createClient()
 
         const { data: barber, error: fetchError } = await supabase
             .from('barberos')
@@ -49,10 +46,7 @@ export async function setBarberPin(barberId: string, pin: string): Promise<Actio
 }
 
 export async function getStaffAgenda(shopId: string, barberName: string, dateStr: string, showAll: boolean = false, barberId?: string) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = await createClient()
 
     console.log(`[getStaffAgenda] Fetching for shop: "${shopId}", barber: "${barberName}", barberId: "${barberId}", date: "${dateStr}"`)
 
@@ -72,8 +66,9 @@ export async function getStaffAgenda(shopId: string, barberName: string, dateStr
 
     if (!showAll) {
         if (barberId) {
-             query = query.or(`barbero_id.eq."${barberId}",barbero.eq."${barberName}",barbero.eq.Cualquiera,barbero.is.null`)
+             query = query.or(`barbero_id.eq."${barberId}",barbero_id.is.null,barbero.eq.Cualquiera`)
         } else {
+             console.warn('[getStaffAgenda] WARNING: Executing legacy name match. Missing barberId!')
              query = query.or(`barbero.eq."${barberName}",barbero.eq.Cualquiera,barbero.is.null`)
         }
     }
@@ -95,10 +90,7 @@ export async function getStaffAgenda(shopId: string, barberName: string, dateStr
 }
 
 export async function getStaffCuts(shopId: string, barberName: string, monthStr: string, barberId?: string) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = await createClient()
 
     const [year, m] = monthStr.split('-').map(Number)
     const lastDay = new Date(year, m, 0).getDate()
@@ -109,13 +101,14 @@ export async function getStaffCuts(shopId: string, barberName: string, monthStr:
         .from('citas')
         .select('servicio, Precio')
         .eq('barberia_id', shopId)
-        .eq('confirmada', true)
+        .eq('cancelada', false)
         .gte('Dia', startDate)
         .lte('Dia', endDate)
 
     if (barberId) {
-        query = query.or(`barbero_id.eq."${barberId}",barbero.eq."${barberName}"`)
+        query = query.eq('barbero_id', barberId)
     } else {
+        console.warn('[getStaffCuts] WARNING: Executing legacy name match. Missing barberId!')
         query = query.eq('barbero', barberName)
     }
 
@@ -160,10 +153,7 @@ export async function getStaffCuts(shopId: string, barberName: string, monthStr:
 }
 
 export async function logStaffOvertime(barberId: string, shopId: string, hours: number, dateStr: string): Promise<ActionResponse> {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = await createClient()
 
     const { data: barber } = await supabase.from('barberos').select('user_id').eq('id', barberId).single()
     const adminUserId = barber?.user_id || shopId
@@ -190,12 +180,9 @@ export async function updateStaffAppointmentStatus(
     pago?: string,
     barberId?: string
 ): Promise<ActionResponse> {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = await createClient()
 
-    let dbValues: any = { confirmada: false, cancelada: false }
+    let dbValues: any = { confirmada: null, cancelada: null }
     if (status === 'confirmada') {
         dbValues = { confirmada: true, cancelada: false }
         if (barberName) dbValues.barbero = barberName
@@ -218,10 +205,7 @@ export async function updateStaffAppointmentStatus(
 }
 
 export async function deleteStaffAppointment(id: number): Promise<ActionResponse> {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = await createClient()
 
     const { error } = await supabase
         .from('citas')
@@ -237,10 +221,7 @@ export async function deleteStaffAppointment(id: number): Promise<ActionResponse
 }
 
 export async function saveStaffAppointment(data: any, editingId: number | null, shopId: string): Promise<ActionResponse> {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = await createClient()
 
     const appointmentData = {
         Nombre: data.Nombre,
@@ -280,10 +261,7 @@ export async function saveStaffAppointment(data: any, editingId: number | null, 
 }
 
 export async function getShopServices(shopId: string) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = await createClient()
 
     const { data, error } = await supabase
         .from('servicios')
@@ -300,10 +278,7 @@ export async function getShopServices(shopId: string) {
 
 export async function updateBarberPhoto(barberId: string, photoUrl: string): Promise<ActionResponse> {
     try {
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        )
+        const supabase = await createClient()
 
         const { error: updateError } = await supabase
             .from('barberos')
@@ -323,10 +298,7 @@ export async function updateBarberPhoto(barberId: string, photoUrl: string): Pro
 
 export async function verifyBarberPin(barberId: string, enteredPin: string): Promise<ActionResponse> {
     try {
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        )
+        const supabase = await createClient()
 
         const { data, error } = await supabase
             .from('barberos')
@@ -354,10 +326,7 @@ export async function verifyBarberPin(barberId: string, enteredPin: string): Pro
 }
 
 export async function getBarberAbsences(barberId: string): Promise<string[]> {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = await createClient()
     const { data } = await supabase
         .from('barberos')
         .select('fechas_cierre')
@@ -370,10 +339,7 @@ export async function getBarberAbsences(barberId: string): Promise<string[]> {
 
 export async function markBarberAbsence(barberId: string, date: string, remove = false): Promise<ActionResponse> {
     try {
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        )
+        const supabase = await createClient()
 
         const { data, error: fetchError } = await supabase
             .from('barberos')

@@ -1,239 +1,204 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Appointment, AppointmentFormData } from "@/types";
+import useSWR, { useSWRConfig } from "swr";
+import { toast } from "sonner";
 
 export type AppointmentStatus = 'pendiente' | 'confirmada' | 'cancelada';
 
 export function useAppointments(selectedDate: string) {
-    const [appointments, setAppointments] = useState<Appointment[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [monthlyRevenue, setMonthlyRevenue] = useState(0);
-    const [monthlyCuts, setMonthlyCuts] = useState(0);
-    const [monthlyProducts, setMonthlyProducts] = useState(0);
-    const [error, setError] = useState<string | null>(null);
-    const [userPlan, setUserPlan] = useState<string>('basico');
+    const { mutate } = useSWRConfig();
+    const [userId, setUserId] = useState<string | null>(null);
 
-    const getCitas = async () => {
-        try {
-            setLoading(true);
+    // Get current user ID
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }) => {
+            if (data.user) setUserId(data.user.id);
+        });
+    }, []);
 
-            // 1. SEGURIDAD: Obtener usuario autenticado
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("No hay sesión activa");
-
-            // 1.1. Fetch del plan del usuario
-            const { data: profileData } = await supabase
+    // 1. Fetch Plan del Usuario
+    const { data: userPlan = 'basico' } = useSWR(
+        userId ? ['user-plan', userId] : null,
+        async () => {
+            const { data } = await supabase
                 .from('perfiles')
                 .select('plan')
-                .eq('id', user.id)
+                .eq('id', userId)
                 .single();
+            return data?.plan || 'basico';
+        }
+    );
 
-            if (profileData?.plan) {
-                setUserPlan(profileData.plan);
-            }
-
-            // 2. Fetch citas del día (FILTRADO POR BARBERÍA usando barberia_id)
-            const { data: dayData, error: dayError } = await supabase
+    // 2. Fetch Citas del Día
+    const { 
+        data: appointments = [], 
+        error: appointmentsError, 
+        isLoading: appointmentsLoading,
+        mutate: mutateAppointments
+    } = useSWR(
+        userId && selectedDate ? ['appointments', selectedDate, userId] : null,
+        async () => {
+            const { data, error } = await supabase
                 .from('citas')
                 .select('*')
                 .eq('Dia', selectedDate)
-                .eq('barberia_id', user.id) // 🔒 FILTRO DE SEGURIDAD con UUID
+                .eq('barberia_id', userId)
                 .order('Hora', { ascending: true });
-
-            if (dayError) throw dayError;
-            if (dayData) setAppointments(dayData as Appointment[]);
-
-            // 3. Fetch ingresos mensuales (FILTRADO POR BARBERÍA usando barberia_id)
-            const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-
-            // Optimizada: Una sola query para métricas
-            const { data: monthData, error: monthError } = await supabase
-                .from('citas')
-                .select('Precio, confirmada')
-                .gte('Dia', startOfMonth)
-                .eq('barberia_id', user.id); // 🔒 FILTRO DE SEGURIDAD con UUID
-
-            if (!monthError && monthData) {
-                // 1. Caja Real: Suma TODO lo confirmado (solo servicios ahora)
-                const totalRevenue = monthData
-                    .filter(item => item.confirmada)
-                    .reduce((acc, curr) => acc + (Number(curr.Precio) || 0), 0);
-
-                setMonthlyRevenue(totalRevenue);
-
-                // 2. Citas: Solo citas confirmadas
-                const cutsConfirmed = monthData.filter(c => c.confirmada).length;
-                setMonthlyCuts(cutsConfirmed);
-
-                // 3. Productos: Ahora en tabla separada ventas_productos
-                setMonthlyProducts(0);
-            }
-
-        } catch (err: any) {
-            setError(err.message);
-            console.log("Error de Supabase:", err.message);
-        } finally {
-            setLoading(false);
+            
+            if (error) throw error;
+            return data as Appointment[];
         }
-    };
+    );
+
+    // 3. Fetch Métricas Mensuales
+    const now = new Date();
+    const mesActual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    const { data: monthlyMetrics } = useSWR(
+        userId ? ['monthly-metrics', mesActual, userId] : null,
+        async () => {
+            const { data } = await supabase
+                .from('metricas_mensuales')
+                .select('ingresos, cortes, productos')
+                .eq('barberia_id', userId)
+                .eq('mes', mesActual)
+                .single();
+            return data || { ingresos: 0, cortes: 0, productos: 0 };
+        }
+    );
 
     const saveCita = async (formData: AppointmentFormData, editingId: number | null) => {
         try {
-            // Obtener usuario autenticado
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("No autenticado");
+            if (!userId) throw new Error("No autenticado");
 
-            let error;
+            const citaData = {
+                Nombre: formData.Nombre,
+                servicio: formData.servicio,
+                Servicio_id: formData.Servicio_id,
+                Dia: formData.Dia,
+                Hora: formData.Hora,
+                Telefono: formData.Telefono,
+                Precio: formData.Precio,
+                confirmada: formData.confirmada ?? false,
+                barbero: formData.barbero || null,
+                barbero_id: formData.barbero_id || null,
+                barberia_id: userId,
+                pago: formData.pago || null
+            };
 
             if (editingId) {
-                // --- EDITAR --- (RLS asegura que solo edite sus propias citas)
-                const { error: updateError } = await supabase
+                const { error } = await supabase
                     .from('citas')
-                    .update({
-                        Nombre: formData.Nombre,
-                        servicio: formData.servicio,
-                        Servicio_id: formData.Servicio_id,
-                        Dia: formData.Dia,
-                        Hora: formData.Hora,
-                        Telefono: formData.Telefono,
-                        Precio: formData.Precio,
-                        confirmada: formData.confirmada,
-                        barbero: formData.barbero || null, // Include barber
-                        barbero_id: formData.barbero_id || null, // Include barber ID
-                        pago: formData.pago || null
-                    })
+                    .update(citaData)
                     .eq('id', editingId)
-                    .eq('barberia_id', user.id); // 🔒 UUID check
-                error = updateError;
+                    .eq('barberia_id', userId);
+                if (error) throw error;
             } else {
-                // --- CREAR --- Cumple con RLS: barberia_id = auth.uid()
-                console.log('📝 Creating appointment with data:', {
-                    Nombre: formData.Nombre,
-                    Servicio: formData.servicio, // Log cleanup
-                    Precio: formData.Precio
-                });
-
-                const { data: newCita, error: insertError } = await supabase
+                const { data: newCita, error } = await supabase
                     .from('citas')
-                    .insert([{
-                        Nombre: formData.Nombre,
-                        servicio: formData.servicio,
-                        Servicio_id: formData.Servicio_id,
-                        Dia: formData.Dia,
-                        Hora: formData.Hora,
-                        Telefono: formData.Telefono,
-                        Precio: formData.Precio,
-                        confirmada: formData.confirmada ?? false,
-                        barbero: formData.barbero || null, // Include barber
-                        barbero_id: formData.barbero_id || null, // Include barber ID
-                        barberia_id: user.id, // 🔒 UUID requerido por RLS
-                        pago: formData.pago || null
-                    }])
-                    .select('uuid, Dia')
+                    .insert([citaData])
+                    .select('uuid')
                     .single();
-                error = insertError;
-
-                if (!insertError && newCita) {
-                    getCitas();
-                    return { success: true, uuid: newCita.uuid as string };
-                }
+                
+                if (error) throw error;
+                // Si la fecha coincide, revalidar localmente
+                if (formData.Dia === selectedDate) mutateAppointments();
+                return { success: true, uuid: newCita?.uuid };
             }
 
-            if (error) throw error;
-            getCitas();
+            mutateAppointments();
             return { success: true };
         } catch (err: any) {
             return { success: false, error: err.message };
         }
     };
 
-    // ... (updateAppointmentStatus se mantiene igual por ahora, RLS debe protegerlo, 
-    // pero idealmente también debería filtrar. Lo dejamos simple para no romper lógica compleja si la hubiera)
-
     const updateAppointmentStatus = async (id: number, verifyStatus: AppointmentStatus, pago?: string) => {
-        // Mapeo de estados a valores de BD
-        let dbValues: any = { confirmada: false, cancelada: false };
+        let dbValues: any = { confirmada: null, cancelada: null };
         if (verifyStatus === 'confirmada') dbValues = { confirmada: true, cancelada: false, ...(pago ? { pago } : {}) };
         if (verifyStatus === 'cancelada') dbValues = { confirmada: false, cancelada: true };
 
-        const originalAppointments = [...appointments];
-        setAppointments(prev => prev.map(cita =>
+        // Optimistic Update
+        const updatedAppointments = appointments.map(cita =>
             cita.id === id ? { ...cita, ...dbValues } : cita
-        ));
+        );
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
+            // Actualizamos el caché local de inmediato
+            mutateAppointments(updatedAppointments, false);
 
             const { data, error } = await supabase
                 .from('citas')
                 .update(dbValues)
                 .eq('id', id)
+                .eq('barberia_id', userId)
                 .select();
 
             if (error) throw error;
             if (!data || data.length === 0) throw new Error("No permitido");
 
+            // Revalidar para asegurar sincronía final
+            mutateAppointments();
             return { success: true };
         } catch (err: any) {
-            setAppointments(originalAppointments);
+            // Rollback en caso de error
+            mutateAppointments();
             return { success: false, error: err.message };
         }
     };
 
     const deleteCita = async (id: number) => {
+        // Optimistic Update
+        const updatedAppointments = appointments.filter(c => c.id !== id);
+        
         try {
-            const { error } = await supabase.from('citas').delete().eq('id', id);
+            mutateAppointments(updatedAppointments, false);
+            const { error } = await supabase.from('citas').delete().eq('id', id).eq('barberia_id', userId);
             if (error) throw error;
-            getCitas();
+            
+            mutateAppointments();
             return { success: true };
         } catch (err: any) {
+            mutateAppointments();
             return { success: false, error: err.message };
         }
     };
 
+    // Realtime Subscription
     useEffect(() => {
-        let subscription: any;
+        if (!userId) return;
 
-        const setupRealtime = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            // Fetch inicial
-            getCitas();
-
-            // Suscripción FILTRADA usando barberia_id
-            subscription = supabase
-                .channel('citas-realtime')
-                .on('postgres_changes', {
-                    event: '*',
-                    schema: 'public',
-                    table: 'citas',
-                    filter: `barberia_id=eq.${user.id}` // 🔒 FILTRO REALTIME con UUID
-                }, () => {
-                    setTimeout(() => getCitas(), 500);
-                })
-                .subscribe();
-        };
-
-        setupRealtime();
+        const subscription = supabase
+            .channel(`citas-${selectedDate}-${userId}`)
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'citas',
+                filter: `barberia_id=eq.${userId}`
+            }, () => {
+                // Revalidamos SWR al detectar cambios
+                mutateAppointments();
+            })
+            .subscribe();
 
         return () => {
-            if (subscription) supabase.removeChannel(subscription);
+            supabase.removeChannel(subscription);
         };
-    }, [selectedDate]);
+    }, [selectedDate, userId, mutateAppointments]);
 
     return {
         appointments,
-        monthlyRevenue,
-        monthlyCuts,
-        monthlyProducts,
+        monthlyRevenue: monthlyMetrics?.ingresos || 0,
+        monthlyCuts: monthlyMetrics?.cortes || 0,
+        monthlyProducts: monthlyMetrics?.productos || 0,
         userPlan,
-        loading,
-        error,
+        loading: appointmentsLoading,
+        error: appointmentsError?.message || null,
         saveCita,
         deleteCita,
-        updateAppointmentStatus, // Nueva función expuesta
-        refreshAppointments: getCitas
+        updateAppointmentStatus,
+        refreshAppointments: () => mutateAppointments()
     };
 }
+

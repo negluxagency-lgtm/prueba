@@ -165,18 +165,18 @@ export default function SalaryCalculatorModal({ onClose, inline }: SalaryCalcula
                     (stats as any[]).map(barber => {
                         const row = getRow(barber.nombre)
                         return (
-                            <div key={barber.nombre} className="bg-zinc-900 border border-zinc-800 rounded-[1.5rem] md:rounded-[3rem] p-4 md:p-10 relative overflow-hidden group/card shadow-2xl transition-all hover:border-zinc-700">
+                            <div key={barber.nombre} className="bg-zinc-900 border border-zinc-800 rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-6 relative overflow-hidden group/card shadow-2xl transition-all hover:border-zinc-700">
                                 <button
                                     onClick={() => toggleBarber(barber.nombre)}
-                                    className="w-full flex flex-col md:flex-row md:items-start justify-between gap-4 md:gap-8 mb-6 md:mb-10 relative z-10 text-left cursor-pointer"
+                                    className={cn("w-full flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 relative z-10 text-left cursor-pointer", expandedBarbers[barber.nombre] ? "mb-6 md:mb-8" : "mb-0")}
                                 >
                                     <div className="flex items-center gap-3 md:gap-5 flex-1">
-                                        <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-3xl bg-amber-500 flex items-center justify-center text-xl md:text-2xl font-black text-black shadow-lg shrink-0">
+                                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-amber-500 flex items-center justify-center text-xl md:text-xl font-black text-black shadow-lg shrink-0">
                                             {barber.nombre.charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex items-center justify-between">
-                                                <h3 className="text-lg md:text-3xl font-black text-white italic tracking-tighter uppercase leading-none">{barber.nombre}</h3>
+                                                <h3 className="text-lg md:text-2xl font-black text-white italic tracking-tighter uppercase leading-none">{barber.nombre}</h3>
                                                 <div className="p-2 hover:bg-white/10 rounded-full transition-all border border-white/5 ml-2">
                                                     <ChevronRight className={cn("w-5 h-5 text-amber-500 transition-transform duration-300", expandedBarbers[barber.nombre] && "rotate-90")} />
                                                 </div>

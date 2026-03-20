@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Check, Star, Shield, X, Rocket, Zap, Heart, TrendingUp } from 'lucide-react';
+import { Check, Star, Shield, X, Rocket, Zap, Heart, TrendingUp, Loader2 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import ManageSubscriptionButton from '@/components/ManageSubscriptionButton';
 
@@ -35,6 +35,13 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             period: "/mes",
             description: "Para barberos independientes que están empezando.",
             features: ["Agenda ilimitada", "Página de citas personalizada", "Gestión de gastos e ingresos", "Gestión de clientes", "Reportes básicos", "Gestión de productos"],
+            perfilFeatures: [
+                "Agenda ilimitada",
+                "Página de citas personalizada",
+                "Gestión de gastos e ingresos",
+                "Gestión de clientes",
+                "Gestión de productos"
+            ],
             link: "https://buy.stripe.com/5kQ00i2WL7FG1Mj3jH28803",
             highlight: false,
             icon: Shield
@@ -45,6 +52,17 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             period: "/mes",
             description: "El más popular. Potencia total para tu negocio.",
             features: ["Todo lo del plan Básico", "Métricas avanzadas", "Gestión de equipo y fichajes", "Portal personalizdo para tus barberos", "Recordatorios de citas por WhatsApp", "Gestión de Facturas y Salarios (Cumplimiento Veri*factu obligatorio 2026)"],
+            perfilFeatures: [
+                "Agenda ilimitada",
+                "Página de citas personalizada",
+                "Gestión de gastos e ingresos",
+                "Gestión de clientes",
+                "Gestión de productos",
+                "Métricas avanzadas",
+                "Gestión de equipo y fichajes",
+                "Portal personalizdo para tus barberos",
+                "Recordatorios de citas por WhatsApp"
+            ],
             link: "https://buy.stripe.com/fZu8wOcxl1hi0Ifg6t28804",
             highlight: true,
             icon: Star
@@ -54,7 +72,22 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             price: "99€",
             period: "/mes",
             description: "Para barberías profesionales.",
-            features: ["Todo lo del plan Profesional", "Soporte 24/7", "Consultoría mensual", "Gestión Contable Total"],
+            features: ["Todo lo del plan Profesional", "Soporte 24/7", "Consultoría mensual", "Gestión Contable Total", "Filtro Reviews positivas de Google"],
+            perfilFeatures: [
+                "Agenda ilimitada",
+                "Página de citas personalizada",
+                "Gestión de gastos e ingresos",
+                "Gestión de clientes",
+                "Gestión de productos",
+                "Métricas avanzadas",
+                "Gestión de equipo y fichajes",
+                "Portal personalizdo para tus barberos",
+                "Recordatorios de citas por WhatsApp",
+                "Soporte 24/7",
+                "Consultoría mensual",
+                "Gestión Contable Total",
+                "Filtro Reviews positivas de Google"
+            ],
             link: "https://buy.stripe.com/5kQeVc40PbVWgHd2fD28802",
             highlight: false,
             icon: Shield
@@ -64,7 +97,9 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
             price: "149€",
             period: "/mes",
             description: "Una IA personalizada para tu barbería para que nunca jamás tengas que agendar una cita manualmente, da igual por donde te coctacten.",
+            perfilDescription: "Enhorabuena, con este plan tienes debloqueado el software al completo incluyendo: Agenda ilimitada, Página de citas personalizada, Gestión de gastos e ingresos, Gestión de equipo, fichajes y salarios, soporte inmediato, Consultoría mensual.\n\nY lo más importante, una IA personalizada de tu barbería que contestará a tus llamadas y mensajes.",
             features: ["Todo lo del plan Premium", "Apartado de mensajes con clientes", "Tu IA personalizada responde WhatsApp, al teléfono y agenda citas 24/7", "Soporte inmediato"],
+            perfilFeatures: [],
             link: "https://wa.me/34623064127",
             highlight: false,
             icon: Shield,
@@ -73,16 +108,30 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
     ];
 
     const isLock = variant === 'lock';
+    const isCurrentPlanView = status === 'pagado' && !showAllPlans;
 
     // Filtrar planes si ya está pagado (solo si showAllPlans === false)
     const displayPlans = (!showAllPlans && status === 'pagado' && paidPlan)
-        ? ALL_PLANS.filter(p => p.name.toLowerCase() === paidPlan.toLowerCase())
+        ? ALL_PLANS.filter(p => {
+              const nameLower = p.name.toLowerCase();
+              const paidLower = paidPlan.toLowerCase();
+              return nameLower === paidLower || (nameLower === 'ia personalizada' && paidLower === 'ia');
+          })
         : ALL_PLANS;
 
     const normalPlans = displayPlans.filter(p => !p.isContact);
     const iaPlan = displayPlans.find(p => p.isContact);
 
-    if (subLoading) return null;
+    if (subLoading) {
+        if (isSection) {
+            return (
+                <div className="w-full flex justify-center py-12">
+                    <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
+                </div>
+            );
+        }
+        return null;
+    }
 
     return (
         <div className={`${isSection ? '' : 'h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-start p-4 lg:p-8 pt-20 lg:pt-8 overflow-y-auto relative'}`}>
@@ -101,15 +150,15 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.05),transparent_70%)] pointer-events-none" />
             )}
 
-            <div className="max-w-5xl w-full relative z-10 pb-32 lg:pb-0">
+            <div className="max-w-5xl w-full relative z-10 pb-0 lg:pb-0">
                 <div className="text-center mb-8 lg:mb-16 mt-8 lg:mt-0">
                     <h1 className="text-3xl lg:text-5xl font-black italic uppercase tracking-tighter text-white mb-3 lg:mb-4 leading-tight">
-                        {status === 'pagado' && variant !== 'pricing' ? (
+                        {isCurrentPlanView ? (
                             <>Tu <span className="text-amber-500">Plan Actual</span></>
                         ) : isLock ? (
                             <>Activa <span className="text-amber-500">Nelux Barbershop</span></>
                         ) : (
-                            <>Mejora tu <span className="text-amber-500">Plan</span></>
+                            <>Planes <span className="text-amber-500">Disponibles</span></>
                         )}
                     </h1>
                     <p className="text-zinc-400 text-sm lg:text-xl max-w-2xl mx-auto px-4">
@@ -158,11 +207,11 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                             </div>
 
                             <p className="text-zinc-400 text-xs lg:text-sm mb-6 lg:mb-8 min-h-[40px] leading-relaxed">
-                                {plan.description}
+                                {isCurrentPlanView && plan.perfilDescription ? plan.perfilDescription : plan.description}
                             </p>
 
                             <ul className="space-y-3 lg:space-y-4 mb-6 lg:mb-8 flex-1">
-                                {plan.features.map((feature, i) => {
+                                {(isCurrentPlanView ? plan.perfilFeatures : plan.features).map((feature, i) => {
                                     const isNegative = feature === "Sin tecnologías IA";
 
                                     return (
@@ -226,12 +275,12 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                     </div>
                                 </div>
 
-                                <p className={`text-zinc-300 leading-relaxed max-w-2xl mx-auto lg:mx-0 border-l-2 border-amber-500/30 pl-4 italic mb-6 ${isSection ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}`}>
-                                    "{iaPlan.description}"
+                                <p className={`text-zinc-300 leading-relaxed max-w-2xl mx-auto lg:mx-0 border-l-2 border-amber-500/30 pl-4 mb-6 ${isSection ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'} ${isCurrentPlanView ? 'whitespace-pre-wrap' : 'italic'}`}>
+                                    {isCurrentPlanView && iaPlan.perfilDescription ? iaPlan.perfilDescription : `"${iaPlan.description}"`}
                                 </p>
 
                                 <ul className={`grid gap-3 lg:gap-4 mb-8 lg:mb-0 text-left ${isSection ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
-                                    {iaPlan.features.map((feature, i) => (
+                                    {(isCurrentPlanView ? iaPlan.perfilFeatures : iaPlan.features).map((feature, i) => (
                                         <li key={i} className={`flex items-start gap-3 ${isSection ? 'text-[10px] lg:text-xs' : 'text-xs lg:text-sm'}`}>
                                             <Check className={`shrink-0 text-amber-500 mt-0.5 ${isSection ? 'w-3 h-3 lg:w-4 lg:h-4' : 'w-4 h-4 lg:w-5 lg:h-5'}`} />
                                             <span className="leading-tight text-zinc-300 font-medium">
@@ -261,9 +310,11 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                 </p>
                             </div>
                         </div>
-                        <p className={`text-center font-bold mt-6 text-amber-500/80 hover:text-amber-500 transition-colors ${isSection ? 'text-sm' : 'text-base lg:text-lg'}`}>
-                            ¿Tienes una cadena de barberías o franquicia? <a href="https://wa.me/34623064127" target="_blank" rel="noopener noreferrer" className="underline decoration-amber-500/50 underline-offset-4 hover:decoration-amber-500 transition-colors cursor-pointer">Contáctanos para una solución a medida.</a>
-                        </p>
+                        {!isSection && (
+                            <p className={`text-center font-bold mt-6 text-amber-500/80 hover:text-amber-500 transition-colors ${isSection ? 'text-sm' : 'text-base lg:text-lg'}`}>
+                                ¿Tienes una cadena de barberías o franquicia? <a href="https://wa.me/34623064127" target="_blank" rel="noopener noreferrer" className="underline decoration-amber-500/50 underline-offset-4 hover:decoration-amber-500 transition-colors cursor-pointer">Contáctanos para una solución a medida.</a>
+                            </p>
+                        )}
                     </div>
                 )}
 
@@ -360,7 +411,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                     </div>
                 )}
 
-                <p className={`text-center text-zinc-600 text-[10px] lg:text-xs ${isSection ? 'mt-4' : 'mt-8 lg:mt-12 pb-8 lg:pb-0'}`}>
+                <p className={`text-center text-zinc-600 text-[10px] lg:text-xs ${isSection ? 'mt-4' : 'mt-8 lg:mt-12'}`}>
                     🔒 Pagos procesados de forma segura por Stripe. Puedes cancelar en cualquier momento.
                 </p>
             </div>

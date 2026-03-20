@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { Target } from 'lucide-react';
 import { ChartDataPoint } from '@/hooks/useTrends';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface MonthlyGoalsChartProps {
     data: ChartDataPoint[];
@@ -26,9 +27,29 @@ const MonthlyGoalsChart: React.FC<MonthlyGoalsChartProps> = ({ data, loading }) 
 
     if (loading) {
         return (
-            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl lg:rounded-[2rem] border border-zinc-800 p-6 shadow-2xl w-full h-full flex flex-col animate-pulse">
-                <div className="h-6 w-48 bg-zinc-800 rounded mb-8"></div>
-                <div className="flex-1 bg-zinc-800/50 rounded-xl"></div>
+            <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl lg:rounded-[2rem] border border-zinc-800 p-8 shadow-2xl w-full h-full flex flex-col animate-in fade-in duration-500">
+                <div className="flex items-center gap-3 mb-8">
+                    <Skeleton className="w-8 h-8 rounded-lg" />
+                    <Skeleton className="w-48 h-6 rounded-lg" />
+                </div>
+                <div className="flex-1 space-y-6">
+                    <div className="h-full w-full relative">
+                        <Skeleton className="absolute inset-0 rounded-xl" />
+                        <div className="absolute inset-0 flex flex-col justify-around p-4">
+                            {[1, 2, 3, 4].map(i => (
+                                <Skeleton key={i} className="w-full h-px bg-zinc-800" />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                <div className="flex gap-4 mt-6">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center gap-2">
+                            <Skeleton className="w-3 h-3 rounded-full" />
+                            <Skeleton className="w-16 h-3 rounded-md" />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }

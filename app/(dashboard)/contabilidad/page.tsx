@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { BarChart3, Clock, FileText, Filter, X, DollarSign, Users } from 'lucide-react'
+import { BarChart3, Clock, FileText, Filter, X, DollarSign, Users, Loader2, Download, Receipt, Calculator, BookOpen } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
+import useSWR from 'swr'
 
 // ── Existing components ────────────────────────────────────────────────────────
 import ExpensesSection from '@/components/accounting/ExpensesSection'
@@ -13,15 +14,14 @@ import AccountingSummary from '@/components/accounting/AccountingSummary'
 import AttendanceReportModal from '@/components/accounting/AttendanceReportModal'
 import SalaryCalculatorModal from '@/components/trends/SalaryCalculatorModal'
 import { PaymentReportModal } from '@/components/accounting/PaymentReportModal'
-import { AccountingDetailPDF } from '@/components/accounting/AccountingDetailPDF'
+import { AccountingReportModal } from '@/components/accounting/AccountingReportModal'
 import AutonomoGuide from '@/components/accounting/AutonomoGuide'
-import { PDFDownloadLink } from '@react-pdf/renderer'
-import { Loader2, Download, Receipt, Calculator, BookOpen } from 'lucide-react'
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 const TABS = [
     { id: 'financiera', label: 'Gestión Financiera', icon: BarChart3 },
-    { id: 'jornadas', label: 'Jornadas y Salarios', icon: Clock },
+    { id: 'jornadas', label: 'Control de Presencia', icon: Clock },
+    { id: 'salarios', label: 'Liquidaciones', icon: Calculator },
     { id: 'facturas', label: 'Facturas e Informes', icon: FileText },
 ] as const
 
@@ -31,50 +31,37 @@ export default function AccountingPage() {
     const [activeTab, setActiveTab] = useState<TabId>('financiera')
     const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().substring(0, 7))
 
-    const [isAutonomo, setIsAutonomo] = useState(false)
-    const [barberCount, setBarberCount] = useState(0)
-    const [plan, setPlan] = useState<string>('')
-    const [netIncome, setNetIncome] = useState(0)
-    const [shopName, setShopName] = useState('Mi Barbería')
+    // --- SWR FOR USER DATA & TEAM ---
+    const { data: accountingProfile } = useSWR('accounting-profile', async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return null
 
-    const [reportEntries, setReportEntries] = useState<any[]>([])
-    const [totalIncome, setTotalIncome] = useState(0)
-    const [totalExpenses, setTotalExpenses] = useState(0)
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-    const [loadingReportData, setLoadingReportData] = useState(false)
+        const [pRes, bRes] = await Promise.all([
+            supabase.from('perfiles').select('Autonomo, nombre_barberia, plan').eq('id', user.id).single(),
+            supabase.from('barberos').select('*', { count: 'exact', head: true }).eq('barberia_id', user.id)
+        ])
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            const { data: profile } = await supabase
-                .from('perfiles')
-                .select('Autonomo, nombre_barberia, plan')
-                .eq('id', user.id)
-                .single()
-
-            if (profile) {
-                setIsAutonomo(!!profile.Autonomo)
-                setShopName(profile.nombre_barberia || 'Mi Barbería')
-                setPlan(profile.plan || '')
-            }
-
-
-            const { count } = await supabase
-                .from('barberos')
-                .select('*', { count: 'exact', head: true })
-                .eq('barberia_id', user.id)
-
-            setBarberCount(count || 0)
+        return {
+            isAutonomo: !!pRes.data?.Autonomo,
+            shopName: pRes.data?.nombre_barberia || 'Mi Barbería',
+            plan: pRes.data?.plan || '',
+            barberCount: bRes.count || 0
         }
-        fetchUserData()
-    }, [])
+    })
 
-    // Ensure we don't stay on 'jornadas' if it's hidden
+    const isAutonomo = accountingProfile?.isAutonomo ?? false
+    const barberCount = accountingProfile?.barberCount ?? 0
+    const plan = accountingProfile?.plan ?? ''
+    const shopName = accountingProfile?.shopName ?? 'Mi Barbería'
+
+    const [netIncome, setNetIncome] = useState(0)
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+    const [isAccountingModalOpen, setIsAccountingModalOpen] = useState(false)
+
+    // Ensure we don't stay on 'jornadas' or 'salarios' if hidden
     useEffect(() => {
-        const isJornadasHidden = barberCount <= 1 || plan === 'Básico'
-        if (isJornadasHidden && activeTab === 'jornadas') {
+        const isTeamHidden = barberCount <= 1 || plan === 'Básico'
+        if (isTeamHidden && (activeTab === 'jornadas' || activeTab === 'salarios')) {
             setActiveTab('financiera')
         }
     }, [barberCount, plan, activeTab])
@@ -111,9 +98,9 @@ export default function AccountingPage() {
             </header>
 
             {/* ── Tab Selector ──────────────────────────────────────────────── */}
-            <div className="flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 p-1 rounded-2xl mb-6 w-full">
+            <div className="flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 p-1 rounded-2xl mb-6 w-full overflow-x-auto">
                 {TABS.filter(tab => {
-                    if (tab.id === 'jornadas') {
+                    if (tab.id === 'jornadas' || tab.id === 'salarios') {
                         return barberCount > 1 && plan !== 'Básico'
                     }
                     return true
@@ -121,13 +108,13 @@ export default function AccountingPage() {
 
                     const Icon = tab.icon
                     const isActive = activeTab === tab.id
-                    const shortLabel = tab.id === 'financiera' ? 'Finanzas' : tab.id === 'jornadas' ? 'Jornadas' : 'Facturas'
+                    const shortLabel = tab.id === 'financiera' ? 'Finanzas' : tab.id === 'jornadas' ? 'Presencia' : tab.id === 'salarios' ? 'Salarios' : 'Facturas'
                     return (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                'flex items-center justify-center gap-1.5 px-2 py-2 lg:px-4 lg:py-2.5 rounded-xl text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all flex-1',
+                                'flex items-center justify-center gap-1.5 px-2 py-2 lg:px-4 lg:py-2.5 rounded-xl text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all flex-1 whitespace-nowrap',
                                 isActive
                                     ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
                                     : 'text-zinc-500 hover:text-white hover:bg-zinc-800/50'
@@ -153,7 +140,11 @@ export default function AccountingPage() {
                     {/* ── TAB 1: Gestión Financiera ─────────────────────── */}
                     {activeTab === 'financiera' && (
                         <div className="space-y-8">
-                            {isAutonomo && <AutonomoGuide />}
+                            {isAutonomo && (
+                                <div className="hidden lg:block">
+                                    <AutonomoGuide />
+                                </div>
+                            )}
                             
                             <AccountingSummary
                                 selectedMonth={selectedMonth}
@@ -184,9 +175,15 @@ export default function AccountingPage() {
                                             <h3 className="text-white font-black uppercase italic tracking-tight text-sm lg:text-lg leading-tight">
                                                 Informe Gastos / Ingresos
                                             </h3>
-                                            <p className="text-zinc-500 text-[9px] lg:text-[10px] font-bold uppercase tracking-widest mt-1.5 lg:mt-2">Libro diario del período · {selectedMonth || 'Todos'}</p>
+                                            <p className="text-zinc-500 text-[9px] lg:text-[10px] font-bold uppercase tracking-widest mt-1.5 lg:mt-2">Libro diario del período</p>
                                         </div>
-                                        <ReportDownloadButton selectedMonth={selectedMonth} shopName={shopName} />
+                                        <button
+                                            onClick={() => setIsAccountingModalOpen(true)}
+                                            className="flex items-center justify-center gap-2 lg:gap-3 px-6 py-3 lg:py-4 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all w-full bg-zinc-800 text-white hover:bg-zinc-700 hover:text-amber-500 active:scale-95 border border-zinc-700 hover:border-amber-500/30 shadow-xl"
+                                        >
+                                            <Download className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-amber-500" />
+                                            Configurar y Descargar
+                                        </button>
                                     </div>
 
                                     {/* Informe por Pagos */}
@@ -210,10 +207,17 @@ export default function AccountingPage() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Guía Autónomo — Móvil */}
+                            {isAutonomo && (
+                                <div className="block lg:hidden">
+                                    <AutonomoGuide />
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* ── TAB 2: Jornadas y Salarios ────────────────────── */}
+                    {/* ── TAB 2: Control de Presencia ────────────────────── */}
                     {activeTab === 'jornadas' && (
                         <div className="space-y-8">
                             {/* Control de Presencia — Inline */}
@@ -235,7 +239,12 @@ export default function AccountingPage() {
                                     />
                                 </div>
                             </div>
+                        </div>
+                    )}
 
+                    {/* ── TAB 3: Liquidación Mensual ────────────────────── */}
+                    {activeTab === 'salarios' && (
+                        <div className="space-y-8">
                             {/* Liquidación — Inline */}
                             <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] overflow-hidden">
                                 <div className="px-6 py-5 border-b border-zinc-800/50 flex items-center gap-4">
@@ -252,7 +261,7 @@ export default function AccountingPage() {
                         </div>
                     )}
 
-                    {/* ── TAB 3: Facturas e Informes ────────────────────── */}
+                    {/* ── TAB 4: Facturas e Informes ────────────────────── */}
                     {activeTab === 'facturas' && (
                         <div className="space-y-8">
                             {/* Archivo de Facturas */}
@@ -263,135 +272,20 @@ export default function AccountingPage() {
                 </motion.div>
             </AnimatePresence>
 
-            {/* Payment modal */}
             <PaymentReportModal
                 isOpen={isPaymentModalOpen}
                 onClose={() => setIsPaymentModalOpen(false)}
                 initialMonth={selectedMonth}
             />
+
+            <AccountingReportModal
+                isOpen={isAccountingModalOpen}
+                onClose={() => setIsAccountingModalOpen(false)}
+                initialMonth={selectedMonth}
+                shopName={shopName}
+            />
         </main>
     )
 }
 
-// ── Report Download Button Helper ──────────────────────────────────────────────
-function ReportDownloadButton({ selectedMonth, shopName }: { selectedMonth: string; shopName: string }) {
-    const [entries, setEntries] = useState<any[]>([])
-    const [income, setIncome] = useState(0)
-    const [expenses, setExpenses] = useState(0)
-    const [deductible, setDeductible] = useState(0)
-    const [ready, setReady] = useState(false)
-    const [loadingData, setLoadingData] = useState(false)
 
-    useEffect(() => { setReady(false) }, [selectedMonth])
-
-    const prepareData = async () => {
-        if (ready) return
-        setLoadingData(true)
-        try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-            const targetMonth = selectedMonth || new Date().toISOString().substring(0, 7)
-            const [year, month] = targetMonth.split('-').map(Number)
-            const startOfMonth = `${targetMonth}-01`
-            const endDate = new Date(year, month, 1).toISOString().split('T')[0]
-
-            const [{ data: gastos }, { data: citas }, { data: sales }] = await Promise.all([
-                supabase.from('gastos').select('*').eq('barberia_id', user.id).gte('fecha', startOfMonth).lt('fecha', endDate).order('fecha'),
-                supabase.from('citas').select('Dia, Precio').eq('barberia_id', user.id).eq('confirmada', true).gte('Dia', startOfMonth).lt('Dia', endDate),
-                supabase.from('ventas_productos').select('created_at, precio, nombre_producto, cantidad').eq('barberia_id', user.id).gte('created_at', `${startOfMonth} 00:00:00`).lt('created_at', `${endDate} 00:00:00`)
-            ])
-
-            const totals = (gastos || []).reduce((a, c) => {
-                a.total += +c.monto; if (c.deducible) a.deducible += +c.monto; return a
-            }, { total: 0, deducible: 0 })
-            setExpenses(totals.total); setDeductible(totals.deducible)
-
-            const dailyIncome: Record<string, number> = {}
-            citas?.forEach(c => { dailyIncome[c.Dia] = (dailyIncome[c.Dia] || 0) + (+c.Precio || 0) })
-            
-            // Add product sales to daily income
-            sales?.forEach(s => {
-                const dateKey = s.created_at.split('T')[0]
-                dailyIncome[dateKey] = (dailyIncome[dateKey] || 0) + (+s.precio || 0)
-            })
-
-            const totalInc = Object.values(dailyIncome).reduce((s, v) => s + v, 0)
-            setIncome(totalInc)
-
-            // Collect all unique dates
-            const allDates = Array.from(new Set([
-                ...Object.keys(dailyIncome), 
-                ...(gastos || []).map(g => g.fecha)
-            ])).sort()
-
-            const built: any[] = []
-            allDates.forEach(date => {
-                const dayInc = dailyIncome[date] || 0
-                const dayExp = (gastos || []).filter(g => g.fecha === date)
-                
-                // If there are no expenses but there is income, add one entry
-                if (!dayExp.length) { 
-                    if (dayInc > 0) built.push({ 
-                        date: date.split('-').reverse().join('/'), 
-                        income: dayInc, 
-                        expense: 0, 
-                        reason: 'Ingresos del día (Citas + Ventas)', 
-                        deductible: false 
-                    }) 
-                }
-                else {
-                    // If there are expenses, link the income to the first expense row of that day
-                    dayExp.forEach((g, i) => built.push({ 
-                        date: date.split('-').reverse().join('/'), 
-                        income: i === 0 ? dayInc : 0, 
-                        expense: +g.monto, 
-                        reason: g.concepto, 
-                        deductible: g.deducible 
-                    }))
-                }
-            })
-            setEntries(built)
-            setReady(true)
-        } finally { setLoadingData(false) }
-    }
-
-    if (!ready) {
-        return (
-            <button
-                onClick={prepareData}
-                disabled={loadingData}
-                className="flex items-center justify-center gap-2 px-6 py-3 lg:py-4 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all w-full bg-zinc-800 text-white hover:bg-zinc-700 active:scale-95 border border-zinc-700"
-            >
-                {loadingData ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {loadingData ? 'Preparando...' : 'Generar Informe'}
-            </button>
-        )
-    }
-
-    return (
-        <PDFDownloadLink
-            document={
-                <AccountingDetailPDF
-                    data={{
-                        shopName,
-                        month: selectedMonth,
-                        entries,
-                        totalIncome: income,
-                        totalExpenses: expenses,
-                        totalDeductible: deductible,
-                        timestamp: new Date().toLocaleString('es-ES')
-                    }}
-                />
-            }
-            fileName={`Informe_Contabilidad_${selectedMonth}.pdf`}
-            className="flex items-center justify-center gap-2 px-6 py-3 lg:py-4 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all w-full bg-amber-500 text-black hover:bg-amber-400 active:scale-95 shadow-lg shadow-amber-500/10"
-        >
-            {({ loading }) => (
-                <>
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    <span>{loading ? 'Preparando...' : 'Descargar Libro Diario'}</span>
-                </>
-            )}
-        </PDFDownloadLink>
-    )
-}
