@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
 import { ResetPasswordButton } from '@/components/ResetPasswordButton'
 import ManageSubscriptionButton from '@/components/ManageSubscriptionButton'
+import { useSubscription } from '@/hooks/useSubscription'
 
 import { BarberManager } from '@/components/management/BarberManager'
 import { AvatarUpload } from '@/components/AvatarUpload'
@@ -58,6 +59,7 @@ function getTextoEstado(estado: string) {
 
 export default function PerfilPage() {
     const router = useRouter()
+    const { refresh: refreshSubscription } = useSubscription()
     const [loading, setLoading] = useState(true)
     const [perfil, setPerfil] = useState<any>(null)
     const [email, setEmail] = useState('')
@@ -446,9 +448,13 @@ export default function PerfilPage() {
                 <MonthlyClosingModal
                     isOpen={showClosingModal}
                     onClose={() => setShowClosingModal(false)}
-                    onSuccess={() => {
-                        setPerfil((prev: any) => ({ ...prev, calendario_confirmado: true }));
-                        cargarPerfil();
+                    onSuccess={(newDates) => {
+                        setPerfil((prev: any) => ({ 
+                            ...prev, 
+                            calendario_confirmado: true,
+                            fechas_cierre: newDates
+                        }));
+                        refreshSubscription();
                     }}
                     currentClosingDates={perfil.fechas_cierre}
                 />

@@ -9,9 +9,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-12-15.clover',
 })
 
+import { getRequiredSession } from '@/lib/auth-utils';
+
 export async function manageSubscription(requestedEmail: string) {
     try {
         // 🛡️ SEGURIDAD: Verificar que el email solicitado sea el del usuario logueado
+        await getRequiredSession();
         const supabase = await createClient()
         const { data: { user } } = await supabase.auth.getUser()
 

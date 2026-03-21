@@ -4,15 +4,12 @@ import { format, addMonths } from 'date-fns';
 import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 
+import { getRequiredSession } from '@/lib/auth-utils';
+
 export async function updateClosingDates(dates: string[]) {
     // 1. Instanciar Cliente Server-Side seguro
+    const user = await getRequiredSession();
     const supabase = await createClient();
-
-    // 2. Verificar Autenticación (Usuario real)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        throw new Error("Usuario no autenticado");
-    }
 
     try {
         // 3. Obtener fechas existentes de la BD
@@ -55,9 +52,10 @@ export async function updateClosingDates(dates: string[]) {
 
         if (updateError) throw updateError;
 
-        // 6. Limpiar caché del Dashboard
+        // 6. Limpiar caché del Dashboard y del Widget de Citas
         revalidatePath('/dashboard');
         revalidatePath('/', 'layout');
+        revalidatePath('/[slug]', 'layout'); 
 
         return { success: true };
 

@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { revalidatePathAction } from '@/app/actions/revalidate-action';
 import {
     MapPin, Phone, Scissors, Loader2, User, DollarSign,
     Target, Plus, Trash2, ChevronRight, ChevronLeft, Check,
@@ -324,6 +325,11 @@ export default function ConfigurationPage() {
             }
 
             toast.success('¡Configuración guardada correctamente!');
+            
+            // Revalidar caché para asegurar que el widget de reserva vea los nuevos horarios/barberos
+            await revalidatePathAction('/', 'layout');
+            await revalidatePathAction('/[slug]', 'layout');
+
             router.push('/inicio');
             router.refresh();
         } catch (err: any) {

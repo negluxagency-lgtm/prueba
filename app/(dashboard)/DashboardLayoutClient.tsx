@@ -23,7 +23,15 @@ export default function DashboardLayoutClient({
     serverStatus?: string;
     calendarioConfirmed?: boolean;
 }) {
-    const { status: clientStatus, loading, daysRemaining, isProfileComplete } = useSubscription();
+    const { 
+        status: clientStatus, 
+        loading, 
+        daysRemaining, 
+        isProfileComplete,
+        calendario_confirmado: hookCalendarioConfirmed,
+        fechas_cierre: hookFechasCierre,
+        refresh: refreshSubscription
+    } = useSubscription();
     const router = useRouter();
     const [showClosingModal, setShowClosingModal] = useState(false);
     const [localCalendarioConfirmed, setLocalCalendarioConfirmed] = useState(calendarioConfirmed);
@@ -38,16 +46,6 @@ export default function DashboardLayoutClient({
 
     // Si tenemos estado del servidor, no estamos "cargando" visualmente (ya tenemos decisión)
     const isLoading = loading && !serverStatus;
-
-    // FIX: Usar initialProfile mientras el hook carga (isProfileComplete empieza en false)
-    const resolvedIsProfileComplete = !loading ? isProfileComplete : (initialProfile?.onboarding_completado === true);
-
-    useEffect(() => {
-        // Redirigir si el perfil no está completo (falta configuración inicial)
-        if (!isLoading && resolvedIsProfileComplete === false && status) {
-            router.replace('/configuracion');
-        }
-    }, [isLoading, resolvedIsProfileComplete, status, router]);
 
     // 0. Estado de Carga Global (solo si no tenemos ni perfil ni estado del servidor)
     if (isLoading && !initialProfile) {
@@ -88,7 +86,7 @@ export default function DashboardLayoutClient({
 
                 <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' ? 'pt-[52px] lg:pt-0' : ''}`}>
                     {/* Banner de Confirmación de Calendario (NUEVO) */}
-                    {!isLoading && localCalendarioConfirmed === false && (
+                    {!isLoading && hookCalendarioConfirmed === false && (
                         <div className="bg-amber-500/10 border-b border-amber-500/20 p-3 lg:p-4 flex flex-col lg:flex-row items-center justify-center gap-3 lg:gap-6 animate-in slide-in-from-top duration-500">
                             <div className="flex items-center gap-2 text-amber-500">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -118,13 +116,11 @@ export default function DashboardLayoutClient({
                 isOpen={showClosingModal}
                 onClose={() => setShowClosingModal(false)}
                 onSuccess={() => {
-                    // Update the state locally to remove the banner immediately
-                    setLocalCalendarioConfirmed(true);
+                    // Sincronizar hook global
+                    refreshSubscription();
                     setShowClosingModal(false);
-                    // Force a simple refresh to ensure the background data is consistent
-                    router.refresh();
                 }}
-                currentClosingDates={initialProfile?.fechas_cierre || []}
+                currentClosingDates={hookFechasCierre}
             />
         </div>
     );

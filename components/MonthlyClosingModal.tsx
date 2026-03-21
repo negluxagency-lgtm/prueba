@@ -13,7 +13,7 @@ import "react-day-picker/dist/style.css";
 interface MonthlyClosingModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess?: () => void;
+    onSuccess?: (dates: string[]) => void;
     currentClosingDates?: string[];
 }
 
@@ -29,12 +29,11 @@ export default function MonthlyClosingModal({ isOpen, onClose, onSuccess, curren
 
     // Initialize with current dates if provided
     useEffect(() => {
-        if (isOpen && !initialized && currentClosingDates.length > 0) {
+        if (isOpen) {
             const parsedDates = currentClosingDates.map(d => new Date(d));
             setSelectedDates(parsedDates);
-            setInitialized(true);
         }
-    }, [isOpen, initialized, currentClosingDates]);
+    }, [isOpen, currentClosingDates]);
 
     if (!isOpen) return null;
 
@@ -48,7 +47,7 @@ export default function MonthlyClosingModal({ isOpen, onClose, onSuccess, curren
 
             if (result.success) {
                 toast.success("Calendario confirmado correctamente.");
-                onSuccess?.();
+                onSuccess?.(dateStrings);
                 onClose();
                 router.refresh();
             } else {
@@ -124,11 +123,11 @@ export default function MonthlyClosingModal({ isOpen, onClose, onSuccess, curren
                                     caption: "flex justify-center pt-2 relative items-center text-amber-500 capitalize font-bold h-12 mb-4 w-full",
                                     caption_label: "text-base md:text-lg px-20 text-center",
                                     nav: "flex items-center",
-                                    nav_button: "h-12 w-12 bg-transparent p-0 opacity-50 hover:opacity-100 transition-opacity flex items-center justify-center text-white outline-none border-none shadow-none focus:outline-none focus:ring-0",
-                                    nav_button_previous: "absolute left-0",
-                                    nav_button_next: "absolute right-0",
-                                    button_previous: "absolute left-0",
-                                    button_next: "absolute right-0",
+                                    nav_button: "h-10 w-10 md:h-12 md:w-12 bg-zinc-800 hover:bg-amber-500 hover:text-black transition-all flex items-center justify-center rounded-full border border-zinc-700 hover:border-amber-400 shadow-lg active:scale-90",
+                                    nav_button_previous: "absolute left-4 z-40",
+                                    nav_button_next: "absolute right-4 z-40",
+                                    button_previous: "absolute left-4 z-40",
+                                    button_next: "absolute right-4 z-40",
                                     table: "w-full border-collapse",
                                     head_cell: "text-zinc-500 font-normal text-[0.9rem] md:text-base pb-3",
                                     // Eliminamos tamaños fijos aquí para que usen la variable CSS

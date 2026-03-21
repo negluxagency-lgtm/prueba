@@ -11,6 +11,8 @@ interface SubscriptionState {
     loading: boolean;
     daysRemaining: number;
     isProfileComplete: boolean;
+    calendario_confirmado: boolean;
+    fechas_cierre: string[];
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -51,7 +53,7 @@ export function useSubscription() {
 
             const { data: profile, error } = await supabase
                 .from('perfiles')
-                .select('estado, plan, created_at, nombre_barberia, telefono, onboarding_completado')
+                .select('estado, plan, created_at, nombre_barberia, telefono, onboarding_completado, calendario_confirmado, fechas_cierre')
                 .eq('id', user.id)
                 .single();
 
@@ -72,7 +74,9 @@ export function useSubscription() {
                     status: isTrial ? 'prueba' : 'impago' as SubscriptionStatus,
                     plan: null,
                     daysRemaining,
-                    isProfileComplete: false
+                    isProfileComplete: false,
+                    calendario_confirmado: false,
+                    fechas_cierre: []
                 };
             }
 
@@ -82,7 +86,9 @@ export function useSubscription() {
                     status: 'pagado' as SubscriptionStatus,
                     plan: profile.plan || null,
                     daysRemaining: 0,
-                    isProfileComplete
+                    isProfileComplete,
+                    calendario_confirmado: profile.calendario_confirmado || false,
+                    fechas_cierre: profile.fechas_cierre || []
                 };
             }
 
@@ -97,7 +103,9 @@ export function useSubscription() {
                 status: (isTrial ? 'prueba' : 'impago') as SubscriptionStatus,
                 plan: null,
                 daysRemaining: Math.max(0, TRIAL_DAYS - daysPassed),
-                isProfileComplete
+                isProfileComplete,
+                calendario_confirmado: profile.calendario_confirmado || false,
+                fechas_cierre: profile.fechas_cierre || []
             };
         },
         {
@@ -116,6 +124,8 @@ export function useSubscription() {
         loading: isLoading || loadingSession,
         daysRemaining: state?.daysRemaining || 0,
         isProfileComplete: state?.isProfileComplete || false,
+        calendario_confirmado: state?.calendario_confirmado ?? true, // Por defecto true para no molestar si falla la carga
+        fechas_cierre: state?.fechas_cierre || [],
         refresh: () => mutate()
     };
 }

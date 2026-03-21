@@ -41,7 +41,7 @@ export function useAppointments(selectedDate: string) {
         async () => {
             const { data, error } = await supabase
                 .from('citas')
-                .select('*')
+                .select('id, uuid, created_at, Nombre, servicio, Servicio_id, Dia, Hora, Telefono, Precio, confirmada, cancelada, barbero, barbero_id, pago')
                 .eq('Dia', selectedDate)
                 .eq('barberia_id', userId)
                 .order('Hora', { ascending: true });

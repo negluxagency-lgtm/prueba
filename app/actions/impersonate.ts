@@ -3,12 +3,14 @@
 import supabaseAdmin from '@/lib/supabaseAdmin'
 import { createClient } from '@/utils/supabase/server'
 
+import { getRequiredSession } from '@/lib/auth-utils';
+
 export async function impersonateUser(formData: FormData) {
     const email = formData.get('email') as string
 
     // 🛡️ SEGURIDAD: Verificar que el usuario que llama sea un admin
+    const user = await getRequiredSession();
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
 
     // RESTRICCIÓN: Solo emails autorizados pueden usar el God Mode
     const ADMIN_EMAILS = ['vanguardiait@gmail.com', 'juanmab94@gmail.com'] // Añadir emails de admin aquí

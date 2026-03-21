@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { getRequiredSession } from '@/lib/auth-utils';
 
 export interface HorasExtraRow {
     id: string
@@ -27,6 +28,7 @@ export async function getBarberOvertimeFromSchedule(
     barberoId: number | string,
     month: string // YYYY-MM
 ): Promise<BarberOvertimeResult | null> {
+    await getRequiredSession();
     try {
         const supabase = await createClient()
 
@@ -72,6 +74,7 @@ export async function getAllBarbersOvertimeFromSchedule(
     barberiaId: string,
     month: string
 ): Promise<BarberOvertimeResult[]> {
+    await getRequiredSession();
     try {
         const supabase = await createClient()
 

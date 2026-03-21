@@ -2,6 +2,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { getRequiredSession } from '@/lib/auth-utils';
+import { logger } from '@/lib/logger'
 
 // Usamos el cliente con rol de servicio para las operaciones de servidor que requieran bypass de RLS 
 // Opcional, pero recomendado si queremos garantizar la inmutabilidad de la hora del servidor a nivel admin
@@ -26,6 +28,7 @@ export interface FichajeLog {
  * Útil para determinar el estado de los botones UI de manera persistente.
  */
 export async function getAttendanceStatus(barberId: number) {
+    const user = await getRequiredSession();
     try {
         const { data: log, error } = await supabaseAdmin
             .from('fichajes_logs')
@@ -59,6 +62,7 @@ export async function logAttendance(
     lat?: number,
     lng?: number
 ) {
+    const user = await getRequiredSession();
     try {
         let pointStr = null;
         if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)) {
@@ -79,10 +83,12 @@ export async function logAttendance(
             .single();
 
         if (error) {
+            logger.error('ACTIONS', 'Error en fichaje de asistencia', { error, barberId, tipo }, user.id);
             console.error('Error in logAttendance DB insert:', error);
             return { success: false, error: error.message };
         }
 
+        logger.info('ACTIONS', 'Fichaje de asistencia registrado', { barberId, tipo }, user.id);
         return { success: true, data };
     } catch (error: any) {
         console.error('Server action logAttendance error:', error);
@@ -95,6 +101,7 @@ export async function logAttendance(
  * Si el estado actual es 'entrada' o 'pausa_fin', suma también el tiempo online hasta este mismo instante (NOW() del server).
  */
 export async function getDailySummary(barberId: number, dateStr?: string) {
+    const user = await getRequiredSession();
     try {
         // Si no se da fecha, usamos hoy
         const targetDate = dateStr ? new Date(dateStr) : new Date();
@@ -164,6 +171,7 @@ export async function getDailySummary(barberId: number, dateStr?: string) {
  * Añade una corrección introduciendo un nuevo log (No usar UPDATE)
  */
 export async function auditPunch(barberId: number, tipo: TipoFichaje, datetimeStr: string, adminId: string, motivo: string) {
+    const user = await getRequiredSession();
     try {
         const { data, error } = await supabaseAdmin
             .from('fichajes_logs')
@@ -192,6 +200,7 @@ export async function auditPunch(barberId: number, tipo: TipoFichaje, datetimeSt
  * Obtiene los logs de un mes específico para un barbero, útil para reportes de contabilidad.
  */
 export async function getMonthlyLogs(barberId: number, year: number, month: number) {
+    const user = await getRequiredSession();
     try {
         const startDate = new Date(year, month - 1, 1).toISOString();
         const endDate = new Date(year, month, 0, 23, 59, 59, 999).toISOString();
@@ -218,6 +227,7 @@ export async function getMonthlyLogs(barberId: number, year: number, month: numb
  * Obtiene los logs de los últimos 7 días (la semana en curso) para un barbero.
  */
 export async function getWeeklyLogs(barberId: number) {
+    const user = await getRequiredSession();
     try {
         const today = new Date();
         const startOfWeek = new Date(today);

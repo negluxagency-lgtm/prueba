@@ -1,5 +1,7 @@
 'use server'
 
+import { getRequiredSession } from '@/lib/auth-utils';
+
 /**
  * =====================================================================
  *  MÓDULO: Generador de XML VERI*FACTU (Ley Antifraude 11/2021)
@@ -201,6 +203,7 @@ function buildSOAPEnvelope(xmlBody: string, nif: string, nombre: string): string
 export async function generarXMLVerifactu(
     facturas: FacturaVerifactuXMLData[]
 ): Promise<{ success: true; xml: string } | { success: false; error: string }> {
+    await getRequiredSession();
     try {
         if (!facturas || facturas.length === 0) {
             return { success: false, error: 'No se han proporcionado facturas para generar el XML.' }

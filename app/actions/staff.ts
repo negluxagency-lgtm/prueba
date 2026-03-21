@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { getRequiredSession } from '@/lib/auth-utils'
 
 // Simple definition to keep the response typed
 type ActionResponse = {
@@ -9,6 +10,7 @@ type ActionResponse = {
 }
 
 export async function setBarberPin(barberId: string, pin: string): Promise<ActionResponse> {
+    await getRequiredSession();
     if (!pin || pin.length !== 4 || !/^\d+$/.test(pin)) {
         return { success: false, error: 'El PIN debe ser de 4 dígitos' }
     }
@@ -46,6 +48,7 @@ export async function setBarberPin(barberId: string, pin: string): Promise<Actio
 }
 
 export async function getStaffAgenda(shopId: string, barberName: string, dateStr: string, showAll: boolean = false, barberId?: string) {
+    await getRequiredSession();
     const supabase = await createClient()
 
     console.log(`[getStaffAgenda] Fetching for shop: "${shopId}", barber: "${barberName}", barberId: "${barberId}", date: "${dateStr}"`)
@@ -90,6 +93,7 @@ export async function getStaffAgenda(shopId: string, barberName: string, dateStr
 }
 
 export async function getStaffCuts(shopId: string, barberName: string, monthStr: string, barberId?: string) {
+    await getRequiredSession();
     const supabase = await createClient()
 
     const [year, m] = monthStr.split('-').map(Number)
@@ -153,6 +157,7 @@ export async function getStaffCuts(shopId: string, barberName: string, monthStr:
 }
 
 export async function logStaffOvertime(barberId: string, shopId: string, hours: number, dateStr: string): Promise<ActionResponse> {
+    await getRequiredSession();
     const supabase = await createClient()
 
     const { data: barber } = await supabase.from('barberos').select('user_id').eq('id', barberId).single()
@@ -180,6 +185,7 @@ export async function updateStaffAppointmentStatus(
     pago?: string,
     barberId?: string
 ): Promise<ActionResponse> {
+    await getRequiredSession();
     const supabase = await createClient()
 
     let dbValues: any = { confirmada: null, cancelada: null }
@@ -205,6 +211,7 @@ export async function updateStaffAppointmentStatus(
 }
 
 export async function deleteStaffAppointment(id: number): Promise<ActionResponse> {
+    await getRequiredSession();
     const supabase = await createClient()
 
     const { error } = await supabase
@@ -221,6 +228,7 @@ export async function deleteStaffAppointment(id: number): Promise<ActionResponse
 }
 
 export async function saveStaffAppointment(data: any, editingId: number | null, shopId: string): Promise<ActionResponse> {
+    await getRequiredSession();
     const supabase = await createClient()
 
     const appointmentData = {
@@ -261,6 +269,7 @@ export async function saveStaffAppointment(data: any, editingId: number | null, 
 }
 
 export async function getShopServices(shopId: string) {
+    await getRequiredSession();
     const supabase = await createClient()
 
     const { data, error } = await supabase
@@ -277,6 +286,7 @@ export async function getShopServices(shopId: string) {
 }
 
 export async function updateBarberPhoto(barberId: string, photoUrl: string): Promise<ActionResponse> {
+    await getRequiredSession();
     try {
         const supabase = await createClient()
 
@@ -297,6 +307,7 @@ export async function updateBarberPhoto(barberId: string, photoUrl: string): Pro
 }
 
 export async function verifyBarberPin(barberId: string, enteredPin: string): Promise<ActionResponse> {
+    await getRequiredSession();
     try {
         const supabase = await createClient()
 
@@ -326,6 +337,7 @@ export async function verifyBarberPin(barberId: string, enteredPin: string): Pro
 }
 
 export async function getBarberAbsences(barberId: string): Promise<string[]> {
+    await getRequiredSession();
     const supabase = await createClient()
     const { data } = await supabase
         .from('barberos')
@@ -338,6 +350,7 @@ export async function getBarberAbsences(barberId: string): Promise<string[]> {
 }
 
 export async function markBarberAbsence(barberId: string, date: string, remove = false): Promise<ActionResponse> {
+    await getRequiredSession();
     try {
         const supabase = await createClient()
 

@@ -1,12 +1,14 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { getRequiredSession } from '@/lib/auth-utils';
 
 /**
  * Genera una URL firmada (Signed URL) para descargar una factura de forma segura.
  * @param invoiceId El ID de la factura en la tabla 'facturas'
  */
 export async function getInvoiceSignedUrl(invoiceId: string) {
+    await getRequiredSession();
     try {
         const supabase = await createClient()
 

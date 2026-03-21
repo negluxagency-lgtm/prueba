@@ -1,11 +1,13 @@
 'use server';
 
 import supabaseAdmin from '@/lib/supabaseAdmin';
+import { getRequiredSession } from '@/lib/auth-utils';
 
 // 🛡️ REGLA: Esta Server Action se ejecuta SÓLO en el servidor.
 // Encapsula la lógica de acceso privilegiado para no exponer supabaseAdmin en componentes.
 
 export async function getAdminProfiles() {
+    await getRequiredSession();
     // 1. Restricción de Entorno (Doble capa: Middleware + Action)
     if (process.env.NODE_ENV !== 'development') {
         throw new Error('Action not allowed in production');
@@ -25,6 +27,7 @@ export async function getAdminProfiles() {
 }
 
 export async function getAdminBillingStats(barberiaId: string) {
+    await getRequiredSession();
     if (process.env.NODE_ENV !== 'development') {
         throw new Error('Action not allowed in production');
     }

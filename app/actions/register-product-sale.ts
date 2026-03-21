@@ -1,8 +1,9 @@
 'use server'
 
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { getRequiredSession } from '@/lib/auth-utils'
+import { logger } from '@/lib/logger'
 
 interface SellProductData {
     productoId: number
@@ -21,45 +22,36 @@ export async function registerProductSale(data: SellProductData): Promise<Action
     const { productoId, nombreProducto, precioVenta, cantidad, metodoPago } = data
 
     try {
-        // Get session via cookies
-        const cookieStore = await cookies()
+        const user = await getRequiredSession();
+        const supabase = await createClient();
 
-        const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            {
-                cookies: {
-                    getAll() {
-                        return cookieStore.getAll()
-                    },
-                    setAll(cookiesToSet) {
-                        cookiesToSet.forEach(({ name, value, options }) =>
-                            cookieStore.set(name, value, options)
-                        )
-                    },
-                },
+        // [RESILIENCIA] Inserción con reintento ante colisión de secuencias (SOP Mantenimiento)
+        let insertError = null;
+        for (let i = 0; i < 3; i++) {
+            const { error } = await supabase
+                .from('ventas_productos')
+                .insert({
+                    barberia_id: user.id,
+                    nombre_producto: nombreProducto,
+                    precio: precioVenta,
+                    cantidad: cantidad,
+                    metodo_pago: metodoPago
+                });
+            
+            if (!error) {
+                insertError = null;
+                break;
             }
-        )
-
-        // Get authenticated user
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
-
-        if (userError || !user) {
-            return { success: false, error: 'No se pudo identificar al usuario' }
+            insertError = error;
+            if (error.code === '23505' && i < 2) {
+                logger.warn('ACTIONS', 'Colisión de secuencia detectada. Reintentando...', { attempt: i + 1, productoId }, user.id);
+                continue; // Retry on duplicate key
+            }
+            break;
         }
 
-        // Insert into ventas_productos
-        const { error: insertError } = await supabase
-            .from('ventas_productos')
-            .insert({
-                barberia_id: user.id,
-                nombre_producto: nombreProducto,
-                precio: precioVenta,
-                cantidad: cantidad,
-                metodo_pago: metodoPago
-            })
-
         if (insertError) {
+            logger.error('ACTIONS', 'Error al insertar venta de producto', { error: insertError, data }, user.id);
             console.error('Error inserting product sale:', insertError)
             return { success: false, error: 'Error al registrar la venta: ' + insertError.message }
         }
@@ -82,18 +74,18 @@ export async function registerProductSale(data: SellProductData): Promise<Action
 
             if (updateError) {
                 console.error('Error updating product stock:', updateError)
-                // Don't fail the whole operation if stock update fails
             }
         }
 
-        // Revalidate pages
         revalidatePath('/productos')
         revalidatePath('/inicio')
 
+        logger.info('ACTIONS', 'Venta de producto registrada con éxito', { productoId, cantidad, total: precioVenta * cantidad }, user.id);
+
         return { success: true }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Unexpected error:', error)
-        return { success: false, error: 'Ha ocurrido un error inesperado.' }
+        return { success: false, error: error.message || 'Ha ocurrido un error inesperado.' }
     }
 }

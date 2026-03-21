@@ -6,6 +6,7 @@ import { renderToBuffer } from '@react-pdf/renderer'
 import React from 'react'
 import { InvoicePDF } from '@/components/dashboard/InvoicePDF'
 import QRCode from 'qrcode'
+import { checkBarberiaOwnership } from '@/lib/auth-utils';
 
 export interface FacturaVerifactuData {
     barberia_id: string
@@ -24,6 +25,7 @@ export interface FacturaVerifactuData {
 }
 
 export async function emitirFacturaVerifactu(data: FacturaVerifactuData) {
+    await checkBarberiaOwnership(data.barberia_id);
     try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
