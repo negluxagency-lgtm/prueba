@@ -50,45 +50,27 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
     }
 
     try {
-        const apiKey = process.env.RECAPTCHA_SECRET_KEY
-        const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-        
-        if (!apiKey || !siteKey) {
+        const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY
+        if (!recaptchaSecret) {
             console.error('❌ [Booking] RECAPTCHA_SECRET_KEY is missing.')
             return { success: false, error: 'Error de configuración del servidor. Contacta al soporte.' }
         }
 
-        const projectID = "n8n-prueba-473712"
-        const enterpriseUrl = `https://recaptchaenterprise.googleapis.com/v1/projects/${projectID}/assessments?key=${apiKey}`
-
-        const assessmentBody = {
-            event: {
-                token: recaptchaToken,
-                expectedAction: "LOGIN",
-                siteKey: siteKey
-            }
-        }
-
-        const verifyRes = await fetch(enterpriseUrl, {
+        const verifyRes = await fetch('https://www.google.com/recaptcha/api/siteverify', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: JSON.stringify(assessmentBody),
+            body: `secret=${recaptchaSecret}&response=${recaptchaToken}`,
         })
 
         const recaptchaData = await verifyRes.json()
-        console.log('🤖 [reCAPTCHA Enterprise Checkbox] Verify response:', recaptchaData)
+        console.log('🤖 [reCAPTCHA v2 / Enterprise Checkbox] Verify response:', recaptchaData)
 
-        if (!recaptchaData.tokenProperties?.valid) {
-            console.warn(`🚨 [reCAPTCHA] Token is invalid. Reason:`, recaptchaData.tokenProperties?.invalidReason)
+        if (!recaptchaData.success) {
+            console.warn(`🚨 [reCAPTCHA] Validation failed. Reason:`, recaptchaData['error-codes'])
             return { success: false, error: 'Validación de seguridad fallida. Por favor, vuelve a completar el reCAPTCHA.' }
         }
-
-        if (recaptchaData.tokenProperties.action !== "LOGIN") {
-            console.warn(`🚨 [reCAPTCHA] Action mismatch. Expected LOGIN, got:`, recaptchaData.tokenProperties.action)
-        }
-
     } catch (error) {
         console.error('❌ [reCAPTCHA Enterprise] Connection error:', error)
         return { success: false, error: 'Error al verificar la seguridad de la petición.' }
