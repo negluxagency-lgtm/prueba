@@ -31,3 +31,4 @@ Asegurar que el icono de la web (favicon) y la identidad visual se muestren corr
 | Fecha | Error Detectado | Solución Implementada |
 | :--- | :--- | :--- |
 | 2026-03-12 | Icono no aparece en Safari por rutas rotas en `site.webmanifest` y falta de `mask-icon`. | Eliminado manifiesto redundante, añadido `safari-pinned-tab.svg` y metadatos `appleWebApp`. |
+| 2026-03-22 | Google Search muestra el favicon predeterminado de Next.js. | El archivo `app/favicon.ico` (predeterminado) tiene prioridad sobre `public/favicon.ico` en App Router. Se eliminó el archivo en `app/` para que Google use el de `public/` definido en los metadatos. |
