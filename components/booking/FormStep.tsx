@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -9,6 +9,18 @@ import { toast } from 'sonner'
 import { useBookingStore, BookingBarber } from '@/store/useBookingStore'
 import { bookGuestAppointment } from '@/app/actions/book-guest-appointment'
 
+declare global {
+  interface Window {
+    onRecaptchaSuccess: (token: string) => void;
+    grecaptcha?: {
+      enterprise?: {
+        render: (container: HTMLElement | string, parameters: any) => number;
+        execute: (siteKey: string, options: { action: string }) => Promise<string>;
+      };
+    };
+  }
+}
+
 interface FormStepProps {
     slug: string
     shopName: string
@@ -16,6 +28,10 @@ interface FormStepProps {
 }
 
 export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
+    // Local state for the classic checkbox reCAPTCHA token
+    const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
+    const recaptchaContainerRef = useRef<HTMLDivElement>(null)
+    
     // Only subscribes to form-related state — calendar never re-renders
     const selectedService = useBookingStore((s) => s.selectedService)
     const selectedDate = useBookingStore((s) => s.selectedDate)
@@ -47,6 +63,34 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
         return /^[67]\d{8}$/.test(phone);
     };
 
+    // Inyección explícita del widget Enterprise
+    useEffect(() => {
+        window.onRecaptchaSuccess = (token: string) => {
+            setRecaptchaToken(token)
+        }
+
+        const renderRecaptcha = () => {
+            if (window.grecaptcha && window.grecaptcha.enterprise && recaptchaContainerRef.current) {
+                try {
+                    if (recaptchaContainerRef.current.innerHTML === '') {
+                        window.grecaptcha.enterprise.render(recaptchaContainerRef.current, {
+                            sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY,
+                            action: 'LOGIN',
+                            callback: 'onRecaptchaSuccess',
+                            theme: 'dark'
+                        })
+                    }
+                } catch (e) {
+                    console.error('Error rendering reCAPTCHA', e)
+                }
+            } else {
+                setTimeout(renderRecaptcha, 500)
+            }
+        }
+
+        renderRecaptcha()
+    }, [])
+
     const handleBook = async () => {
         setPhoneError(null)
 
@@ -54,6 +98,11 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
 
         if (!isValidPhone(guestPhone)) {
             setPhoneError(guestPhone.length < 9 ? 'Faltan números (son 9 dígitos)' : 'El número es inválido')
+            return
+        }
+
+        if (!recaptchaToken) {
+            toast.error('Por favor, resuelve el reCAPTCHA para confirmar la reserva.')
             return
         }
 
@@ -68,6 +117,7 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
             guestPhone,
             barberId: selectedBarberId || undefined,
             address_confirm: honeypot, // honeypot: si no está vacío, Zod lo rechaza
+            recaptchaToken: recaptchaToken,
         })
 
         setIsSubmitting(false)
@@ -190,10 +240,15 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
 
             {/* CTA Button */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black to-transparent z-50 md:static md:bg-none md:p-0 md:mt-8">
-                <div className="max-w-2xl mx-auto">
+                <div className="max-w-2xl mx-auto space-y-4">
+                    {/* ReCAPTCHA Native Enterprise Checkbox Widget */}
+                    <div className="flex justify-center bg-black/50 p-2 rounded-xl backdrop-blur-sm border border-zinc-800/50">
+                        <div ref={recaptchaContainerRef}></div>
+                    </div>
+
                     <button
                         onClick={handleBook}
-                        disabled={!guestName || !guestPhone || isSubmitting}
+                        disabled={!guestName || !guestPhone || !recaptchaToken || isSubmitting}
                         className="w-full py-4 rounded-2xl bg-amber-500 text-black font-black text-lg uppercase tracking-wide shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-400 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                     >
                         {isSubmitting && (

@@ -109,6 +109,12 @@ export default function RootLayout({
             gtag('config', 'G-JPTSPNH3EW');
           `}
         </Script>
+
+        {/* reCAPTCHA Enterprise */}
+        <Script 
+          src="https://www.google.com/recaptcha/enterprise.js" 
+          strategy="beforeInteractive" 
+        />
         <SWRProvider>
             {children}
         </SWRProvider>

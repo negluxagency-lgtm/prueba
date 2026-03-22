@@ -15,6 +15,7 @@ interface BookingData {
     guestPhone: string
     barberId?: string // Optional: ID of the selected barber
     address_confirm?: string // Honeypot: must be empty
+    recaptchaToken?: string
 }
 
 interface ActionResponse {
@@ -32,7 +33,7 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
     }
     // ───────────────────────────────────────────────────────────
 
-    const { slug, serviceId, date, time, guestName, guestPhone, barberId } = parsed.data
+    const { slug, serviceId, date, time, guestName, guestPhone, barberId, recaptchaToken } = parsed.data
 
     // 0. Interceptar reservas para el perfil Demo
     if (slug.toLowerCase() === 'demo') {
@@ -41,6 +42,56 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
         await new Promise(resolve => setTimeout(resolve, 800));
         console.log('🤖 [Demo Mode] Reserva simulada con éxito. No se guardó nada en DB.');
         return { success: true };
+    }
+
+    // 0.5 Validate reCAPTCHA v2 / Enterprise Checkbox
+    if (!recaptchaToken) {
+        return { success: false, error: 'Falta el token de seguridad. Por favor, resuelve el reCAPTCHA.' }
+    }
+
+    try {
+        const apiKey = process.env.RECAPTCHA_SECRET_KEY
+        const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+        
+        if (!apiKey || !siteKey) {
+            console.error('❌ [Booking] RECAPTCHA_SECRET_KEY is missing.')
+            return { success: false, error: 'Error de configuración del servidor. Contacta al soporte.' }
+        }
+
+        const projectID = "n8n-prueba-473712"
+        const enterpriseUrl = `https://recaptchaenterprise.googleapis.com/v1/projects/${projectID}/assessments?key=${apiKey}`
+
+        const assessmentBody = {
+            event: {
+                token: recaptchaToken,
+                expectedAction: "LOGIN",
+                siteKey: siteKey
+            }
+        }
+
+        const verifyRes = await fetch(enterpriseUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(assessmentBody),
+        })
+
+        const recaptchaData = await verifyRes.json()
+        console.log('🤖 [reCAPTCHA Enterprise Checkbox] Verify response:', recaptchaData)
+
+        if (!recaptchaData.tokenProperties?.valid) {
+            console.warn(`🚨 [reCAPTCHA] Token is invalid. Reason:`, recaptchaData.tokenProperties?.invalidReason)
+            return { success: false, error: 'Validación de seguridad fallida. Por favor, vuelve a completar el reCAPTCHA.' }
+        }
+
+        if (recaptchaData.tokenProperties.action !== "LOGIN") {
+            console.warn(`🚨 [reCAPTCHA] Action mismatch. Expected LOGIN, got:`, recaptchaData.tokenProperties.action)
+        }
+
+    } catch (error) {
+        console.error('❌ [reCAPTCHA Enterprise] Connection error:', error)
+        return { success: false, error: 'Error al verificar la seguridad de la petición.' }
     }
 
     // 1. Get Client IP

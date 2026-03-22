@@ -41,6 +41,9 @@ export const BookingSchema = z.object({
      * formularios lo llenarán y serán detectados antes de tocar Supabase.
      */
     address_confirm: z.string().max(0, 'Bot detected').optional(),
+
+    /** reCAPTCHA v3 token for bot validation */
+    recaptchaToken: z.string().optional(),
 })
 
 // Inferred TypeScript type — use this in Server Actions
