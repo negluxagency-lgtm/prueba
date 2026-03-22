@@ -156,7 +156,7 @@ barberia_id: (UUID).
 
 barberia: nombre de la barbería.
 
-tlf: ID de conversación (Teléfono cliente).
+tlf: ID de conversación (Teléfono cliente)
 
 mensaje_enviado / mensaje_recibido: Contenido.
 
