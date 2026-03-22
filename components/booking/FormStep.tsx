@@ -236,16 +236,18 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
                         </p>
                     )}
                 </div>
+                
+                {/* ReCAPTCHA Native Enterprise Checkbox Widget */}
+                <div className="flex justify-center pt-2 pb-6 md:pb-0">
+                    <div className="bg-black/50 p-2 rounded-xl backdrop-blur-sm border border-zinc-800/50 transform scale-[0.85] md:scale-100 origin-center md:origin-top">
+                        <div ref={recaptchaContainerRef}></div>
+                    </div>
+                </div>
             </div>
 
             {/* CTA Button */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black to-transparent z-50 md:static md:bg-none md:p-0 md:mt-8">
                 <div className="max-w-2xl mx-auto space-y-4">
-                    {/* ReCAPTCHA Native Enterprise Checkbox Widget */}
-                    <div className="flex justify-center bg-black/50 p-2 rounded-xl backdrop-blur-sm border border-zinc-800/50">
-                        <div ref={recaptchaContainerRef}></div>
-                    </div>
-
                     <button
                         onClick={handleBook}
                         disabled={!guestName || !guestPhone || !recaptchaToken || isSubmitting}
