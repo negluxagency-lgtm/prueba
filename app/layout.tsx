@@ -67,17 +67,17 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico?v=nelux2', sizes: 'any' },
-      { url: '/favicon.svg?v=nelux2', type: 'image/svg+xml' },
-      { url: '/favicon-96x96.png?v=nelux2', type: 'image/png', sizes: '96x96' },
+      { url: '/favicon.ico?v=nelux3', sizes: '48x48' },
+      { url: '/favicon.svg?v=nelux3', type: 'image/svg+xml' },
+      { url: '/favicon-96x96.png?v=nelux3', type: 'image/png', sizes: '96x96' },
     ],
     apple: [
-      { url: '/apple-touch-icon.png?v=nelux2', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-touch-icon.png?v=nelux3', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/favicon.ico?v=nelux2',
+    shortcut: '/favicon.ico?v=nelux3',
     other: [
-      { rel: 'manifest', url: '/manifest.json?v=nelux2' },
-      { rel: 'mask-icon', url: '/safari-pinned-tab.svg?v=nelux2', color: '#f59e0b' },
+      { rel: 'manifest', url: '/site.webmanifest?v=nelux3' },
+      { rel: 'mask-icon', url: '/safari-pinned-tab.svg?v=nelux3', color: '#f59e0b' },
     ],
   }
 };
@@ -113,7 +113,7 @@ export default function RootLayout({
         {/* reCAPTCHA Enterprise */}
         <Script 
           src="https://www.google.com/recaptcha/enterprise.js" 
-          strategy="beforeInteractive" 
+          strategy="afterInteractive" 
         />
         <SWRProvider>
             {children}
@@ -143,12 +143,6 @@ export default function RootLayout({
                  "highPrice": "149.00",
                  "priceCurrency": "EUR",
                  "offerCount": "4"
-               },
-               "aggregateRating": {
-                 "@type": "AggregateRating",
-                 "ratingValue": "4.9",
-                 "ratingCount": "142",
-                 "bestRating": "5"
                },
                "featureList": [
                  "Agenda de citas automática",

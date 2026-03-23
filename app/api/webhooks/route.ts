@@ -4,7 +4,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-12-15.clover', // Updated to match installed SDK type definition
+  apiVersion: '2025-12-15.clover',
 })
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
@@ -30,10 +30,12 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
+
+      // ----------------------------------------------------------------
+      // 1. COMPRA INICIAL completada
+      // ----------------------------------------------------------------
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-
-        // Retrieve userId from metadata
         const userId = session.metadata?.userId
         const customerId = session.customer as string
 
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
           .from('perfiles')
           .update({
             is_subscribed: true,
-            estado: 'activo',
+            estado: 'active',
             stripe_customer_id: customerId,
           })
           .eq('id', userId)
@@ -60,6 +62,9 @@ export async function POST(req: Request) {
         break
       }
 
+      // ----------------------------------------------------------------
+      // 2. SUSCRIPCIÓN CANCELADA (manual o por impago prolongado)
+      // ----------------------------------------------------------------
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
         const customerId = subscription.customer as string
@@ -77,6 +82,56 @@ export async function POST(req: Request) {
         if (error) {
           console.error('Error updating profile (cancellation):', error)
           return new NextResponse('Database Update Failed', { status: 500 })
+        }
+        break
+      }
+
+      // ----------------------------------------------------------------
+      // 3. PAGO FALLIDO — Stripe reintentará automáticamente
+      //    (según Smart Retries del Dashboard de Stripe)
+      // ----------------------------------------------------------------
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice
+        const customerId = invoice.customer as string
+
+        console.warn(`Payment failed for customer ${customerId}`)
+
+        const { error } = await supabase
+          .from('perfiles')
+          .update({ estado: 'past_due' })
+          .eq('stripe_customer_id', customerId)
+
+        if (error) {
+          console.error('Error updating profile (payment_failed):', error)
+          return new NextResponse('Database Update Failed', { status: 500 })
+        }
+        break
+      }
+
+      // ----------------------------------------------------------------
+      // 4. RENOVACIÓN MENSUAL EXITOSA
+      //    Solo actuamos en ciclos de renovación, no en la compra inicial
+      //    (ésta ya está cubierta por checkout.session.completed)
+      // ----------------------------------------------------------------
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice
+        const customerId = invoice.customer as string
+
+        if (invoice.billing_reason === 'subscription_cycle') {
+          console.log(`Renewal payment succeeded for customer ${customerId}`)
+
+          const { error } = await supabase
+            .from('perfiles')
+            .update({
+              estado: 'active',
+              is_subscribed: true,
+            })
+            .eq('stripe_customer_id', customerId)
+
+          if (error) {
+            console.error('Error updating profile (payment_succeeded):', error)
+            return new NextResponse('Database Update Failed', { status: 500 })
+          }
         }
         break
       }
