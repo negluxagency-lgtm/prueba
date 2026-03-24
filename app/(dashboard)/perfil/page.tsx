@@ -11,6 +11,7 @@ import { Paywall } from '@/components/Paywall'
 import { ResetPasswordButton } from '@/components/ResetPasswordButton'
 import ManageSubscriptionButton from '@/components/ManageSubscriptionButton'
 import { useSubscription } from '@/hooks/useSubscription'
+import { Rocket as RocketIcon, Coins, Copy } from 'lucide-react'
 
 import { BarberManager } from '@/components/management/BarberManager'
 import { AvatarUpload } from '@/components/AvatarUpload'
@@ -449,8 +450,8 @@ export default function PerfilPage() {
                     isOpen={showClosingModal}
                     onClose={() => setShowClosingModal(false)}
                     onSuccess={(newDates) => {
-                        setPerfil((prev: any) => ({ 
-                            ...prev, 
+                        setPerfil((prev: any) => ({
+                            ...prev,
                             calendario_confirmado: true,
                             fechas_cierre: newDates
                         }));
@@ -458,6 +459,42 @@ export default function PerfilPage() {
                     }}
                     currentClosingDates={perfil.fechas_cierre}
                 />
+
+                {/* Tarjeta Exclusiva: Programa de Afiliados */}
+                <div className="bg-gradient-to-br from-amber-500/20 via-zinc-900/50 to-zinc-900/50 border border-amber-500/30 rounded-2xl p-6 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+                        <Coins className="w-32 h-32 text-amber-500" />
+                    </div>
+
+                    <div className="relative z-10 space-y-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-amber-500/20 rounded-lg border border-amber-500/30">
+                                <RocketIcon className="w-6 h-6 text-amber-500" />
+                            </div>
+                            <h2 className="text-xl font-bold text-white shadow-amber-500/50 drop-shadow-md">
+                                {perfil?.afiliado
+                                    ? 'Tu Panel del Programa de Afiliados'
+                                    : '¿Quieres ganar ingresos ilimitados con Nelux Barber?'}
+                            </h2>
+                        </div>
+
+                        <p className="text-sm text-zinc-300 max-w-2xl">
+                            {perfil?.afiliado
+                                ? 'Gestiona tus beneficios, visualiza tus referidos y extrae tu código desde tu panel principal de recompensas de Nelux Barber.'
+                                : 'Invita a otros barberos a usar Nelux y gana dinero real o saldo para tu suscripción. Hemos diseñado nuestro programa de afiliados para recompensar a aquellos que nos ayudan a crecer.'}
+                        </p>
+
+                        <div className="pt-2">
+                            <Link
+                                href="/afiliados"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-sm uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] hover:-translate-y-0.5"
+                            >
+                                <Coins className="w-4 h-4" />
+                                {perfil?.afiliado ? 'Acceder a mi panel de afiliado' : 'Únete a nuestro programa de afiliados'}
+                            </Link>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Tarjeta 2: Suscripción y Facturación */}
                 <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-6">

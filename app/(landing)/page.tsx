@@ -799,6 +799,7 @@ export default function InicioPage() {
                         <Link href="/pricing" className="hover:text-white transition-colors">Planes y Precios</Link>
                         <Link href="/login" className="hover:text-white transition-colors">Iniciar sesión en la App</Link>
                         <Link href="/register" className="hover:text-white transition-colors">Crear Barbería</Link>
+                        <a href="https://nelux.es" target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 transition-colors font-bold">Nelux</a>
                     </div>
                 </div>
             </footer>

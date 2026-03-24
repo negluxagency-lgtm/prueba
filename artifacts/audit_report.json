@@ -1,0 +1,37 @@
+{
+    "timestamp": "2026-03-23T16:04:11.909555",
+    "checks": {
+        "environment": {
+            "status": "WARNING",
+            "details": {
+                "NEXT_PUBLIC_SUPABASE_URL": "PRESENT",
+                "NEXT_PUBLIC_SUPABASE_ANON_KEY": "PRESENT",
+                "SUPABASE_SERVICE_ROLE_KEY": "PRESENT",
+                "STRIPE_SECRET_KEY": "PRESENT",
+                "STRIPE_WEBHOOK_SECRET": "PRESENT",
+                "NEXT_PUBLIC_RECAPTCHA_SITE_KEY": "PRESENT",
+                "RECAPTCHA_SECRET_KEY": "PRESENT",
+                "RECAPTCHA_PROJECT_ID": "PRESENT",
+                "STRIPE_MODE": "LIVE_WITH_TEST_LABELS"
+            }
+        },
+        "routes": {
+            "status": "SUCCESS",
+            "details": {
+                "pricing": "EXISTS",
+                "reserva": "EXISTS",
+                "perfil": "EXISTS",
+                "dashboard": "EXISTS",
+                "legal_link": "PRESENT (nelux.es)"
+            }
+        },
+        "security": {
+            "status": "SUCCESS",
+            "details": {
+                "auth_guards": "UNKNOWN",
+                "middleware": "PRESENT"
+            }
+        }
+    },
+    "verdict": "NEEDS_ATTENTION"
+}
