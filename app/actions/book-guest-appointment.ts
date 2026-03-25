@@ -111,7 +111,7 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
         }
 
         // 3.5 Bloqueo de duplicados
-        const today = new Date().toISOString().split('T')[0]
+        const today = new Date(new Date().getTime() + (1 * 60 * 60 * 1000)).toISOString().split('T')[0] // Spain offset logic for server context
         const cleanTargetPhone = guestPhone.replace(/\D/g, '')
 
         const { data: allFutureAppointments, error: pendingError } = await supabase

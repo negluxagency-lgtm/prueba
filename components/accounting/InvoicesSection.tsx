@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Receipt, FileText, Loader2, ExternalLink, Upload, Calendar as CalendarIcon, Filter, X } from 'lucide-react'
+import { Plus, Trash2, Receipt, FileText, Loader2, ExternalLink, Upload, Calendar as CalendarIcon, Filter, X, Download, Search, Edit3, Save, Eye, FileDigit, Calendar } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import useSWR from 'swr'
+import { getLocalISOString } from '@/utils/date-helper'
 
 interface Factura {
     id: string | number
@@ -64,9 +65,8 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
 
     // --- REALTIME ---
     useEffect(() => {
-        const channel = supabase
-            .channel('realtime-invoices')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'facturas' }, () => mutate())
+        const channel = supabase.channel('realtime-facturas')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'facturacion' }, () => { mutate() })
             .subscribe()
         return () => { supabase.removeChannel(channel) }
     }, [mutate])
@@ -75,7 +75,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
     const [newFactura, setNewFactura] = useState({
         titulo: '',
         tipo: 'otros',
-        fecha_documento: new Date().toISOString().split('T')[0]
+        fecha_documento: getLocalISOString(),
     })
     const [file, setFile] = useState<File | null>(null)
     const [saving, setSaving] = useState(false)
@@ -131,7 +131,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
             if (dbError) throw dbError
 
             toast.success('Factura archivada correctamente')
-            setNewFactura({ titulo: '', tipo: 'otros', fecha_documento: new Date().toISOString().split('T')[0] })
+            setNewFactura({ titulo: '', tipo: 'otros', fecha_documento: getLocalISOString() })
             setFile(null)
             setShowAdd(false)
             mutate()

@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Search, Filter, Loader2, DollarSign, Wallet, CheckCircle2, XCircle, Upload, FileText } from 'lucide-react'
+import { Plus, Trash2, Search, Filter, Loader2, DollarSign, Wallet, CheckCircle2, XCircle, Upload, FileText, Download, Receipt, Edit3, Save, X, TrendingDown, Calendar } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import useSWR from 'swr'
+import { getLocalISOString } from '@/utils/date-helper'
 
 interface Gasto {
     id: number
@@ -74,7 +75,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
     const [newGasto, setNewGasto] = useState({
         concepto: '',
         monto: '',
-        fecha: new Date().toISOString().split('T')[0],
+        fecha: getLocalISOString(),
         categoria: 'Otros',
         metodo_pago: 'Efectivo',
         deducible: true
@@ -149,7 +150,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
             setNewGasto({
                 concepto: '',
                 monto: '',
-                fecha: new Date().toISOString().split('T')[0],
+                fecha: getLocalISOString(),
                 categoria: 'Otros',
                 metodo_pago: 'Efectivo',
                 deducible: true

@@ -31,7 +31,7 @@ export async function updateAppointmentDate(
         if (cita.cancelada) return { success: false, error: 'La cita está cancelada.' }
 
         // Don't allow editing past appointments
-        const today = new Date().toISOString().split('T')[0]
+        const today = new Date(new Date().getTime() + (1 * 60 * 60 * 1000)).toISOString().split('T')[0]
         if (cita.Dia < today) return { success: false, error: 'Este enlace ha expirado.' }
 
         // New date must be in the future too

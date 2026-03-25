@@ -65,8 +65,10 @@ export default async function CitaPage(props: PageProps) {
     const plan = shop?.plan || 'Básico'
     const closingDates = shop?.fechas_cierre || []
 
-    const today = new Date().toISOString().split('T')[0]
-    const isExpired = cita.Dia < today
+    // Considerar zona horaria de España (UTC+1) para evitar que a las 00:30 se considere día anterior por el servidor
+    const now = new Date();
+    const today = new Date(now.getTime() + (1 * 60 * 60 * 1000)).toISOString().split('T')[0];
+    const isExpired = cita.Dia < today;
     const isCancelled = !!cita.cancelada
 
     const formatDate = (dateStr: string) => {

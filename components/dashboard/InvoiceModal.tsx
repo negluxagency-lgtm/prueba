@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { X, User, Phone, Mail, CheckCircle2, Download, Loader2, FileText } from 'lucide-react'
+import { X, User, Phone, Mail, CheckCircle2, Download, Loader2, FileText, Receipt, CheckCircle, Package, DollarSign, Calculator, Smartphone, Save, Calendar, Clock } from 'lucide-react'
 import { PDFDownloadLink } from '@react-pdf/renderer'
 import { InvoicePDF } from './InvoicePDF'
 import { cn } from '@/lib/utils'
@@ -9,6 +9,7 @@ import QRCode from 'qrcode'
 import { emitirFacturaVerifactu } from '@/app/actions/verifactu'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
+import { getLocalISOString } from '@/utils/date-helper';
 
 interface InvoiceModalProps {
     isOpen: boolean
@@ -186,7 +187,7 @@ export function InvoiceModal({ isOpen, onClose, appointment, shopData, onUpdateC
                                                 barberia_id,
                                                 titulo: `Factura ${appointment.servicio} - ${clientData.name}`,
                                                 tipo: 'servicio_agenda',
-                                                fecha_documento: new Date().toISOString().split('T')[0],
+                                                fecha_documento: getLocalISOString(),
                                                 importe_total: Number(appointment.Precio) || 0,
                                                 cliente_nombre: clientData.name,
                                                 cliente_telefono: clientData.phone,

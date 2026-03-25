@@ -21,11 +21,12 @@ import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ObjectiveRingsSkeleton, TableSkeleton } from "@/components/ui/SkeletonLoader";
 import useSWR from "swr";
+import { getLocalISOString } from "@/utils/date-helper";
 
 export default function Dashboard() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState(getLocalISOString());
 
     // --- SWR HOOKS ---
     const {

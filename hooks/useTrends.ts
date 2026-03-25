@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import useSWR from "swr";
+import { getLocalISOString } from "@/utils/date-helper";
 
 export interface ChartDataPoint {
     name: string;
@@ -62,7 +63,7 @@ export function useTrends(referenceDate?: string, initialRange: TimeRange = 'mon
         userId ? ['trends', range, referenceDate, userId] : null,
         async () => {
             const refDate = (range === 'week' || !referenceDate) ? new Date() : new Date(referenceDate + 'T12:00:00');
-            const fmt = (d: Date) => d.toISOString().split('T')[0];
+            const fmt = (d: Date) => getLocalISOString(d);
 
             let result = {
                 chartData: [] as ChartDataPoint[],

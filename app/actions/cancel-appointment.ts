@@ -29,7 +29,7 @@ export async function cancelAppointmentByUuid(uuid: string): Promise<{ success: 
         }
 
         // Check expiry
-        const today = new Date().toISOString().split('T')[0]
+        const today = new Date(new Date().getTime() + (1 * 60 * 60 * 1000)).toISOString().split('T')[0]
         if (cita.Dia < today) {
             return { success: false, error: 'Este enlace ha expirado.' }
         }
