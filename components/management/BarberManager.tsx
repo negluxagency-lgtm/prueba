@@ -492,26 +492,26 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                                 key={barber.id}
                                 className="bg-zinc-900/40 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-colors"
                             >
-                                <div className="p-4 flex items-center justify-between">
+                                <div className="p-3 sm:p-4 flex items-center justify-between">
                                     {/* Clic en el row para abrir modal */}
                                     <button
                                         className="flex items-center gap-3 min-w-0 flex-1 text-left"
                                         onClick={() => setSelectedBarber(barber)}
                                     >
-                                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                                            <span className="text-xs font-black text-amber-400">{getInitials(barber.nombre)}</span>
+                                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                                            <span className="text-[10px] sm:text-xs font-black text-amber-400">{getInitials(barber.nombre)}</span>
                                         </div>
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <h3 className="text-white font-bold text-sm">{barber.nombre}</h3>
+                                        <div className="min-w-0 flex flex-col justify-center">
+                                            <div className="flex items-center gap-2 flex-nowrap overflow-hidden">
+                                                <h3 className="text-white font-bold text-xs sm:text-sm truncate">{barber.nombre}</h3>
                                                 {barber['jefe/dueño'] && (
                                                     <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm shrink-0">Dueño</span>
                                                 )}
                                                 {barbersWithChanges.includes(barber.id) && (
-                                                    <span className="text-[8px] font-black bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0">Sin guardar</span>
+                                                    <span className="text-[8px] font-black bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0 hidden sm:inline-block">Sin guardar</span>
                                                 )}
                                             </div>
-                                            <div className="flex gap-1 mt-1.5 flex-wrap">
+                                            <div className="hidden sm:flex gap-1 mt-1.5 flex-wrap">
                                                 {activeDayNames(barber).length > 0 ? (
                                                     activeDayNames(barber).map(d => (
                                                         <span key={d} className="text-[9px] font-bold bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded uppercase">{d}</span>
@@ -526,9 +526,9 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                                     {/* Botón eliminar */}
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleDeleteBarber(barber.id); }}
-                                        className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors shrink-0 ml-2"
+                                        className="p-1.5 sm:p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors shrink-0 ml-2"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     </button>
                                 </div>
                             </div>

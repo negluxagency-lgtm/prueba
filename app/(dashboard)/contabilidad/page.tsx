@@ -140,11 +140,6 @@ export default function AccountingPage() {
                     {/* ── TAB 1: Gestión Financiera ─────────────────────── */}
                     {activeTab === 'financiera' && (
                         <div className="space-y-8">
-                            {isAutonomo && (
-                                <div className="hidden lg:block">
-                                    <AutonomoGuide />
-                                </div>
-                            )}
                             
                             <AccountingSummary
                                 selectedMonth={selectedMonth}
@@ -208,9 +203,9 @@ export default function AccountingPage() {
                                 </div>
                             </div>
 
-                            {/* Guía Autónomo — Móvil */}
+                            {/* Guía Autónomo */}
                             {isAutonomo && (
-                                <div className="block lg:hidden">
+                                <div className="w-full">
                                     <AutonomoGuide />
                                 </div>
                             )}

@@ -67,17 +67,17 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon-new.ico?v=nelux3', sizes: '48x48' },
-      { url: '/favicon-new.svg?v=nelux3', type: 'image/svg+xml' },
-      { url: '/favicon-96x96.png?v=nelux3', type: 'image/png', sizes: '96x96' },
+      { url: '/favicon-new.ico?v=nelux4', sizes: '48x48' },
+      { url: '/favicon-new.svg?v=nelux4', type: 'image/svg+xml' },
+      { url: '/favicon-96x96.png?v=nelux4', type: 'image/png', sizes: '96x96' },
     ],
     apple: [
-      { url: '/apple-touch-icon.png?v=nelux3', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-touch-icon.png?v=nelux4', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/favicon-new.ico?v=nelux3',
+    shortcut: '/favicon-new.ico?v=nelux4',
     other: [
-      { rel: 'manifest', url: '/site.webmanifest?v=nelux3' },
-      { rel: 'mask-icon', url: '/safari-pinned-tab.svg?v=nelux3', color: '#f59e0b' },
+      { rel: 'manifest', url: '/site.webmanifest?v=nelux4' },
+      { rel: 'mask-icon', url: '/safari-pinned-tab.svg?v=nelux4', color: '#f59e0b' },
     ],
   }
 };

@@ -1,26 +1,28 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { manageSubscription } from '@/app/actions/manage-subscription'
-import { Store, CreditCard, Calendar, Mail, User, LogOut, Headset, Settings, ExternalLink } from 'lucide-react'
+import {
+    Store, CreditCard, LogOut, Headset,
+    Settings, Rocket as RocketIcon, Coins,
+    Save, Loader2, Calendar as CalendarIcon, ChevronRight,
+    Users, CheckCircle2, AlertTriangle, Shield
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
 import { ResetPasswordButton } from '@/components/ResetPasswordButton'
 import ManageSubscriptionButton from '@/components/ManageSubscriptionButton'
 import { useSubscription } from '@/hooks/useSubscription'
-import { Rocket as RocketIcon, Coins, Copy } from 'lucide-react'
-
 import { BarberManager } from '@/components/management/BarberManager'
 import { AvatarUpload } from '@/components/AvatarUpload'
-import { BannerUpload } from '@/components/BannerUpload'
-import { Save, Loader2, Calendar as CalendarIcon, ChevronRight } from 'lucide-react'
+import { ImageCropperDialog } from '@/components/ImageCropperDialog'
+import { getCroppedImg } from '@/utils/cropImage'
 import MonthlyClosingModal from '@/components/MonthlyClosingModal'
 import { cn } from '@/lib/utils'
 
-// Función para formatear fecha
 function formatearFecha(fecha: string) {
     return new Date(fecha).toLocaleDateString('es-ES', {
         day: 'numeric',
@@ -29,7 +31,6 @@ function formatearFecha(fecha: string) {
     })
 }
 
-// Función para obtener badge según estado
 function getBadgeEstado(estado: string) {
     switch (estado) {
         case 'pagado':
@@ -47,14 +48,14 @@ function getBadgeEstado(estado: string) {
 function getTextoEstado(estado: string) {
     switch (estado) {
         case 'pagado':
-            return 'Suscripción Activa'
+            return 'Activa'
         case 'impago':
             return 'Pago Pendiente'
         case 'prueba':
         case 'periodo_prueba':
             return 'Periodo de Prueba'
         default:
-            return 'Estado Desconocido'
+            return 'Desconocido'
     }
 }
 
@@ -69,154 +70,74 @@ export default function PerfilPage() {
     const [uploadingLogo, setUploadingLogo] = useState(false)
     const [bannerFile, setBannerFile] = useState<File | null>(null)
     const [uploadingBanner, setUploadingBanner] = useState(false)
+    const bannerInputRef = useRef<HTMLInputElement>(null)
+    const [uncroppedBannerUrl, setUncroppedBannerUrl] = useState<string | null>(null)
+    const [isBannerCropperOpen, setIsBannerCropperOpen] = useState(false)
     const [showClosingModal, setShowClosingModal] = useState(false)
 
     const cargarPerfil = useCallback(async () => {
         setLoading(true)
         try {
-            // Obtener sesión actual
             const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-            if (sessionError || !session) {
-                router.push('/')
-                return
-            }
-
+            if (sessionError || !session) { router.push('/'); return }
             setUserId(session.user.id)
             setEmail(session.user.email || '')
-
-            // Obtener datos del perfil desde la tabla perfiles
             const { data: perfilData, error: perfilError } = await supabase
-                .from('perfiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single()
-
+                .from('perfiles').select('*').eq('id', session.user.id).single()
             if (perfilError) {
-                console.error('Error al obtener perfil:', perfilError)
-                toast.error('Error al cargar datos del perfil')
-                return
+                toast.error('Error al cargar datos del perfil'); return
             }
-
             setPerfil(perfilData)
-        } catch (error) {
-            console.error('Error:', error)
-            toast.error('Error inesperado al cargar el perfil')
-        } finally {
-            setLoading(false)
-        }
+        } catch { toast.error('Error inesperado al cargar el perfil') }
+        finally { setLoading(false) }
     }, [router])
 
-    useEffect(() => {
-        cargarPerfil()
-    }, [cargarPerfil])
+    useEffect(() => { cargarPerfil() }, [cargarPerfil])
 
     const handleLogout = async () => {
         try {
             const { error } = await supabase.auth.signOut()
-
-            if (error) {
-                toast.error('Error al cerrar sesión')
-                console.error('Error:', error)
-                return
-            }
-
+            if (error) { toast.error('Error al cerrar sesión'); return }
             toast.success('Sesión cerrada correctamente')
-            router.push('/')
-            router.refresh()
-        } catch (error) {
-            toast.error('Error inesperado al cerrar sesión')
-            console.error('Error:', error)
-        }
-    }
-
-    const handleManageSubscription = async () => {
-        try {
-            await manageSubscription(email)
-        } catch (error: any) {
-            toast.error(error.message || 'Error al abrir el portal de Stripe')
-        }
+            router.push('/'); router.refresh()
+        } catch { toast.error('Error inesperado al cerrar sesión') }
     }
 
     const handleUploadLogo = async () => {
-        if (!avatarFile || !userId) return;
-
-        setUploadingLogo(true);
+        if (!avatarFile || !userId) return
+        setUploadingLogo(true)
         try {
-            const fileExt = avatarFile.name.split('.').pop();
-            const fileName = `${userId}/${Date.now()}.${fileExt}`;
-
-            // Upload to Supabase Storage
-            const { error: uploadError } = await supabase.storage
-                .from('logos_barberias')
-                .upload(fileName, avatarFile, { upsert: true });
-
-            if (uploadError) throw uploadError;
-
-            // Get Public URL
-            const { data: urlData } = supabase.storage
-                .from('logos_barberias')
-                .getPublicUrl(fileName);
-
-            const finalLogoUrl = urlData.publicUrl;
-
-            // Update Profile Table
-            const { error: profileError } = await supabase
-                .from('perfiles')
-                .update({ logo_url: finalLogoUrl })
-                .eq('id', userId);
-
-            if (profileError) throw profileError;
-
-            // Update local state
-            setPerfil((prev: any) => ({ ...prev, logo_url: finalLogoUrl }));
-            setAvatarFile(null);
-            toast.success('Foto de perfil actualizada');
-        } catch (error: any) {
-            console.error('Error:', error);
-            toast.error('Error al subir imagen: ' + (error.message || 'Error desconocido'));
-        } finally {
-            setUploadingLogo(false);
-        }
-    };
+            const fileExt = avatarFile.name.split('.').pop()
+            const fileName = `${userId}/${Date.now()}.${fileExt}`
+            const { error: uploadError } = await supabase.storage.from('logos_barberias').upload(fileName, avatarFile, { upsert: true })
+            if (uploadError) throw uploadError
+            const { data: urlData } = supabase.storage.from('logos_barberias').getPublicUrl(fileName)
+            const { error: profileError } = await supabase.from('perfiles').update({ logo_url: urlData.publicUrl }).eq('id', userId)
+            if (profileError) throw profileError
+            setPerfil((prev: any) => ({ ...prev, logo_url: urlData.publicUrl }))
+            setAvatarFile(null)
+            toast.success('Foto de perfil actualizada')
+        } catch (error: any) { toast.error('Error al subir imagen: ' + (error.message || 'Error desconocido')) }
+        finally { setUploadingLogo(false) }
+    }
 
     const handleUploadBanner = async () => {
-        if (!bannerFile || !userId) return;
-
-        setUploadingBanner(true);
+        if (!bannerFile || !userId) return
+        setUploadingBanner(true)
         try {
-            const fileExt = bannerFile.name.split('.').pop();
-            const fileName = `${userId}/banner_${Date.now()}.${fileExt}`;
-
-            const { error: uploadError } = await supabase.storage
-                .from('banner')
-                .upload(fileName, bannerFile, { upsert: true });
-
-            if (uploadError) throw uploadError;
-
-            const { data: urlData } = supabase.storage
-                .from('banner')
-                .getPublicUrl(fileName);
-
-            const finalBannerUrl = urlData.publicUrl;
-
-            const { error: profileError } = await supabase
-                .from('perfiles')
-                .update({ banner_url: finalBannerUrl })
-                .eq('id', userId);
-
-            if (profileError) throw profileError;
-
-            setPerfil((prev: any) => ({ ...prev, banner_url: finalBannerUrl }));
-            setBannerFile(null);
-            toast.success('Banner actualizado correctamente');
-        } catch (error: any) {
-            console.error('Error:', error);
-            toast.error('Error al subir el banner: ' + (error.message || 'Error desconocido'));
-        } finally {
-            setUploadingBanner(false);
-        }
-    };
+            const fileExt = bannerFile.name.split('.').pop()
+            const fileName = `${userId}/banner_${Date.now()}.${fileExt}`
+            const { error: uploadError } = await supabase.storage.from('banner').upload(fileName, bannerFile, { upsert: true })
+            if (uploadError) throw uploadError
+            const { data: urlData } = supabase.storage.from('banner').getPublicUrl(fileName)
+            const { error: profileError } = await supabase.from('perfiles').update({ banner_url: urlData.publicUrl }).eq('id', userId)
+            if (profileError) throw profileError
+            setPerfil((prev: any) => ({ ...prev, banner_url: urlData.publicUrl }))
+            setBannerFile(null)
+            toast.success('Banner actualizado correctamente')
+        } catch (error: any) { toast.error('Error al subir el banner: ' + (error.message || 'Error desconocido')) }
+        finally { setUploadingBanner(false) }
+    }
 
     if (loading) {
         return (
@@ -243,344 +164,391 @@ export default function PerfilPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] p-4 lg:p-8">
-            <div className="max-w-4xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="space-y-2">
-                    <h1 className="text-3xl lg:text-4xl font-bold text-white">
-                        Perfil de Barbería
-                    </h1>
-                    <p className="text-sm text-zinc-500">
-                        ID: {userId}
-                    </p>
+        <div className="min-h-[calc(100vh+4.5rem)] bg-[#0a0a0a] -mt-[1.5rem] lg:mt-0 pb-24 lg:pb-8">
+
+            {/* ── HEADER FUSION ── */}
+            <div className="relative">
+                <div
+                    className="h-[140px] lg:h-[420px] w-full bg-zinc-900 relative overflow-hidden"
+                    style={{ backgroundImage: `url(${perfil.banner_url || '/images/default_banner.jpg'})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                >
+                    {/* Degradado inferior */}
+                    <div className="absolute inset-x-0 bottom-0 h-30 lg:h-40 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/70 to-transparent pointer-events-none" />
+                    {/* Banner upload overlay */}
+                    <input
+                        ref={bannerInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            if (file.size > 8 * 1024 * 1024) { toast.error('La imagen no debe superar los 8MB'); return }
+                            const objectUrl = URL.createObjectURL(file)
+                            setUncroppedBannerUrl(objectUrl)
+                            setIsBannerCropperOpen(true)
+                            e.target.value = ''
+                        }}
+                    />
+                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        {bannerFile ? (
+                            <button
+                                onClick={handleUploadBanner}
+                                disabled={uploadingBanner}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[10px] uppercase rounded-lg transition-all disabled:opacity-50 shadow-lg"
+                            >
+                                {uploadingBanner ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                {uploadingBanner ? 'Guardando...' : 'Guardar banner'}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => bannerInputRef.current?.click()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white font-bold text-[10px] uppercase tracking-widest rounded-lg border border-white/10 hover:border-white/20 transition-all shadow-lg"
+                            >
+                                Cambiar banner
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                {/* Tarjeta 1: Datos Generales */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                            <Store className="w-6 h-6 text-amber-500" />
-                        </div>
-                        <h2 className="text-xl font-semibold text-white">
-                            Datos Generales
-                        </h2>
-                    </div>
-
-                    <div className="flex flex-col lg:flex-row gap-8 items-start">
-                        {/* Columna Izquierda: Logo y Banner */}
-                        <div className="flex flex-col gap-8 w-full lg:w-64 shrink-0">
-                            {/* Selector de Foto de Perfil */}
-                            <div className="flex flex-col items-center gap-4 w-full">
-                                <AvatarUpload
-                                    currentImageUrl={perfil?.logo_url}
-                                    onFileSelect={setAvatarFile}
-                                    loading={uploadingLogo}
-                                />
+                {/* Avatar flotante */}
+                <div className="px-4 lg:px-8">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex flex-col lg:flex-row items-center lg:items-end lg:justify-between gap-3 -mt-10 lg:-mt-16 relative z-10 text-center lg:text-left">
+                            <div className="flex flex-col lg:flex-row items-center lg:items-end gap-3 lg:gap-4">
+                                <div className="relative">
+                                    <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-full border-4 border-[#0a0a0a] overflow-hidden bg-zinc-900 shadow-xl">
+                                        <AvatarUpload
+                                            currentImageUrl={perfil?.logo_url}
+                                            onFileSelect={setAvatarFile}
+                                            loading={uploadingLogo}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="pb-1">
+                                    <h1 className="text-xl lg:text-2xl font-black text-white leading-tight">
+                                        {perfil.nombre_barberia || 'Tu Barbería'}
+                                    </h1>
+                                    <p className="text-xs text-zinc-500 font-mono mt-0.5">
+                                        app.nelux.es/<span className="text-amber-500">{perfil.slug || 'sin-slug'}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap justify-center lg:justify-end items-center gap-2 pb-1 lg:mt-0 mt-2">
                                 {avatarFile && (
                                     <button
                                         onClick={handleUploadLogo}
                                         disabled={uploadingLogo}
-                                        className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[10px] uppercase rounded-lg transition-all disabled:opacity-50"
                                     >
-                                        {uploadingLogo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                        Guardar Nueva Foto
+                                        {uploadingLogo ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                        Guardar Foto
                                     </button>
                                 )}
-                            </div>
-
-                            {/* Selector de Banner */}
-                            <div className="flex flex-col gap-3 w-full">
-                                <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest text-center">
-                                    Banner de la Barbería
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold ${getBadgeEstado(perfil.estado)}`}>
+                                    {perfil.estado === 'pagado' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                                    {getTextoEstado(perfil.estado)}
                                 </span>
-                                <BannerUpload
-                                    currentImageUrl={perfil?.banner_url}
-                                    onFileSelect={setBannerFile}
-                                    loading={uploadingBanner}
-                                />
-                                {bannerFile && (
-                                    <button
-                                        onClick={handleUploadBanner}
-                                        disabled={uploadingBanner}
-                                        className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs uppercase rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                                    >
-                                        {uploadingBanner ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                        Guardar Banner
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 flex-1 w-full">
-                            {/* Nombre del negocio */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-                                    <User className="w-4 h-4" />
-                                    Nombre del Negocio
-                                </label>
-                                <input
-                                    type="text"
-                                    value={perfil.nombre_barberia || 'Sin nombre'}
-                                    disabled
-                                    className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
-                                         rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                                />
-                            </div>
-
-                            {/* Link para agendar */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-                                    <ExternalLink className="w-4 h-4" />
-                                    Link para agendar en tu barbería
-                                </label>
-                                <div className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-white text-xs lg:text-sm break-all font-mono min-h-[42px] flex items-center">
-                                    {`app.nelux.es/${perfil.slug || '(sin-slug)'}`}
-                                </div>
-                            </div>
-
-                            {/* Link portal de barberos (Solo para planes no Básicos) */}
-                            {perfil.plan !== 'Básico' && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-                                        <User className="w-4 h-4 text-amber-500" />
-                                        Link portal de barberos
-                                    </label>
-                                    <div className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-amber-500/80 text-xs lg:text-sm font-mono break-all min-h-[42px] flex items-center">
-                                        {`app.nelux.es/${perfil.slug || '(sin-slug)'}/staff`}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Email */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-                                    <Mail className="w-4 h-4" />
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    disabled
-                                    className="w-full px-4 py-2.5 bg-zinc-950 border border-zinc-800 
-                                         rounded-lg text-white disabled:opacity-60 disabled:cursor-not-allowed"
-                                />
-                            </div>
-
-                            {/* Miembro desde */}
-                            <div className="flex items-center gap-2 text-zinc-400">
-                                <Calendar className="w-4 h-4" />
-                                <span className="text-sm">
-                                    Miembro desde: <span className="text-white font-medium">
-                                        {formatearFecha(perfil.created_at)}
-                                    </span>
-                                </span>
-                            </div>
-
-                            {/* Botón Cambiar Datos */}
-                            <div className="pt-4 border-t border-zinc-800/50">
                                 <Link
                                     href="/ajustes"
-                                    className="inline-flex items-center gap-2 px-3 py-2 lg:px-4 lg:py-2.5 bg-zinc-800 hover:bg-zinc-700 
-                                         text-white text-[10px] lg:text-sm font-bold uppercase tracking-widest rounded-xl 
-                                         border border-zinc-700 hover:border-zinc-600 transition-all active:scale-95"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all"
                                 >
-                                    <Settings className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-amber-500" />
-                                    <span className="leading-none">Cambiar Datos de Configuración</span>
+                                    <Settings className="w-3.5 h-3.5 text-amber-500" />
+                                    Ajustes
                                 </Link>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* Sección de Gestión Operativa */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Tarjeta: Gestión de Equipo */}
-                    {perfil.plan !== 'Básico' && (
-                        <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-                            <BarberManager perfilId={userId} />
-                        </div>
-                    )}
+            {/* ── CUERPO PRINCIPAL ── */}
+            <div className="px-4 lg:px-8 py-6">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-                    {/* Tarjeta: Gestión de Cierres y Vacaciones (NUEVO) */}
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 h-fit flex flex-col justify-between space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-amber-500/10 rounded-lg">
-                                <CalendarIcon className="w-5 h-5 text-amber-500" />
+                        {/* ══════════ COLUMNA IZQUIERDA (7/12) ══════════ */}
+                        <div className="lg:col-span-7 flex flex-col gap-6 order-1 lg:order-1">
+
+                            {/* Datos Generales (compacto) */}
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+                                <div className="flex items-center gap-2.5 mb-4">
+                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                        <Store className="w-4 h-4 text-amber-500" />
+                                    </div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Datos Generales</h2>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Nombre del Negocio</p>
+                                        <p className="text-sm text-white font-medium truncate">{perfil.nombre_barberia || '—'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Email</p>
+                                        <p className="text-sm text-white font-medium truncate">{email}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Link de Citas</p>
+                                        <p className="text-xs text-zinc-300 font-mono truncate">app.nelux.es/{perfil.slug || '(sin-slug)'}</p>
+                                    </div>
+                                    {perfil.plan !== 'Básico' && (
+                                        <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Portal de Barberos</p>
+                                            <p className="text-xs text-amber-500/80 font-mono truncate">app.nelux.es/{perfil.slug || '(sin-slug)'}/staff</p>
+                                        </div>
+                                    )}
+                                    <div className="sm:col-span-2">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Miembro desde</p>
+                                        <p className="text-sm text-zinc-300">{formatearFecha(perfil.created_at)}</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-white font-bold text-sm">Cierres Mensuales</h3>
-                                <p className={cn(
-                                    "uppercase tracking-wider font-black transition-all",
-                                    perfil.calendario_confirmado
-                                        ? "text-[10px] text-zinc-500"
-                                        : "text-xs text-red-500 animate-pulse"
-                                )}>
-                                    {perfil.calendario_confirmado ? '✓ Calendario Verificado' : '⚠ Confirmación Pendiente'}
+
+                            {/* Gestión de Equipo */}
+                            {perfil.plan !== 'Básico' && (
+                                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+                                    <div className="flex items-center gap-2.5 mb-4">
+                                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                            <Users className="w-4 h-4 text-amber-500" />
+                                        </div>
+                                        <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">
+                                            Gestión de Equipo
+                                        </h2>
+                                    </div>
+                                    <BarberManager perfilId={userId} />
+                                </div>
+                            )}
+
+                            {/* Cierres Mensuales */}
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                            <CalendarIcon className="w-4 h-4 text-amber-500" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Cierres Mensuales</h2>
+                                            <p className={cn(
+                                                "text-[10px] font-black uppercase tracking-wider mt-0.5",
+                                                perfil.calendario_confirmado ? "text-zinc-600" : "text-red-500 animate-pulse"
+                                            )}>
+                                                {perfil.calendario_confirmado ? '✓ Calendario Verificado' : '⚠ Confirmación Pendiente'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowClosingModal(true)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg border border-zinc-700/50 transition-all text-xs font-bold uppercase tracking-widest group"
+                                    >
+                                        Abrir
+                                        <ChevronRight className="w-3.5 h-3.5 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
+                                    </button>
+                                </div>
+                                <p className="text-xs text-zinc-500 mb-3">
+                                    Define los días de cierre del próximo mes. Los clientes no podrán agendar en esas fechas.
                                 </p>
+                                {perfil.fechas_cierre && perfil.fechas_cierre.length > 0 ? (
+                                    <div className="flex overflow-x-auto hide-scrollbar flex-nowrap gap-2 pb-2 -mx-5 px-5 lg:mx-0 lg:px-0">
+                                        {perfil.fechas_cierre.sort().map((fecha: string) => (
+                                            <span key={fecha} className="px-3 py-1.5 whitespace-nowrap bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-md text-[10px] font-bold">
+                                                {fecha.split('-').reverse().slice(0, 2).join('/')}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-zinc-600 italic">Sin fechas de cierre configuradas</p>
+                                )}
+                            </div>
+
+                            {/* Cuenta & Soporte (Desktop) */}
+                            <div className="hidden lg:block bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-3">
+                                <div className="flex items-center gap-2.5 mb-4">
+                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                        <Shield className="w-4 h-4 text-amber-500" />
+                                    </div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Cuenta & Soporte</h2>
+                                </div>
+
+                                <a
+                                    href="https://wa.me/34623064127"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-white font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <Headset className="w-4 h-4 text-amber-500" />
+                                    Hablar con Soporte
+                                </a>
+
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Cerrar Sesión
+                                </button>
+
+                                <div className="pt-1 border-t border-zinc-800/60 flex justify-center">
+                                    <ResetPasswordButton email={email} />
+                                </div>
                             </div>
                         </div>
 
-                        <p className="text-xs text-zinc-400">
-                            Define qué días cerrarás el próximo mes para que esos días los clientes no puedan agendar citas.
-                            La APP te hará confirmar las fechas de cierre del próximo mes una semana antes de su comienzo automáticamente.
-                        </p>
+                        {/* ══════════ COLUMNA DERECHA (5/12) ══════════ */}
+                        <div className="lg:col-span-5 flex flex-col gap-6 order-2 lg:order-2">
 
-                        {/* Preview de fechas seleccionadas */}
-                        {perfil.fechas_cierre && perfil.fechas_cierre.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 pt-2">
-                                {perfil.fechas_cierre.sort().map((fecha: string) => (
-                                    <span key={fecha} className="px-2 py-0.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-md text-[10px] font-bold">
-                                        {fecha.split('-').reverse().slice(0, 2).join('/')}
+                            {/* Tarjeta de Recompensas: Afiliados (Mobile Action Card) */}
+                            <div className="bg-gradient-to-b from-[#1a1500] to-zinc-900/60 border border-amber-500/30 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center text-center shadow-2xl">
+                                <div className="absolute -top-10 -right-10 opacity-[0.03] pointer-events-none">
+                                    <Coins className="w-64 h-64 text-amber-500" />
+                                </div>
+                                <div className="relative z-10 w-full space-y-6">
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
+                                        <RocketIcon className="w-3.5 h-3.5 text-amber-500" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Programa de Afiliados</span>
+                                    </div>
+
+                                    {perfil?.afiliado ? (
+                                        <div className="w-full pt-2">
+                                            <Link
+                                                href="/afiliados"
+                                                className="flex items-center justify-center gap-2 w-full py-4 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:-translate-y-0.5 active:translate-y-0"
+                                            >
+                                                <Coins className="w-4 h-4" />
+                                                Acceder a mi panel de afiliados
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col text-left space-y-5">
+                                            <div className="space-y-3">
+                                                <h3 className="text-white font-bold text-lg">Gana más con Nelux</h3>
+                                                <ul className="text-xs text-zinc-400 space-y-2">
+                                                    <li className="flex items-start gap-2">
+                                                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                                                        <span>Llévate el <strong className="text-amber-400">100% del primer pago</strong> de cada profesional que invites.</span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2">
+                                                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                                                        <span>Generador automático de cupones para atraer prospectos.</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            <Link
+                                                href="/afiliados"
+                                                className="flex items-center justify-center gap-2 w-full py-4 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] hover:-translate-y-0.5 active:translate-y-0"
+                                            >
+                                                <RocketIcon className="w-4 h-4" />
+                                                Unirme al programa de afiliados
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Suscripción */}
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                        <CreditCard className="w-4 h-4 text-amber-500" />
+                                    </div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Suscripción</h2>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Plan Actual</p>
+                                        <p className="text-base font-black text-white">{perfil.plan || '—'}</p>
+                                    </div>
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold ${getBadgeEstado(perfil.estado)}`}>
+                                        {getTextoEstado(perfil.estado)}
                                     </span>
-                                ))}
+                                </div>
+
+                                <div className="border-t border-zinc-800 pt-4">
+                                    <div className="lg:scale-75 lg:origin-top lg:-mb-57">
+                                        <Paywall variant="pricing" isSection={true} showAllPlans={false} />
+                                    </div>
+                                </div>
+
+                                {perfil.estado !== 'prueba' && perfil.estado !== 'periodo_prueba' && (
+                                    <ManageSubscriptionButton className="w-full" />
+                                )}
                             </div>
-                        )}
 
-                        <button
-                            onClick={() => setShowClosingModal(true)}
-                            className="flex items-center justify-between w-full px-4 py-3 bg-zinc-800/50 hover:bg-zinc-800 text-white rounded-xl border border-zinc-700/50 transition-all group mt-auto"
-                        >
-                            <span className="text-xs font-bold uppercase tracking-widest">Abrir Calendario</span>
-                            <ChevronRight className="w-4 h-4 text-amber-500 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                    </div>
-                </div>
 
-                <MonthlyClosingModal
-                    isOpen={showClosingModal}
-                    onClose={() => setShowClosingModal(false)}
-                    onSuccess={(newDates) => {
-                        setPerfil((prev: any) => ({
-                            ...prev,
-                            calendario_confirmado: true,
-                            fechas_cierre: newDates
-                        }));
-                        refreshSubscription();
-                    }}
-                    currentClosingDates={perfil.fechas_cierre}
-                />
-
-                {/* Tarjeta Exclusiva: Programa de Afiliados */}
-                <div className="bg-gradient-to-br from-amber-500/20 via-zinc-900/50 to-zinc-900/50 border border-amber-500/30 rounded-2xl p-6 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
-                        <Coins className="w-32 h-32 text-amber-500" />
-                    </div>
-
-                    <div className="relative z-10 space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-amber-500/20 rounded-lg border border-amber-500/30">
-                                <RocketIcon className="w-6 h-6 text-amber-500" />
-                            </div>
-                            <h2 className="text-xl font-bold text-white shadow-amber-500/50 drop-shadow-md">
-                                {perfil?.afiliado
-                                    ? 'Tu Panel del Programa de Afiliados'
-                                    : '¿Quieres ganar ingresos ilimitados con Nelux Barber?'}
-                            </h2>
                         </div>
 
-                        <p className="text-sm text-zinc-300 max-w-2xl">
-                            {perfil?.afiliado
-                                ? 'Gestiona tus beneficios, visualiza tus referidos y extrae tu código desde tu panel principal de recompensas de Nelux Barber.'
-                                : 'Invita a otros barberos a usar Nelux y gana dinero real o saldo para tu suscripción. Hemos diseñado nuestro programa de afiliados para recompensar a aquellos que nos ayudan a crecer.'}
-                        </p>
+                        {/* ══════════ SECCIÓN FINAL (Cuenta & Soporte Mobile) ══════════ */}
+                        <div className="lg:hidden lg:col-span-7 flex flex-col gap-6 order-3">
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-3">
+                                <div className="flex items-center gap-2.5 mb-4">
+                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                        <Shield className="w-4 h-4 text-amber-500" />
+                                    </div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Cuenta & Soporte</h2>
+                                </div>
 
-                        <div className="pt-2">
-                            <Link
-                                href="/afiliados"
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-sm uppercase tracking-widest rounded-xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] hover:-translate-y-0.5"
-                            >
-                                <Coins className="w-4 h-4" />
-                                {perfil?.afiliado ? 'Acceder a mi panel de afiliado' : 'Únete a nuestro programa de afiliados'}
-                            </Link>
-                        </div>
-                    </div>
-                </div>
+                                <a
+                                    href="https://wa.me/34623064127"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-white font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <Headset className="w-4 h-4 text-amber-500" />
+                                    Hablar con Soporte
+                                </a>
 
-                {/* Tarjeta 2: Suscripción y Facturación */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                            <CreditCard className="w-6 h-6 text-amber-500" />
-                        </div>
-                        <h2 className="text-xl font-semibold text-white">
-                            Suscripción y Facturación
-                        </h2>
-                    </div>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Cerrar Sesión
+                                </button>
 
-                    <div className="space-y-4">
-                        {/* Estado */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-400">
-                                Estado de Suscripción
-                            </label>
-                            <div>
-                                <span className={`inline-block px-4 py-2 rounded-lg border font-medium text-sm
-                                                ${getBadgeEstado(perfil.estado)}`}>
-                                    {getTextoEstado(perfil.estado)}
-                                </span>
+                                <div className="pt-1 border-t border-zinc-800/60 flex justify-center">
+                                    <ResetPasswordButton email={email} />
+                                </div>
                             </div>
                         </div>
-
-                        {/* Botón de gestión - Solo visible si no es periodo de prueba */}
-                        {perfil.estado !== 'prueba' && perfil.estado !== 'periodo_prueba' && (
-                            <ManageSubscriptionButton className="w-full" />
-                        )}
-                    </div>
-                </div>
-
-                {/* Tarjeta 3: Planes y Precios */}
-                <div className="bg-zinc-900/30 border border-zinc-800 rounded-2xl p-6 overflow-hidden">
-                    <Paywall variant="pricing" isSection={true} showAllPlans={false} />
-                </div>
-
-                {/* Tarjeta 4: Contactar con Soporte */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-6">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                            <Headset className="w-6 h-6 text-amber-500" />
-                        </div>
-                        <h2 className="text-xl font-semibold text-white">
-                            Contactar con Soporte
-                        </h2>
-                    </div>
-
-                    <div className="space-y-4">
-                        <p className="text-sm text-zinc-400">
-                            ¿Tienes alguna duda o problema técnico? Nuestro equipo está listo para ayudarte por WhatsApp.
-                        </p>
-                        <a
-                            href="https://wa.me/34623064127"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 
-                                     text-white font-medium rounded-lg transition-all duration-200
-                                     border border-zinc-700 hover:border-zinc-600 text-center block"
-                        >
-                            Hablar con Soporte
-                        </a>
-                    </div>
-                </div>
-
-                {/* Zona de Peligro */}
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-                    <div className="border-t border-red-900/30 pt-6">
-                        <h3 className="text-sm font-semibold text-red-400 mb-3">
-                            Zona de Peligro
-                        </h3>
-                        <button
-                            onClick={handleLogout}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 
-                                       bg-red-950/30 hover:bg-red-900/40 border border-red-800/50 
-                                       hover:border-red-700 text-red-400 hover:text-red-300 
-                                       rounded-lg transition-all duration-200"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            <span className="font-medium">Cerrar Sesión</span>
-                        </button>
-                        <ResetPasswordButton email={email} />
                     </div>
                 </div>
             </div>
+
+
+            {uncroppedBannerUrl && (
+                <ImageCropperDialog
+                    isOpen={isBannerCropperOpen}
+                    imageSrc={uncroppedBannerUrl}
+                    onClose={() => setIsBannerCropperOpen(false)}
+                    onCropComplete={async (croppedAreaPixels) => {
+                        try {
+                            const croppedFile = await getCroppedImg(uncroppedBannerUrl, croppedAreaPixels)
+                            if (croppedFile) {
+                                setBannerFile(croppedFile)
+                                setIsBannerCropperOpen(false)
+                            }
+                        } catch {
+                            toast.error('Error al recortar la imagen')
+                        }
+                    }}
+                    aspectRatio={3 / 1}
+                />
+            )}
+
+            <MonthlyClosingModal
+                isOpen={showClosingModal}
+                onClose={() => setShowClosingModal(false)}
+                onSuccess={(newDates) => {
+                    setPerfil((prev: any) => ({
+                        ...prev,
+                        calendario_confirmado: true,
+                        fechas_cierre: newDates
+                    }))
+                    refreshSubscription()
+                }}
+                currentClosingDates={perfil.fechas_cierre}
+            />
         </div>
     )
 }

@@ -169,10 +169,14 @@ export default function Dashboard() {
             promise = supabase.from('ventas_productos').delete().eq('id', item.id).then(({ error }) => {
                 if (error) return { success: false, error: error.message };
                 mutateSales();
+                mutateMetrics();
                 return { success: true };
             }) as any;
         } else {
-            promise = deleteCita(item.id);
+            promise = deleteCita(item.id).then((res: any) => {
+                if (res.success) mutateMetrics();
+                return res;
+            });
         }
 
         toast.promise(promise, {
@@ -186,8 +190,10 @@ export default function Dashboard() {
     };
 
     const handleSave = async (data: AppointmentFormData) => {
-        const isNew = !editingCita;
-        const promise = saveCita(data, editingCita?.id || null);
+        const promise = saveCita(data, editingCita?.id || null).then((res: any) => {
+            if (res.success) mutateMetrics();
+            return res;
+        });
 
         toast.promise(promise, {
             loading: 'Guardando...',
@@ -195,7 +201,8 @@ export default function Dashboard() {
                 if (!result.success) throw new Error(result.error);
                 setIsModalOpen(false);
                 setEditingCita(null);
-                if (isNew && result.uuid) setAppointmentLinkUuid(result.uuid);
+                // NOTA: Se ha omitido mostrar el generador de links de gestión 
+                // para citas introducidas manualmente desde el dashboard.
                 return 'Registro guardado correctamente';
             },
             error: (err) => `Error: ${err}`
@@ -213,6 +220,7 @@ export default function Dashboard() {
                 .eq('barberia_id', userId);
             if (error) throw error;
             mutateSales();
+            mutateMetrics();
             return { success: true };
         };
 
@@ -223,8 +231,9 @@ export default function Dashboard() {
     };
 
     const handleUpdateStatus = async (id: number, status: 'pendiente' | 'confirmada' | 'cancelada', pago?: string) => {
-        const promise = updateAppointmentStatus(id, status, pago).then(res => {
+        const promise = updateAppointmentStatus(id, status, pago).then((res: any) => {
             if (!res.success) throw new Error(res.error);
+            mutateMetrics();
             return res;
         });
         toast.promise(promise, { loading: 'Actualizando estado...', success: 'Estado actualizado', error: (err) => `Error: ${err.message}` });
@@ -302,7 +311,7 @@ export default function Dashboard() {
                 isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingCita(null); }}
                 onSave={handleSave} services={services} barbers={barbers} isEditing={!!editingCita}
                 initialData={editingCita ? { ...editingCita, Telefono: String(editingCita.Telefono), Precio: String(editingCita.Precio) } as any : {
-                    Nombre: '', servicio: '', barbero: '', barbero_id: '', Dia: selectedDate, Hora: '', Telefono: '', Precio: '', confirmada: false
+                    Nombre: '', servicio: '', barbero: '', barbero_id: '', Dia: selectedDate, Hora: '09:00', Telefono: '', Precio: '', confirmada: false
                 }}
             />
 

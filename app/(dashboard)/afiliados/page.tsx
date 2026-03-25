@@ -12,6 +12,7 @@ export default function AfiliadosPage() {
     const [loading, setLoading] = useState(true)
     const [profile, setProfile] = useState<any>(null)
     const [copied, setCopied] = useState(false)
+    const [joining, setJoining] = useState(false)
 
     const fetchProfile = useCallback(async () => {
         setLoading(true)
@@ -54,6 +55,29 @@ export default function AfiliadosPage() {
         setTimeout(() => setCopied(false), 2000)
     }
 
+    const handleJoinProgram = async () => {
+        setJoining(true)
+        try {
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+            if (sessionError || !session) throw new Error('No session')
+
+            const { error } = await supabase
+                .from('perfiles')
+                .update({ afiliado: true })
+                .eq('id', session.user.id)
+
+            if (error) throw error
+
+            setProfile((prev: any) => ({ ...prev, afiliado: true }))
+            toast.success('¡Te has unido al Programa de Afiliados!')
+        } catch (error) {
+            console.error('Error joining affiliate program:', error)
+            toast.error('Error al unirse al programa')
+        } finally {
+            setJoining(false)
+        }
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
@@ -68,7 +92,7 @@ export default function AfiliadosPage() {
     }
 
     // VISTA DE AFILIADO ACTIVO (Si tiene código, ya es afiliado por defecto gracias a n8n)
-    if (profile?.codigo) {
+    if (profile?.afiliado && profile?.codigo) {
         const balance = profile.cantidad_ganada || 0
         const afiliadosCount = profile.cantidad_afiliados || 0
         const code = profile.codigo
@@ -225,11 +249,26 @@ export default function AfiliadosPage() {
                 </div>
 
                 <div className="pt-8 flex flex-col items-center gap-4">
-                    <div className="bg-zinc-900/80 border border-amber-500/20 text-amber-500 px-6 py-4 rounded-xl text-sm font-bold uppercase tracking-widest text-center">
-                        Para activar tu panel de afiliado y ver tu código, necesitas tener una suscripción activa.
-                    </div>
+                    {!profile?.afiliado ? (
+                        <button
+                            onClick={handleJoinProgram}
+                            disabled={joining}
+                            className="flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-black text-sm uppercase tracking-widest rounded-2xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.25)] hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] disabled:opacity-50"
+                        >
+                            {joining ? (
+                                <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <Rocket className="w-5 h-5" />
+                            )}
+                            {joining ? 'Uniendo...' : 'Unirme al programa de afiliados'}
+                        </button>
+                    ) : (
+                        <div className="bg-zinc-900/80 border border-amber-500/20 text-amber-500 px-6 py-4 rounded-xl text-sm font-bold uppercase tracking-widest text-center">
+                            Para activar tu panel de afiliado y ver tu código, necesitas tener una suscripción activa.
+                        </div>
+                    )}
 
-                    <p className="text-xs text-zinc-600 font-medium max-w-xl text-center">
+                    <p className="text-xs text-zinc-600 font-medium max-w-xl text-center mt-2">
                         * Aplicable a todos los planes. Las comisiones se acreditan exclusivamente tras el primer pago real de la suscripción del referido (excluyendo pagos promocionales de 0€).
                     </p>
                 </div>

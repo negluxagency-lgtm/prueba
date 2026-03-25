@@ -84,7 +84,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onCl
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="flex flex-col items-center gap-4 mb-6">
-                                <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 w-full ml-1">Foto del Producto</label>
+                                <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 w-full ml-1">Foto del Producto (opcional)</label>
                                 <div className="relative group w-40 h-40">
                                     <input
                                         type="file"

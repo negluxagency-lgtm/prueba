@@ -13,7 +13,7 @@ interface AddProductModalProps {
 export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onConfirm }) => {
     const [nombre, setNombre] = useState('');
     const [precio, setPrecio] = useState('');
-    const [stock, setStock] = useState('0');
+    const [stock, setStock] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -35,7 +35,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
             onConfirm(nombre, Number(precio), Number(stock), file);
             setNombre('');
             setPrecio('');
-            setStock('0');
+            setStock('');
             setFile(null);
             setPreviewUrl(null);
             onClose();
@@ -76,7 +76,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClos
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="flex flex-col items-center gap-4 mb-6">
-                                <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 w-full ml-1">Foto del Producto</label>
+                                <label className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 w-full ml-1">Foto del Producto (opcional)</label>
                                 <div className="relative group w-40 h-40">
                                     <input
                                         type="file"

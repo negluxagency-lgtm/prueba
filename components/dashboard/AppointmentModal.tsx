@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Zap } from 'lucide-react';
 import { AppointmentFormData } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TimePicker24h } from '@/components/ui/TimePicker24h';
@@ -16,15 +16,53 @@ interface AppointmentModalProps {
 
 export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onClose, onSave, initialData, isEditing, services = [], barbers = [] }) => {
     const [formData, setFormData] = useState<AppointmentFormData>(initialData);
+    const [isFastMode, setIsFastMode] = useState(false);
     console.log('🎯 Modal received services:', services);
 
     useEffect(() => {
         setFormData(initialData);
+        setIsFastMode(false);
     }, [initialData, isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await onSave(formData);
+        
+        // Saneamiento de los datos numéricos para Supabase
+        const cleanData: any = { ...formData };
+        
+        if (!cleanData.Telefono || cleanData.Telefono.toString().trim() === '') {
+            cleanData.Telefono = null; // Enviar null para evitar error de sintaxis en numeric
+        }
+
+        if (cleanData.Precio) {
+            cleanData.Precio = String(cleanData.Precio).replace(/[^0-9.]/g, '');
+        }
+
+        if (cleanData.duracion) {
+            cleanData.duracion = String(cleanData.duracion).replace(/[^0-9]/g, '');
+        }
+
+        if (isFastMode) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const fastData = {
+                ...cleanData,
+                Nombre: '',
+                Telefono: null,
+                Dia: `${year}-${month}-${day}`,
+                Hora: `${hours}:${minutes}`,
+                confirmada: true
+            };
+            await onSave(fastData);
+            return;
+        }
+
+        await onSave(cleanData);
     };
 
     const handleServiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -32,11 +70,12 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
         console.log('🎯 Service selected:', selectedName);
         const selectedService = services?.find(s => s.nombre === selectedName);
 
-        const newFormData = {
+        const newFormData: any = {
             ...formData,
             servicio: selectedName,
             Servicio_id: selectedService?.id, // Capture ID with correct casing
-            Precio: selectedService ? String(selectedService.precio) : formData.Precio
+            Precio: selectedService ? String(selectedService.precio).replace(/[^0-9.]/g, '') : formData.Precio,
+            duracion: selectedService ? String(selectedService.duracion || '').replace(/[^0-9]/g, '') : (formData as any).duracion
         };
         console.log('📋 Updated formData:', newFormData);
         setFormData(newFormData);
@@ -63,14 +102,23 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
 
                         <div className="flex justify-between items-center mb-8 text-amber-500 relative z-10">
                             <h2 className="text-2xl font-black italic uppercase">
-                                {isEditing ? "Editar Cita" : "Nueva Cita"}
+                                {isEditing ? "Editar Cita" : (isFastMode ? "Cita Rápida" : "Nueva Cita")}
                             </h2>
-                            <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors"><X size={24} /></button>
+                            <div className="flex items-center gap-3">
+                                {isFastMode && (
+                                    <button type="button" onClick={() => setIsFastMode(false)} className="text-zinc-400 hover:text-white transition-colors text-xs font-bold uppercase underline">Volver</button>
+                                )}
+                                <button type="button" onClick={onClose} className="text-zinc-500 hover:text-white transition-colors"><X size={24} /></button>
+                            </div>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-                            <input required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Nombre" value={formData.Nombre || ""} onChange={(e) => setFormData({ ...formData, Nombre: e.target.value })} />
-                            <input type="tel" className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Telefono" value={formData.Telefono || ""} onChange={(e) => setFormData({ ...formData, Telefono: e.target.value })} />
+                            {!isFastMode && (
+                                <>
+                                    <input required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Nombre" value={formData.Nombre || ""} onChange={(e) => setFormData({ ...formData, Nombre: e.target.value })} />
+                                    <input type="tel" className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Telefono" value={formData.Telefono || ""} onChange={(e) => setFormData({ ...formData, Telefono: e.target.value })} />
+                                </>
+                            )}
 
                             {/* Dynamic Service Selector */}
                             <select
@@ -117,19 +165,22 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                                     );
                                 })}
                             </select>
-                            <div className="grid grid-cols-2 gap-3">
-                                <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 md:px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />
-                                <div className="space-y-1">
-                                    <label className="text-[10px] text-zinc-500 font-bold uppercase ml-2">Hora (24h)</label>
-                                    <TimePicker24h
-                                        value={formData.Hora || "09:00"}
-                                        onChange={(val) => setFormData({ ...formData, Hora: val })}
-                                        className="h-[52px]" // Match height of native inputs
-                                    />
-                                </div>
-
-                            </div>
-                            <input type="number" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Precio (€)" value={formData.Precio || ""} onChange={(e) => setFormData({ ...formData, Precio: e.target.value })} />
+                            {!isFastMode && (
+                                <>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 md:px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-zinc-500 font-bold uppercase ml-2">Hora (24h)</label>
+                                            <TimePicker24h
+                                                value={formData.Hora || "09:00"}
+                                                onChange={(val) => setFormData({ ...formData, Hora: val })}
+                                                className="h-[52px]" // Match height of native inputs
+                                            />
+                                        </div>
+                                    </div>
+                                    <input type="number" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors" placeholder="Precio (€)" value={formData.Precio || ""} onChange={(e) => setFormData({ ...formData, Precio: e.target.value })} />
+                                </>
+                            )}
 
                             <select
                                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
@@ -144,8 +195,19 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                             </select>
 
                             <button type="submit" className="w-full bg-amber-500 hover:bg-amber-600 text-black font-black uppercase py-4 rounded-2xl transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] active:scale-[0.98]">
-                                {isEditing ? "Guardar Cambios" : "Confirmar Cita"}
+                                {isEditing ? "Guardar Cambios" : (isFastMode ? "Confirmar Cita Rápida" : "Confirmar Cita")}
                             </button>
+
+                            {!isEditing && !isFastMode && (
+                                <button 
+                                    type="button" 
+                                    onClick={() => setIsFastMode(true)} 
+                                    className="w-full mt-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold uppercase py-4 rounded-2xl transition-all border border-zinc-700 flex items-center justify-center gap-2"
+                                >
+                                    <Zap className="w-4 h-4 text-amber-500" />
+                                    Crear cita rápida
+                                </button>
+                            )}
                         </form>
                     </motion.div>
                 </motion.div>

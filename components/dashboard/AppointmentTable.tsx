@@ -132,7 +132,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                                             className="hover:bg-amber-500/[0.03] transition-all group"
                                         >
                                             <td className="px-2 py-1 lg:px-4 lg:py-3 font-bold text-zinc-100 text-[11px] lg:text-sm group-hover:text-amber-500 transition-colors text-center">
-                                                {cita.Nombre}
+                                                {cita.Nombre || "-"}
                                             </td>
                                             <td className="px-2 py-1 lg:px-4 lg:py-3 text-zinc-300 text-[10px] lg:text-xs font-medium text-center">
                                                 {cita.servicio || <span className="text-zinc-600 italic">--</span>}

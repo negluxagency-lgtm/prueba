@@ -76,12 +76,6 @@ export default function InicioPage() {
                     }}
                 />
 
-                {/* Badge */}
-                <div className="relative z-10 flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-500 px-4 py-2 rounded-full mb-8">
-                    <Zap className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Potenciado por Nelux AI</span>
-                </div>
-
                 {/* Headline */}
                 <h1 className="relative z-10 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-center text-white leading-tight max-w-4xl">
                     El mejor Software para Barberos y Barberías en{' '}

@@ -15,6 +15,12 @@ interface PaywallProps {
 export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = false }: PaywallProps) => {
     const [user, setUser] = useState<any>(null);
     const { status, plan: paidPlan, loading: subLoading } = useSubscription();
+    const [expandedPlans, setExpandedPlans] = useState<number[]>([]);
+    const [expandedIa, setExpandedIa] = useState(false);
+
+    const togglePlan = (idx: number) => {
+        setExpandedPlans(prev => prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]);
+    };
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -213,9 +219,10 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                             <ul className="space-y-3 lg:space-y-4 mb-6 lg:mb-8 flex-1">
                                 {(isCurrentPlanView ? plan.perfilFeatures : plan.features).map((feature, i) => {
                                     const isNegative = feature === "Sin tecnologías IA";
+                                    const isHiddenOnMobile = !expandedPlans.includes(index) && i >= 3;
 
                                     return (
-                                        <li key={i} className="flex items-start gap-3 text-xs lg:text-sm">
+                                        <li key={i} className={`items-start gap-3 text-xs lg:text-sm ${isHiddenOnMobile ? 'hidden lg:flex' : 'flex'}`}>
                                             {isNegative ? (
                                                 <X className="w-4 h-4 lg:w-5 lg:h-5 shrink-0 text-zinc-600 mt-0.5" />
                                             ) : (
@@ -227,6 +234,15 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                         </li>
                                     );
                                 })}
+                                
+                                {(isCurrentPlanView ? plan.perfilFeatures : plan.features).length > 3 && (
+                                    <button 
+                                        onClick={() => togglePlan(index)}
+                                        className="lg:hidden w-full text-center mt-4 text-[10px] font-bold uppercase tracking-widest text-amber-500/80 hover:text-amber-400 transition-colors py-2.5 border border-dashed border-amber-500/20 rounded-xl"
+                                    >
+                                        {expandedPlans.includes(index) ? 'Ver menos' : 'Ver todos los beneficios'}
+                                    </button>
+                                )}
                             </ul>
 
                             {status !== 'pagado' && (
@@ -280,14 +296,25 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                 </p>
 
                                 <ul className={`grid gap-3 lg:gap-4 mb-8 lg:mb-0 text-left ${isSection ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
-                                    {(isCurrentPlanView ? iaPlan.perfilFeatures : iaPlan.features).map((feature, i) => (
-                                        <li key={i} className={`flex items-start gap-3 ${isSection ? 'text-[10px] lg:text-xs' : 'text-xs lg:text-sm'}`}>
+                                    {(isCurrentPlanView ? iaPlan.perfilFeatures : iaPlan.features).map((feature, i) => {
+                                        const isHiddenOnMobile = !expandedIa && i >= 3;
+                                        return (
+                                        <li key={i} className={`items-start gap-3 ${isSection ? 'text-[10px] lg:text-xs' : 'text-xs lg:text-sm'} ${isHiddenOnMobile ? 'hidden lg:flex' : 'flex'}`}>
                                             <Check className={`shrink-0 text-amber-500 mt-0.5 ${isSection ? 'w-3 h-3 lg:w-4 lg:h-4' : 'w-4 h-4 lg:w-5 lg:h-5'}`} />
                                             <span className="leading-tight text-zinc-300 font-medium">
                                                 {feature}
                                             </span>
                                         </li>
-                                    ))}
+                                    )})}
+                                    
+                                    {(isCurrentPlanView ? iaPlan.perfilFeatures : iaPlan.features).length > 3 && (
+                                        <button 
+                                            onClick={() => setExpandedIa(!expandedIa)}
+                                            className="lg:hidden w-full text-center mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-500/80 hover:text-amber-400 transition-colors py-2.5 border border-dashed border-amber-500/20 rounded-xl md:col-span-2"
+                                        >
+                                            {expandedIa ? 'Ver menos' : 'Ver todos los beneficios'}
+                                        </button>
+                                    )}
                                 </ul>
                             </div>
 
