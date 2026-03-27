@@ -21,16 +21,21 @@ export async function getRequiredSession() {
  */
 export async function checkBarberiaOwnership(barberiaId: string) {
     const user = await getRequiredSession();
-    const supabase = await createClient();
 
+    // 1. Si el usuario es el propietario directo (su ID es el ID de la barbería), acceso concedido.
+    if (user.id === barberiaId) {
+        return user;
+    }
+
+    // 2. Si no coinciden, verificamos si es staff vinculado a esa barbería.
+    const supabase = await createClient();
     const { data: profile, error } = await supabase
         .from('perfiles')
-        .select('id')
+        .select('id, barberia_id')
         .eq('id', user.id)
-        .eq('barberia_id', barberiaId)
         .single();
 
-    if (error || !profile) {
+    if (error || !profile || profile.barberia_id !== barberiaId) {
         throw new Error('Acceso denegado: No tienes permisos sobre esta barbería.');
     }
 

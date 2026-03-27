@@ -725,7 +725,7 @@ function Step3({ barbers, newBarber, setNewBarber, isAddingBarber, setIsAddingBa
 
                     {isAutonomo && (
                         <div className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-xl border border-zinc-800">
-                            <span className="text-xs font-bold text-white uppercase italic">¿Es el dueño/jefe?</span>
+                            <span className="text-xs font-bold text-white uppercase italic">¿Es el encargado de la barbería?</span>
                             <Toggle
                                 checked={newBarber['jefe/dueño']}
                                 onChange={(v: boolean) => setNewBarber((p: any) => ({ ...p, 'jefe/dueño': v }))}

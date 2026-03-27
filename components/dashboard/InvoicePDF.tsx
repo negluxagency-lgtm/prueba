@@ -250,15 +250,18 @@ export function InvoicePDF({ data }: InvoicePDFProps) {
                     <>
                         <View style={styles.qrSection}>
                             <Image src={data.qrCodeUrl} style={styles.qrImage} />
-                            <View>
-                                <Text style={styles.hashText}>Huella Hash: {data.huellaHash}</Text>
-                                {data.hashAnterior && <Text style={styles.hashText}>Hash Anterior: {data.hashAnterior}</Text>}
-                                <Text style={styles.legalText}>Factura generada por software de facturación que cumple con la normativa VERI*FACTU</Text>
-                            </View>
                         </View>
                         <Text style={styles.avisoLegal}>
-                            Aviso Legal: Este código QR contiene la huella digital de la factura conforme a la Ley 11/2021. La verificación en la sede de la AEAT será efectiva una vez el dueño de la barbería realice la remisión de la factura mediante su certificado digital personal o a través de su gestoría autorizada. Hasta ese momento el QR no mostrará la información, sin embargo, esto no quiere decir que sea una factura inválida o esté fuera de la ley, el código QR es solo un indicativo.
+                            Información de Integridad (Ley 11/2021): Esta factura incorpora una huella digital (hash) y un código QR que garantizan su inalterabilidad conforme al Reglamento de sistemas informáticos de facturación. La consulta en la sede electrónica de la AEAT será efectiva una vez el emisor realice la remisión de los registros según los plazos legalmente establecidos. Este código es un elemento de transparencia y trazabilidad; su disponibilidad online no condiciona la validez legal del documento.
                         </Text>
+                        <View style={{ alignItems: 'center', marginTop: 5 }}>
+                            <Text style={[styles.hashText, { width: '100%', textAlign: 'center' }]}>Huella Hash: {data.huellaHash}</Text>
+                            {data.hashAnterior && (
+                                <Text style={[styles.hashText, { width: '100%', textAlign: 'center', marginTop: 3 }]}>
+                                    Hash Anterior: {data.hashAnterior}
+                                </Text>
+                            )}
+                        </View>
                     </>
                 )}
 

@@ -18,6 +18,7 @@ import { createPortal } from 'react-dom'
 import { AppointmentFormData } from '@/types'
 import { AgendaSkeleton, PerformanceSkeleton } from '@/components/ui/SkeletonLoader'
 import useSWR from 'swr'
+import { CashRegisterManager } from '@/components/dashboard/CashRegisterManager'
 
 interface StaffDashboardProps {
     shopData: any
@@ -97,6 +98,19 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
     )
     const absenceDates = absenceDatesData || []
 
+    const [showAttendanceReminder, setShowAttendanceReminder] = useState(false)
+    const [hasCheckedAttendance, setHasCheckedAttendance] = useState(false)
+
+    // Trigger reminder if not clocked in today
+    useEffect(() => {
+        if (!loadingAgenda && attendanceStatus === null && !hasCheckedAttendance) {
+            setShowAttendanceReminder(true)
+            setHasCheckedAttendance(true)
+        } else if (attendanceStatus !== null) {
+            setHasCheckedAttendance(true)
+        }
+    }, [attendanceStatus, loadingAgenda, hasCheckedAttendance])
+
     // --- REALTIME ---
     useEffect(() => {
         if (!shopData?.id) return
@@ -128,6 +142,7 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
     const [locationError, setLocationError] = useState<string | null>(null)
     const [absenceTarget, setAbsenceTarget] = useState(format(new Date(), 'yyyy-MM-dd'))
     const [isMarkingAbsence, setIsMarkingAbsence] = useState(false)
+    const [showAllAbsences, setShowAllAbsences] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const loading = (activeTab === 'agenda' && loadingAgenda) || (activeTab === 'cortes' && loadingCuts)
@@ -236,6 +251,14 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                     <div><h2 className="text-white font-bold tracking-tight">{barber.nombre}</h2><p className="text-xs text-amber-500 font-bold uppercase tracking-widest">{shopData.nombre_barberia}</p></div>
                 </div>
                 <button onClick={onLogout} className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-800 text-zinc-400 hover:text-red-500 transition-colors"><LogOut className="w-5 h-5" /></button>
+            </div>
+
+            <div className="mb-6">
+                <CashRegisterManager 
+                    shopId={shopData.id} 
+                    userName={barber.nombre}
+                    onStatusChange={() => { mutateCuts(); mutateAgenda(); }} 
+                />
             </div>
 
             <div className="flex gap-2 mb-8 bg-zinc-900 p-2 rounded-[2rem] border border-zinc-800">
@@ -363,12 +386,66 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                                         )}
                                     </div>
                                     {absenceDates.length > 0 && (
-                                        <div className="mt-5 space-y-4">{Object.entries(absenceDates.sort().reduce((acc: any, d: string) => { const monthKey = d.substring(0, 7); if (!acc[monthKey]) acc[monthKey] = []; acc[monthKey].push(d); return acc }, {} as Record<string, string[]>)).map(([month, dates]: any) => (
-                                            <div key={month}><p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mb-2 px-1">{format(new Date(month + '-01'), 'MMMM yyyy', { locale: es })}</p>
-                                                <table className="w-full text-left border-collapse"><tbody>{dates.map((d: string) => (
-                                                    <tr key={d} className="hover:bg-zinc-800/20 transition-colors group/row"><td className="py-2.5 px-4 text-xs text-white font-medium capitalize">{format(new Date(d + 'T00:00:00'), 'EEEE d', { locale: es })}</td><td className="py-2.5 px-4"><span className="px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded-md text-[9px] text-red-400 font-black uppercase tracking-widest">Ausente</span></td><td className="py-2.5 px-4 text-right"><button onClick={async () => { setIsMarkingAbsence(true); const res = await markBarberAbsence(barber.id, d, true); if (res.success) { mutateAbsences(); toast.success('Eliminada') } else toast.error('Error'); setIsMarkingAbsence(false) }} disabled={isMarkingAbsence} className="opacity-100 md:opacity-0 group-hover/row:opacity-100 transition-opacity p-2 text-zinc-400 hover:text-red-400"><Trash2 className="w-4 h-4" /></button></td></tr>
-                                                ))}</tbody></table></div>
-                                        ))}</div>
+                                        <div className="mt-5 space-y-4">
+                                            {(() => {
+                                                const sorted = [...absenceDates].sort((a, b) => b.localeCompare(a));
+                                                const displayed = showAllAbsences ? sorted : sorted.slice(0, 2);
+                                                const grouped = displayed.reduce((acc: any, d: string) => {
+                                                    const monthKey = d.substring(0, 7);
+                                                    if (!acc[monthKey]) acc[monthKey] = [];
+                                                    acc[monthKey].push(d);
+                                                    return acc;
+                                                }, {} as Record<string, string[]>);
+
+                                                return Object.entries(grouped).map(([month, dates]: any) => (
+                                                    <div key={month}>
+                                                        <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mb-2 px-1">
+                                                            {format(new Date(month + '-01'), 'MMMM yyyy', { locale: es })}
+                                                        </p>
+                                                        <table className="w-full text-left border-collapse">
+                                                            <tbody>
+                                                                {dates.map((d: string) => (
+                                                                    <tr key={d} className="hover:bg-zinc-800/20 transition-colors group/row">
+                                                                        <td className="py-2.5 px-4 text-xs text-white font-medium capitalize">
+                                                                            {format(new Date(d + 'T00:00:00'), 'EEEE d', { locale: es })}
+                                                                        </td>
+                                                                        <td className="py-2.5 px-4">
+                                                                            <span className="px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded-md text-[9px] text-red-400 font-black uppercase tracking-widest">
+                                                                                Ausente
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="py-2.5 px-4 text-right">
+                                                                            <button 
+                                                                                onClick={async () => { 
+                                                                                    setIsMarkingAbsence(true); 
+                                                                                    const res = await markBarberAbsence(barber.id, d, true); 
+                                                                                    if (res.success) { mutateAbsences(); toast.success('Eliminada') } 
+                                                                                    else toast.error('Error'); 
+                                                                                    setIsMarkingAbsence(false) 
+                                                                                }} 
+                                                                                disabled={isMarkingAbsence} 
+                                                                                className="opacity-100 md:opacity-0 group-hover/row:opacity-100 transition-opacity p-2 text-zinc-400 hover:text-red-400"
+                                                                            >
+                                                                                <Trash2 className="w-4 h-4" />
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                ));
+                                            })()}
+                                            
+                                            {absenceDates.length > 2 && (
+                                                <button 
+                                                    onClick={() => setShowAllAbsences(!showAllAbsences)}
+                                                    className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors border-t border-zinc-800 mt-2"
+                                                >
+                                                    {showAllAbsences ? 'Ver menos' : `Ver todas (${absenceDates.length})`}
+                                                </button>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -376,7 +453,32 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                 </div>
             </div>
 
-            <AppointmentModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setEditingAppointment(null); }} onSave={handleSaveAppointment} services={services} isEditing={!!editingAppointment} initialData={editingAppointment ? { Nombre: editingAppointment.Nombre, servicio: editingAppointment.servicio, Dia: editingAppointment.Dia, Hora: editingAppointment.Hora, Telefono: editingAppointment.Telefono, Precio: String(editingAppointment.Precio), confirmada: editingAppointment.confirmada } : { Nombre: '', servicio: '', Dia: selectedDate, Hora: '09:00', Telefono: '', Precio: '', confirmada: false }} />
+            <AppointmentModal 
+                showBarberSelector={false} 
+                isOpen={isEditModalOpen} 
+                onClose={() => { setIsEditModalOpen(false); setEditingAppointment(null); }} 
+                onSave={handleSaveAppointment} 
+                services={services} 
+                isEditing={!!editingAppointment} 
+                initialData={editingAppointment ? { 
+                    Nombre: editingAppointment.Nombre, 
+                    servicio: editingAppointment.servicio, 
+                    Dia: editingAppointment.Dia, 
+                    Hora: editingAppointment.Hora, 
+                    Telefono: editingAppointment.Telefono ? String(editingAppointment.Telefono) : '', 
+                    Precio: editingAppointment.Precio ? String(editingAppointment.Precio) : '', 
+                    confirmada: editingAppointment.confirmada,
+                    pago: editingAppointment.pago || undefined
+                } : { 
+                    Nombre: '', 
+                    servicio: '', 
+                    Dia: selectedDate, 
+                    Hora: '09:00', 
+                    Telefono: '', 
+                    Precio: '', 
+                    confirmada: false 
+                }} 
+            />
             <InvoiceModal isOpen={isInvoiceModalOpen} onClose={() => { setIsInvoiceModalOpen(false); setInvoiceAppointment(null); }} appointment={invoiceAppointment} shopData={{ name: shopData?.nombre_barberia, address: shopData?.Direccion, phone: shopData?.telefono, email: shopData?.correo, cif: shopData?.['CIF/NIF'] }} />
 
             {menuState && typeof document !== 'undefined' && createPortal(
@@ -402,6 +504,55 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                     }
                 }}
             />
+
+            {/* Modal de Recordatorio de Fichaje */}
+            <AnimatePresence>
+                {showAttendanceReminder && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl relative overflow-hidden text-center"
+                        >
+                            <div className="absolute top-0 left-0 w-full h-1 bg-amber-500" />
+                            
+                            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-6">
+                                <Clock className="w-10 h-10 text-amber-500" />
+                            </div>
+
+                            <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">¡Hola {barber.nombre.split(' ')[0]}! 💈</h3>
+                            <p className="text-sm text-zinc-400 font-medium leading-relaxed mb-8">
+                                Parece que aún no has registrado tu <span className="text-white font-bold">entrada</span> de hoy. ¿Quieres fichar ahora?
+                            </p>
+
+                            <div className="space-y-3">
+                                <button 
+                                    onClick={() => {
+                                        handlePunch('entrada')
+                                        setShowAttendanceReminder(false)
+                                    }}
+                                    className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-amber-500/10 active:scale-95 flex items-center justify-center gap-2"
+                                >
+                                    <Play className="w-4 h-4 fill-current" />
+                                    Fichar Entrada
+                                </button>
+                                <button 
+                                    onClick={() => setShowAttendanceReminder(false)}
+                                    className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-bold uppercase tracking-widest rounded-2xl transition-all text-[10px]"
+                                >
+                                    Más tarde
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }

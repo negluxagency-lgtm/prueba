@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { getMonthlyLogs, auditPunch, TipoFichaje, FichajeLog } from '@/app/actions/attendance'
 import { getBarberOvertimeFromSchedule, type BarberOvertimeResult } from '@/app/actions/overtime'
+import { getBarberAbsences } from '@/app/actions/staff'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -36,7 +37,8 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
     const [shopCif, setShopCif] = useState<string>('')
     const [autoOvertime, setAutoOvertime] = useState<BarberOvertimeResult | null>(null)
     const [loadingOvertime, setLoadingOvertime] = useState(false)
-    const [activeView, setActiveView] = useState<'day' | 'month' | 'overtime'>('month')
+    const [activeView, setActiveView] = useState<'day' | 'month' | 'overtime' | 'absences'>('month')
+    const [barberAbsences, setBarberAbsences] = useState<string[]>([])
     const [showAllDays, setShowAllDays] = useState(false)
 
     // Audit State
@@ -57,6 +59,7 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
             const targetMonth = attendanceDate.substring(0, 7)
             fetchLogs(selectedBarber.id, targetMonth)
             fetchAutoOvertime(selectedBarber.id, targetMonth)
+            fetchAbsences(selectedBarber.id)
         }
     }, [selectedBarber?.id, attendanceDate.substring(0, 7)])
 
@@ -136,6 +139,15 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
         }
     }
 
+    const fetchAbsences = async (bId: number) => {
+        try {
+            const data = await getBarberAbsences(String(bId))
+            setBarberAbsences(data)
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
     // ── Daily Summaries ──────────────────────────────────────────────────────
     const processDailySummaries = () => {
         const daysTracker: Record<string, { totalSeconds: number; firstIn: string; lastOut: string; events: FichajeLog[] }> = {}
@@ -163,7 +175,7 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
             })
             daysTracker[date].totalSeconds = Math.max(0, Math.floor(daySecs))
         })
-        return Object.entries(daysTracker).sort((a, b) => a[0].localeCompare(b[0]))
+        return Object.entries(daysTracker).sort((a, b) => b[0].localeCompare(a[0]))
     }
 
     const formatHours = (secs: number) => {
@@ -207,7 +219,7 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
         doc.text(`Trabajador/a: ${selectedBarber.nombre}`, 120, 25)
         doc.text(`Mes/Año: ${monthName}`, 120, 30)
         let totalMonthSecs = 0
-        const tableData = dailySummaries.map(([date, d]) => {
+        const tableData = [...dailySummaries].reverse().map(([date, d]) => {
             totalMonthSecs += d.totalSeconds
             return [format(parseISO(date), 'dd/MM/yyyy'), d.firstIn || '--:--', d.lastOut || '--:--', formatHours(d.totalSeconds)]
         })
@@ -354,7 +366,7 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl p-1.5">
-                                {[{ key: 'month', label: 'Resumen Mensual', icon: CalendarIcon }, { key: 'day', label: 'Detalle del Día', icon: Clock }, { key: 'overtime', label: 'Horas Extra', icon: Zap }].map(({ key, label, icon: Icon }) => (
+                                {[{ key: 'month', label: 'Resumen Mensual', icon: CalendarIcon }, { key: 'day', label: 'Detalle del Día', icon: Clock }, { key: 'overtime', label: 'Horas Extra', icon: Zap }, { key: 'absences', label: 'Ausencias', icon: AlertTriangle }].map(({ key, label, icon: Icon }) => (
                                     <button key={key} onClick={() => setActiveView(key as any)} className={cn('flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all', activeView === key ? 'bg-white text-black shadow' : 'text-zinc-500 hover:text-white')}>
                                         <Icon className="w-3.5 h-3.5" /><span className="hidden sm:inline">{label}</span>
                                     </button>
@@ -365,7 +377,7 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                                     {dailySummaries.length === 0 ? (
                                         <div className="text-center py-12 text-zinc-600 bg-zinc-900/50 rounded-2xl border border-dashed border-zinc-800"><Clock className="w-8 h-8 mx-auto mb-3 opacity-50" /><p className="text-xs font-bold uppercase tracking-widest">Sin registros este mes</p></div>
                                     ) : (() => {
-                                        const toShow = showAllDays ? dailySummaries : dailySummaries.slice(-3)
+                                        const toShow = showAllDays ? dailySummaries : dailySummaries.slice(0, 3)
                                         return (
                                             <>
                                                 {toShow.map(([date, d]) => {
@@ -457,6 +469,43 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                                                     ))}
                                                 </div>
                                             </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeView === 'absences' && (
+                                <div className="space-y-4">
+                                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                                                <AlertTriangle className="w-5 h-5 text-red-500" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-white uppercase italic">Historial de Ausencias</h3>
+                                                <p className="text-[9px] text-zinc-500 font-medium mt-0.5">Días marcados como no laborables por {selectedBarber?.nombre}</p>
+                                            </div>
+                                        </div>
+                                        {barberAbsences.length === 0 ? (
+                                            <div className="text-center py-8">
+                                                <Clock className="w-8 h-8 mx-auto mb-3 text-zinc-700 opacity-50" />
+                                                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Sin ausencias registradas</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {[...barberAbsences].sort((a,b) => b.localeCompare(a)).map(date => (
+                                                    <div key={date} className="flex items-center justify-between bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-3.5">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex flex-col items-center justify-center">
+                                                                <span className="text-[7px] font-black text-red-500 uppercase">{format(parseISO(date), 'EEE', { locale: es })}</span>
+                                                                <span className="text-sm font-black text-white leading-none">{format(parseISO(date), 'dd')}</span>
+                                                            </div>
+                                                            <p className="text-sm font-black text-white capitalize">{format(parseISO(date), "MMMM yyyy", { locale: es })}</p>
+                                                        </div>
+                                                        <span className="px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-lg text-[10px] text-red-500 font-black uppercase tracking-widest">Ausente</span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -625,6 +674,7 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                                         { key: 'month', label: 'Resumen Mensual', icon: CalendarIcon },
                                         { key: 'day', label: 'Detalle del Día', icon: Clock },
                                         { key: 'overtime', label: 'Horas Extra', icon: Zap },
+                                        { key: 'absences', label: 'Ausencias', icon: AlertTriangle },
                                     ].map(({ key, label, icon: Icon }) => (
                                         <button
                                             key={key}
@@ -649,7 +699,7 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                                                 <p className="text-xs font-bold uppercase tracking-widest">Sin registros este mes</p>
                                             </div>
                                         ) : (() => {
-                                            const toShow = showAllDays ? dailySummaries : dailySummaries.slice(-3)
+                                            const toShow = showAllDays ? dailySummaries : dailySummaries.slice(0, 3)
                                             return (
                                                 <>
                                                     {toShow.map(([date, d]) => {

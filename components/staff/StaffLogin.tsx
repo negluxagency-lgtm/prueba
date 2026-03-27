@@ -267,17 +267,22 @@ export default function StaffLogin({ shopData, barbers, onLoginSuccess }: StaffL
                             ))}
                         </div>
 
-                        {/* Error Message */}
-                        {errorMsg && (
-                            <motion.p
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-red-500 text-sm font-bold mb-4 uppercase tracking-widest text-center h-4"
-                            >
-                                {errorMsg}
-                            </motion.p>
-                        )}
-                        {!errorMsg && <div className="h-4 mb-4"></div>}
+                        {/* Error Message Container */}
+                        <div className="min-h-[80px] flex items-center justify-center w-full px-4 mb-2">
+                            <AnimatePresence mode="wait">
+                                {errorMsg && (
+                                    <motion.p
+                                        key="error"
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="text-red-500 text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] text-center leading-relaxed"
+                                    >
+                                        {errorMsg}
+                                    </motion.p>
+                                )}
+                            </AnimatePresence>
+                        </div>
 
                         {/* Numeric Keypad */}
                         <div className="grid grid-cols-3 gap-4 w-full max-w-[280px]">

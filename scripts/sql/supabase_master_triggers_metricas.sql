@@ -15,34 +15,42 @@ DECLARE
 BEGIN
     -- Capturamos datos del estado NUEVO (en Inserts/Updates)
     IF TG_OP IN ('INSERT', 'UPDATE') THEN
-        v_barberia_id := NEW.barberia_id;
-        
         IF TG_TABLE_NAME = 'citas' THEN
+            v_barberia_id := NEW.barberia_id;
             v_fecha := NEW."Dia";
             v_barbero_id := NULLIF(NEW.barbero_id, '')::BIGINT;
         ELSIF TG_TABLE_NAME = 'ventas_productos' THEN
+            v_barberia_id := NEW.barberia_id;
             v_fecha := (NEW.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Madrid')::DATE;
         ELSIF TG_TABLE_NAME = 'horas_extra' THEN
             v_fecha := NEW.fecha;
             v_barbero_id := NEW.barbero_id;
+            -- Obtenemos barberia_id desde la tabla barberos
+            SELECT barberia_id INTO v_barberia_id FROM barberos WHERE id = v_barbero_id;
         ELSIF TG_TABLE_NAME = 'gastos' THEN
+            v_barberia_id := NEW.barberia_id;
             v_fecha := NEW.fecha;
         END IF;
     END IF;
 
     -- Capturamos datos del estado ANTIGUO (en Deletes/Updates)
     IF TG_OP IN ('DELETE', 'UPDATE') THEN
-        v_barberia_id := COALESCE(v_barberia_id, OLD.barberia_id);
-        
         IF TG_TABLE_NAME = 'citas' THEN
+            v_barberia_id := COALESCE(v_barberia_id, OLD.barberia_id);
             v_old_fecha := OLD."Dia";
             v_old_barbero_id := NULLIF(OLD.barbero_id, '')::BIGINT;
         ELSIF TG_TABLE_NAME = 'ventas_productos' THEN
+            v_barberia_id := COALESCE(v_barberia_id, OLD.barberia_id);
             v_old_fecha := (OLD.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Madrid')::DATE;
         ELSIF TG_TABLE_NAME = 'horas_extra' THEN
             v_old_fecha := OLD.fecha;
             v_old_barbero_id := OLD.barbero_id;
+            -- Si aún no tenemos v_barberia_id (caso DELETE), lo buscamos
+            IF v_barberia_id IS NULL THEN
+                SELECT barberia_id INTO v_barberia_id FROM barberos WHERE id = v_old_barbero_id;
+            END IF;
         ELSIF TG_TABLE_NAME = 'gastos' THEN
+            v_barberia_id := COALESCE(v_barberia_id, OLD.barberia_id);
             v_old_fecha := OLD.fecha;
         END IF;
     END IF;

@@ -1,7 +1,7 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
-import { getRequiredSession } from '@/lib/auth-utils'
+import supabaseAdmin from '@/lib/supabaseAdmin'
+import { getRequiredSession } from '@/lib/auth-utils';
 
 // Simple definition to keep the response typed
 type ActionResponse = {
@@ -10,13 +10,12 @@ type ActionResponse = {
 }
 
 export async function setBarberPin(barberId: string, pin: string): Promise<ActionResponse> {
-    await getRequiredSession();
     if (!pin || pin.length !== 4 || !/^\d+$/.test(pin)) {
         return { success: false, error: 'El PIN debe ser de 4 dígitos' }
     }
 
     try {
-        const supabase = await createClient()
+        const supabase = supabaseAdmin
 
         const { data: barber, error: fetchError } = await supabase
             .from('barberos')
@@ -48,8 +47,7 @@ export async function setBarberPin(barberId: string, pin: string): Promise<Actio
 }
 
 export async function getStaffAgenda(shopId: string, barberName: string, dateStr: string, showAll: boolean = false, barberId?: string) {
-    await getRequiredSession();
-    const supabase = await createClient()
+    const supabase = supabaseAdmin
 
     console.log(`[getStaffAgenda] Fetching for shop: "${shopId}", barber: "${barberName}", barberId: "${barberId}", date: "${dateStr}"`)
 
@@ -93,8 +91,7 @@ export async function getStaffAgenda(shopId: string, barberName: string, dateStr
 }
 
 export async function getStaffCuts(shopId: string, barberName: string, monthStr: string, barberId?: string) {
-    await getRequiredSession();
-    const supabase = await createClient()
+    const supabase = supabaseAdmin
 
     const [year, m] = monthStr.split('-').map(Number)
     const lastDay = new Date(year, m, 0).getDate()
@@ -157,8 +154,7 @@ export async function getStaffCuts(shopId: string, barberName: string, monthStr:
 }
 
 export async function logStaffOvertime(barberId: string, shopId: string, hours: number, dateStr: string): Promise<ActionResponse> {
-    await getRequiredSession();
-    const supabase = await createClient()
+    const supabase = supabaseAdmin
 
     const { data: barber } = await supabase.from('barberos').select('user_id').eq('id', barberId).single()
     const adminUserId = barber?.user_id || shopId
@@ -185,8 +181,7 @@ export async function updateStaffAppointmentStatus(
     pago?: string,
     barberId?: string
 ): Promise<ActionResponse> {
-    await getRequiredSession();
-    const supabase = await createClient()
+    const supabase = supabaseAdmin
 
     let dbValues: any = { confirmada: null, cancelada: null }
     if (status === 'confirmada') {
@@ -211,8 +206,7 @@ export async function updateStaffAppointmentStatus(
 }
 
 export async function deleteStaffAppointment(id: number): Promise<ActionResponse> {
-    await getRequiredSession();
-    const supabase = await createClient()
+    const supabase = supabaseAdmin
 
     const { error } = await supabase
         .from('citas')
@@ -228,8 +222,7 @@ export async function deleteStaffAppointment(id: number): Promise<ActionResponse
 }
 
 export async function saveStaffAppointment(data: any, editingId: number | null, shopId: string): Promise<ActionResponse> {
-    await getRequiredSession();
-    const supabase = await createClient()
+    const supabase = supabaseAdmin
 
     const appointmentData = {
         Nombre: data.Nombre,
@@ -269,8 +262,7 @@ export async function saveStaffAppointment(data: any, editingId: number | null, 
 }
 
 export async function getShopServices(shopId: string) {
-    await getRequiredSession();
-    const supabase = await createClient()
+    const supabase = supabaseAdmin
 
     const { data, error } = await supabase
         .from('servicios')
@@ -286,9 +278,8 @@ export async function getShopServices(shopId: string) {
 }
 
 export async function updateBarberPhoto(barberId: string, photoUrl: string): Promise<ActionResponse> {
-    await getRequiredSession();
     try {
-        const supabase = await createClient()
+        const supabase = supabaseAdmin
 
         const { error: updateError } = await supabase
             .from('barberos')
@@ -307,13 +298,12 @@ export async function updateBarberPhoto(barberId: string, photoUrl: string): Pro
 }
 
 export async function verifyBarberPin(barberId: string, enteredPin: string): Promise<ActionResponse> {
-    await getRequiredSession();
     try {
-        const supabase = await createClient()
+        const supabase = supabaseAdmin
 
         const { data, error } = await supabase
             .from('barberos')
-            .select('pin')
+            .select('pin, intentos_fallidos, bloqueado_hasta')
             .eq('id', barberId)
             .single()
 
@@ -322,13 +312,65 @@ export async function verifyBarberPin(barberId: string, enteredPin: string): Pro
             return { success: false, error: 'No se pudo verificar el PIN' }
         }
 
+        // Check for lockout
+        if (data.bloqueado_hasta) {
+            const now = new Date()
+            const blockUntil = new Date(data.bloqueado_hasta)
+            if (blockUntil > now) {
+                const diffMs = blockUntil.getTime() - now.getTime()
+                const diffMin = Math.ceil(diffMs / (1000 * 60))
+                return { 
+                    success: false, 
+                    error: `Bloqueo de seguridad activo. Intenta en ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}.` 
+                }
+            }
+        }
+
         const dbPin = data.pin ? String(data.pin).trim() : null
         const trimmedEnteredPin = enteredPin.trim()
 
         if (dbPin === trimmedEnteredPin) {
+            // Success: Reset failures
+            if (data.intentos_fallidos > 0 || data.bloqueado_hasta) {
+                await supabase
+                    .from('barberos')
+                    .update({ intentos_fallidos: 0, bloqueado_hasta: null })
+                    .eq('id', barberId)
+            }
             return { success: true }
         } else {
-            return { success: false, error: 'PIN incorrecto' }
+            // Failure: Increment and Lock
+            const newIntentos = (data.intentos_fallidos || 0) + 1
+            let lockMinutes = 0
+            
+            if (newIntentos === 3) lockMinutes = 5
+            else if (newIntentos === 4) lockMinutes = 20
+            else if (newIntentos > 4) lockMinutes = 60 * (newIntentos - 4)
+
+            const newBlockUntil = lockMinutes > 0 ? new Date() : null
+            if (newBlockUntil) {
+                newBlockUntil.setMinutes(newBlockUntil.getMinutes() + lockMinutes)
+            }
+
+            await supabase
+                .from('barberos')
+                .update({ 
+                    intentos_fallidos: newIntentos, 
+                    bloqueado_hasta: newBlockUntil ? newBlockUntil.toISOString() : null 
+                })
+                .eq('id', barberId)
+
+            if (lockMinutes > 0) {
+                return { 
+                    success: false, 
+                    error: `Múltiples intentos fallidos. Bloqueo de seguridad: ${lockMinutes} min. Si has olvidado tu PIN, ponte en contacto con el dueño/jefe de tu barbería.` 
+                }
+            } else {
+                return {
+                    success: false,
+                    error: `PIN incorrecto (${newIntentos}/3 antes del bloqueo).`
+                }
+            }
         }
     } catch (err: any) {
         console.error('[verifyBarberPin] Unexpected error:', err)
@@ -336,9 +378,31 @@ export async function verifyBarberPin(barberId: string, enteredPin: string): Pro
     }
 }
 
+/**
+ * Permite al dueño/administrador cambiar el PIN de un barbero y resetear sus intentos fallidos.
+ */
+export async function updateBarberPinByAdmin(barberId: string, newPin: string): Promise<ActionResponse> {
+    const user = await getRequiredSession();
+    try {
+        const { error } = await supabaseAdmin
+            .from('barberos')
+            .update({ 
+                pin: newPin,
+                intentos_fallidos: 0,
+                bloqueado_hasta: null
+            })
+            .eq('id', barberId)
+
+        if (error) throw error;
+        return { success: true }
+    } catch (error: any) {
+        console.error('[updateBarberPinByAdmin] Error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
 export async function getBarberAbsences(barberId: string): Promise<string[]> {
-    await getRequiredSession();
-    const supabase = await createClient()
+    const supabase = supabaseAdmin
     const { data } = await supabase
         .from('barberos')
         .select('fechas_cierre')
@@ -350,9 +414,8 @@ export async function getBarberAbsences(barberId: string): Promise<string[]> {
 }
 
 export async function markBarberAbsence(barberId: string, date: string, remove = false): Promise<ActionResponse> {
-    await getRequiredSession();
     try {
-        const supabase = await createClient()
+        const supabase = supabaseAdmin
 
         const { data, error: fetchError } = await supabase
             .from('barberos')

@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { BarChart3, Clock, FileText, Filter, X, DollarSign, Users, Loader2, Download, Receipt, Calculator, BookOpen } from 'lucide-react'
+import { BarChart3, Clock, FileText, Filter, X, DollarSign, Users, Loader2, Download, Receipt, Calculator, BookOpen, History } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import useSWR from 'swr'
+import Link from 'next/link'
 
 // ── Existing components ────────────────────────────────────────────────────────
 import ExpensesSection from '@/components/accounting/ExpensesSection'
@@ -16,11 +17,12 @@ import SalaryCalculatorModal from '@/components/trends/SalaryCalculatorModal'
 import { PaymentReportModal } from '@/components/accounting/PaymentReportModal'
 import { AccountingReportModal } from '@/components/accounting/AccountingReportModal'
 import AutonomoGuide from '@/components/accounting/AutonomoGuide'
+import { BarberManager } from '@/components/management/BarberManager'
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 const TABS = [
     { id: 'financiera', label: 'Gestión Financiera', icon: BarChart3 },
-    { id: 'jornadas', label: 'Control de Presencia', icon: Clock },
+    { id: 'equipo', label: 'Equipo y Presencia', icon: Users },
     { id: 'salarios', label: 'Liquidaciones', icon: Calculator },
     { id: 'facturas', label: 'Facturas e Informes', icon: FileText },
 ] as const
@@ -42,6 +44,7 @@ export default function AccountingPage() {
         ])
 
         return {
+            userId: user.id,
             isAutonomo: !!pRes.data?.Autonomo,
             shopName: pRes.data?.nombre_barberia || 'Mi Barbería',
             plan: pRes.data?.plan || '',
@@ -61,7 +64,7 @@ export default function AccountingPage() {
     // Ensure we don't stay on 'jornadas' or 'salarios' if hidden
     useEffect(() => {
         const isTeamHidden = barberCount <= 1 || plan === 'Básico'
-        if (isTeamHidden && (activeTab === 'jornadas' || activeTab === 'salarios')) {
+        if (isTeamHidden && (activeTab === 'equipo' || activeTab === 'salarios')) {
             setActiveTab('financiera')
         }
     }, [barberCount, plan, activeTab])
@@ -80,6 +83,14 @@ export default function AccountingPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                    <Link 
+                        href="/historial_caja"
+                        className="p-1.5 lg:px-4 lg:py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-400 hover:text-amber-500 hover:border-amber-500/50 transition-all flex items-center gap-2 group"
+                    >
+                        <History className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                        <span className="hidden lg:inline text-[10px] font-black uppercase tracking-widest">Historial Cajas</span>
+                    </Link>
+
                     <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 flex items-center gap-2 hover:border-amber-500/30 transition-all">
                         <Filter className="w-3.5 h-3.5 text-zinc-500" />
                         <input
@@ -100,7 +111,7 @@ export default function AccountingPage() {
             {/* ── Tab Selector ──────────────────────────────────────────────── */}
             <div className="flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 p-1 rounded-2xl mb-6 w-full overflow-x-auto">
                 {TABS.filter(tab => {
-                    if (tab.id === 'jornadas' || tab.id === 'salarios') {
+                    if (tab.id === 'equipo' || tab.id === 'salarios') {
                         return barberCount > 1 && plan !== 'Básico'
                     }
                     return true
@@ -108,7 +119,7 @@ export default function AccountingPage() {
 
                     const Icon = tab.icon
                     const isActive = activeTab === tab.id
-                    const shortLabel = tab.id === 'financiera' ? 'Finanzas' : tab.id === 'jornadas' ? 'Presencia' : tab.id === 'salarios' ? 'Salarios' : 'Facturas'
+                    const shortLabel = tab.id === 'financiera' ? 'Finanzas' : tab.id === 'equipo' ? 'Equipo' : tab.id === 'salarios' ? 'Salarios' : 'Facturas'
                     return (
                         <button
                             key={tab.id}
@@ -212,8 +223,8 @@ export default function AccountingPage() {
                         </div>
                     )}
 
-                    {/* ── TAB 2: Control de Presencia ────────────────────── */}
-                    {activeTab === 'jornadas' && (
+                    {/* ── TAB 2: Equipo y Presencia ────────────────────── */}
+                    {activeTab === 'equipo' && (
                         <div className="space-y-8">
                             {/* Control de Presencia — Inline */}
                             <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] overflow-hidden">
@@ -222,17 +233,34 @@ export default function AccountingPage() {
                                         <Clock className="w-5 h-5 text-amber-500" />
                                     </div>
                                     <div>
-                                        <h2 className="text-base font-black italic uppercase tracking-tighter text-white">Control de Presencia</h2>
+                                        <h2 className="text-base font-black italic uppercase tracking-tighter text-white">Asistencia del Equipo</h2>
                                         <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Registro de jornadas y fichajes</p>
                                     </div>
                                 </div>
-                                <div className="min-h-[500px]">
+                                <div className="min-h-[400px]">
                                     <AttendanceReportModal
                                         onClose={() => { }}
                                         month={selectedMonth}
                                         inline
                                     />
                                 </div>
+                            </div>
+
+                            {/* Gestión de Personal */}
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] overflow-hidden p-6 lg:p-8">
+                                <div className="flex items-center gap-4 mb-8">
+                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                        <Users className="w-5 h-5 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-base font-black italic uppercase tracking-tighter text-white">Gestión de Personal</h2>
+                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Añade o edita los miembros de tu barbería</p>
+                                    </div>
+                                </div>
+                                
+                                {accountingProfile?.userId && (
+                                    <BarberManager perfilId={accountingProfile.userId} />
+                                )}
                             </div>
                         </div>
                     )}

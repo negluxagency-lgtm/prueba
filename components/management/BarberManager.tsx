@@ -1,11 +1,10 @@
-"use client";
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User, Plus, Trash2, Calendar, Save, Loader2, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Plus, Trash2, Calendar, Save, Loader2, X, ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { TimePicker24h } from '@/components/ui/TimePicker24h';
 import { cn } from '@/lib/utils';
+import { updateBarberPinByAdmin } from '@/app/actions/staff';
 
 interface BarberDaySchedule {
     dia: number;
@@ -47,10 +46,14 @@ interface BarberModalProps {
     onUpdateDay: (e: React.MouseEvent | null, barberId: string, dayIndex: number, field: string, value: any) => void;
     onUpdateField: (barberId: string, field: 'salario_base' | 'porcentaje_comision' | 'jefe/dueño', value: any) => void;
     onUpdateTurn: (barberId: string, dayIndex: number, turnIndex: number, field: 'inicio' | 'fin', value: string) => void;
+    onUpdatePin: (barberId: string, newPin: string) => Promise<boolean>;
 }
 
-function BarberModal({ barber, saving, onClose, onSave, onUpdateDay, onUpdateField, onUpdateTurn }: BarberModalProps) {
+function BarberModal({ barber, saving, onClose, onSave, onUpdateDay, onUpdateField, onUpdateTurn, onUpdatePin }: BarberModalProps) {
     const [expandedDays, setExpandedDays] = useState<string[]>([]);
+    const [isChangingPin, setIsChangingPin] = useState(false);
+    const [newPin, setNewPin] = useState('');
+    const [savingPin, setSavingPin] = useState(false);
 
     const toggleDay = (idx: number) => {
         const key = `${idx}`;
@@ -105,7 +108,7 @@ function BarberModal({ barber, saving, onClose, onSave, onUpdateDay, onUpdateFie
                                 <User className="w-4 h-4" />
                             </div>
                             <div>
-                                <h4 className="text-[10px] font-black uppercase text-white tracking-widest leading-none">Dueño / Jefe de Barbería</h4>
+                                <h4 className="text-[10px] font-black uppercase text-white tracking-widest leading-none">Encargado de la barbería</h4>
                                 <p className="text-[9px] text-zinc-500 font-bold mt-1 uppercase">Solo puede haber uno designado</p>
                             </div>
                         </div>
@@ -220,7 +223,55 @@ function BarberModal({ barber, saving, onClose, onSave, onUpdateDay, onUpdateFie
                             })}
                         </div>
                     </div>
+
+                {/* Cambiar PIN */}
+                <div className="pt-2 border-t border-zinc-800/60 transition-all">
+                    {!isChangingPin ? (
+                        <button
+                            onClick={() => setIsChangingPin(true)}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white font-bold text-[10px] uppercase tracking-widest rounded-xl border border-zinc-800 transition-all group"
+                        >
+                            <Shield className="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform" />
+                            Cambiar PIN de {barber.nombre}
+                        </button>
+                    ) : (
+                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Nuevo PIN (4 dígitos)</span>
+                                <button onClick={() => setIsChangingPin(false)} className="text-zinc-500 hover:text-white p-1">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    maxLength={4}
+                                    placeholder="0000"
+                                    value={newPin}
+                                    onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+                                    className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-center font-mono text-lg tracking-[0.5em] text-white focus:border-amber-500 outline-none"
+                                />
+                                <button
+                                    onClick={async () => {
+                                        setSavingPin(true);
+                                        const ok = await onUpdatePin(barber.id, newPin);
+                                        if (ok) {
+                                            setIsChangingPin(false);
+                                            setNewPin('');
+                                        }
+                                        setSavingPin(false);
+                                    }}
+                                    disabled={newPin.length !== 4 || savingPin}
+                                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black rounded-lg disabled:opacity-50 transition-all flex items-center justify-center min-w-[48px]"
+                                >
+                                    {savingPin ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                </button>
+                            </div>
+                            <p className="text-[9px] text-zinc-500 font-bold uppercase text-center">Esto reseteará los intentos de acceso fallidos</p>
+                        </div>
+                    )}
                 </div>
+            </div>
 
                 {/* Footer con botón guardar */}
                 <div className="px-5 py-4 border-t border-zinc-800 shrink-0">
@@ -257,7 +308,7 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
         try {
             const { data, error } = await supabase
                 .from('barberos')
-                .select('*')
+                .select('id, nombre, horario_semanal, salario_base, porcentaje_comision, "jefe/dueño"')
                 .eq('barberia_id', perfilId)
                 .order('nombre', { ascending: true });
 
@@ -505,7 +556,7 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                                             <div className="flex items-center gap-2 flex-nowrap overflow-hidden">
                                                 <h3 className="text-white font-bold text-xs sm:text-sm truncate">{barber.nombre}</h3>
                                                 {barber['jefe/dueño'] && (
-                                                    <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm shrink-0">Dueño</span>
+                                                    <span className="text-[8px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm shrink-0">Encargado</span>
                                                 )}
                                                 {barbersWithChanges.includes(barber.id) && (
                                                     <span className="text-[8px] font-black bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-full uppercase tracking-tighter shrink-0 hidden sm:inline-block">Sin guardar</span>
@@ -563,6 +614,16 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                     onUpdateDay={updateBarberDay}
                     onUpdateField={updateBarberField}
                     onUpdateTurn={updateBarberTurn}
+                    onUpdatePin={async (id, pin) => {
+                        const res = await updateBarberPinByAdmin(id, pin);
+                        if (res.success) {
+                            toast.success('PIN actualizado correctamente');
+                            return true;
+                        } else {
+                            toast.error('Error al actualizar PIN: ' + res.error);
+                            return false;
+                        }
+                    }}
                 />
             )}
         </>

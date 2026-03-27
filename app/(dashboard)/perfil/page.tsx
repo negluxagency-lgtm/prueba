@@ -121,13 +121,14 @@ export default function PerfilPage() {
         finally { setUploadingLogo(false) }
     }
 
-    const handleUploadBanner = async () => {
-        if (!bannerFile || !userId) return
+    const handleUploadBanner = async (fileToUpload?: File) => {
+        const file = fileToUpload || bannerFile
+        if (!file || !userId) return
         setUploadingBanner(true)
         try {
-            const fileExt = bannerFile.name.split('.').pop()
+            const fileExt = file.name.split('.').pop()
             const fileName = `${userId}/banner_${Date.now()}.${fileExt}`
-            const { error: uploadError } = await supabase.storage.from('banner').upload(fileName, bannerFile, { upsert: true })
+            const { error: uploadError } = await supabase.storage.from('banner').upload(fileName, file, { upsert: true })
             if (uploadError) throw uploadError
             const { data: urlData } = supabase.storage.from('banner').getPublicUrl(fileName)
             const { error: profileError } = await supabase.from('perfiles').update({ banner_url: urlData.publicUrl }).eq('id', userId)
@@ -191,23 +192,14 @@ export default function PerfilPage() {
                         }}
                     />
                     <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                        {bannerFile ? (
-                            <button
-                                onClick={handleUploadBanner}
-                                disabled={uploadingBanner}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[10px] uppercase rounded-lg transition-all disabled:opacity-50 shadow-lg"
-                            >
-                                {uploadingBanner ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                                {uploadingBanner ? 'Guardando...' : 'Guardar banner'}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => bannerInputRef.current?.click()}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white font-bold text-[10px] uppercase tracking-widest rounded-lg border border-white/10 hover:border-white/20 transition-all shadow-lg"
-                            >
-                                Cambiar banner
-                            </button>
-                        )}
+                        <button
+                            onClick={() => bannerInputRef.current?.click()}
+                            disabled={uploadingBanner}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white font-bold text-[10px] uppercase tracking-widest rounded-lg border border-white/10 hover:border-white/20 transition-all shadow-lg disabled:opacity-50"
+                        >
+                            {uploadingBanner ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                            {uploadingBanner ? 'Guardando...' : 'Cambiar banner'}
+                        </button>
                     </div>
                 </div>
 
@@ -349,7 +341,7 @@ export default function PerfilPage() {
                                 </p>
                                 {perfil.fechas_cierre && perfil.fechas_cierre.length > 0 ? (
                                     <div className="flex overflow-x-auto hide-scrollbar flex-nowrap gap-2 pb-2 -mx-5 px-5 lg:mx-0 lg:px-0">
-                                        {perfil.fechas_cierre.sort().map((fecha: string) => (
+                                        {[...perfil.fechas_cierre].sort().map((fecha: string) => (
                                             <span key={fecha} className="px-3 py-1.5 whitespace-nowrap bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-md text-[10px] font-bold">
                                                 {fecha.split('-').reverse().slice(0, 2).join('/')}
                                             </span>
@@ -525,8 +517,9 @@ export default function PerfilPage() {
                         try {
                             const croppedFile = await getCroppedImg(uncroppedBannerUrl, croppedAreaPixels)
                             if (croppedFile) {
-                                setBannerFile(croppedFile)
                                 setIsBannerCropperOpen(false)
+                                // Guardar automáticamente
+                                await handleUploadBanner(croppedFile)
                             }
                         } catch {
                             toast.error('Error al recortar la imagen')

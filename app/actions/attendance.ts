@@ -28,7 +28,6 @@ export interface FichajeLog {
  * Útil para determinar el estado de los botones UI de manera persistente.
  */
 export async function getAttendanceStatus(barberId: number) {
-    const user = await getRequiredSession();
     try {
         const { data: log, error } = await supabaseAdmin
             .from('fichajes_logs')
@@ -62,7 +61,6 @@ export async function logAttendance(
     lat?: number,
     lng?: number
 ) {
-    const user = await getRequiredSession();
     try {
         let pointStr = null;
         if (lat !== undefined && lng !== undefined && !isNaN(lat) && !isNaN(lng)) {
@@ -83,12 +81,12 @@ export async function logAttendance(
             .single();
 
         if (error) {
-            logger.error('ACTIONS', 'Error en fichaje de asistencia', { error, barberId, tipo }, user.id);
+            logger.error('ACTIONS', 'Error en fichaje de asistencia', { error, barberId, tipo }, `barber-${barberId}`);
             console.error('Error in logAttendance DB insert:', error);
             return { success: false, error: error.message };
         }
 
-        logger.info('ACTIONS', 'Fichaje de asistencia registrado', { barberId, tipo }, user.id);
+        logger.info('ACTIONS', 'Fichaje de asistencia registrado', { barberId, tipo }, `barber-${barberId}`);
         return { success: true, data };
     } catch (error: any) {
         console.error('Server action logAttendance error:', error);
@@ -101,7 +99,6 @@ export async function logAttendance(
  * Si el estado actual es 'entrada' o 'pausa_fin', suma también el tiempo online hasta este mismo instante (NOW() del server).
  */
 export async function getDailySummary(barberId: number, dateStr?: string) {
-    const user = await getRequiredSession();
     try {
         // Si no se da fecha, usamos hoy
         const targetDate = dateStr ? new Date(dateStr) : new Date();
@@ -152,7 +149,7 @@ export async function getDailySummary(barberId: number, dateStr?: string) {
 
         // Si sigue activo después de todas las interacciones (ej: fichó entrada pero aún no salida)
         if (lastInTime) {
-            // Solo sumar si targetDate es el día de hoy
+            // Solo sumar si targetDate is el día de hoy
             if (targetDate.toDateString() === new Date().toDateString()) {
                 totalSeconds += (serverNow.getTime() - lastInTime.getTime()) / 1000;
             }
@@ -227,7 +224,6 @@ export async function getMonthlyLogs(barberId: number, year: number, month: numb
  * Obtiene los logs de los últimos 7 días (la semana en curso) para un barbero.
  */
 export async function getWeeklyLogs(barberId: number) {
-    const user = await getRequiredSession();
     try {
         const today = new Date();
         const startOfWeek = new Date(today);

@@ -14,6 +14,8 @@ import { InvoiceModal } from "@/components/dashboard/InvoiceModal";
 import { AppointmentLinkModal } from "@/components/dashboard/AppointmentLinkModal";
 import { ProductSalesTable } from '@/components/dashboard/ProductSalesTable';
 import { EditProductSaleModal } from '@/components/dashboard/EditProductSaleModal';
+import { CashRegisterManager } from "@/components/dashboard/CashRegisterManager";
+import { getDashboardStats } from '@/app/actions/cash';
 import ObjectiveRings from "@/components/dashboard/ObjectiveRings";
 import MonthlyGoalsChart from "@/components/dashboard/MonthlyGoalsChart";
 import CadenaStatsChart from '@/components/dashboard/CadenaStatsChart';
@@ -53,22 +55,22 @@ export default function Dashboard() {
         mutate: mutateMetrics, 
         isLoading: loadingMetrics 
     } = useSWR(
-        userId ? ['dashboard-metrics', selectedDate, userId] : null,
+        userId ? ['dashboard-metrics-server', selectedDate, userId] : null,
         async () => {
-            const { data: metrics } = await supabase
-                .from('metricas_diarias')
-                .select('*')
-                .eq('barberia_id', userId)
-                .eq('dia', selectedDate)
-                .single();
-
+            const res = await getDashboardStats(userId!, selectedDate)
+            if (!res.success) throw new Error(res.error)
+            
             const objectives = {
                 ingresos: Number(shopProfile?.ingresos_dia) || 0,
                 cortes: Number(shopProfile?.cortes_dia) || 0,
                 productos: Number(shopProfile?.productos_dia) || 0
             };
 
-            return { metrics, objectives };
+            return { 
+                metrics: res.data.metrics, 
+                objectives, 
+                cajaInicial: res.data.cajaInicial 
+            };
         }
     );
 
@@ -113,6 +115,7 @@ export default function Dashboard() {
         const channel = supabase
             .channel(`dashboard-realtime-${userId}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'metricas_diarias', filter: `barberia_id=eq.${userId}` }, () => mutateMetrics())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'arqueos_caja', filter: `barberia_id=eq.${userId}` }, () => mutateMetrics())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas_productos', filter: `barberia_id=eq.${userId}` }, () => mutateSales())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'citas', filter: `barberia_id=eq.${userId}` }, () => refreshAppointments())
             .on('postgres_changes', { event: '*', schema: 'public', table: 'barberos', filter: `barberia_id=eq.${userId}` }, () => refreshShopData())
@@ -262,16 +265,8 @@ export default function Dashboard() {
 
             <div className="flex flex-col lg:flex-row gap-0 lg:gap-6 mb-6 lg:mb-10 items-stretch justify-start">
                 <div className="flex flex-row gap-0 w-full lg:flex-1 items-stretch min-h-[160px] lg:min-h-0">
-                    <div className="w-[75%] lg:w-full">
+                    <div className="w-full">
                         <ObjectiveRings {...stats} loading={loadingMetrics || shopLoading} />
-                    </div>
-                    <div className="w-[25%] lg:hidden flex justify-end">
-                        <DashboardStats 
-                            citas={metricasDia.citas || dailyCitas.length} 
-                            cajaEsperada={metricasDia.caja_esperada} 
-                            cajaReal={metricasDia.caja_real}
-                            onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }} 
-                        />
                     </div>
                 </div>
                 <div className="w-full lg:flex-1 hidden lg:flex flex-col gap-6 items-end">
@@ -281,12 +276,21 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            <div className="hidden lg:flex mb-6 lg:mb-10 lg:px-4">
+            <div className="mb-6 lg:mb-10 lg:px-4">
                 <DashboardStats 
                     citas={metricasDia.citas || dailyCitas.length} 
-                    cajaEsperada={metricasDia.caja_esperada} 
-                    cajaReal={metricasDia.caja_real}
+                    cajaTotal={metricasDia.caja_real}
+                    cajaInicial={metricsData?.cajaInicial}
                     onNewAppointment={() => { setEditingCita(null); setIsModalOpen(true); }} 
+                    registerControl={
+                        userId && (
+                            <CashRegisterManager 
+                                shopId={userId} 
+                                userName={shopProfile?.nombre_encargado}
+                                onStatusChange={() => mutateMetrics()} 
+                            />
+                        )
+                    }
                 />
             </div>
 
@@ -311,7 +315,12 @@ export default function Dashboard() {
             <AppointmentModal
                 isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingCita(null); }}
                 onSave={handleSave} services={services} barbers={barbers} isEditing={!!editingCita}
-                initialData={editingCita ? { ...editingCita, Telefono: String(editingCita.Telefono), Precio: String(editingCita.Precio) } as any : {
+                initialData={editingCita ? { 
+                    ...editingCita, 
+                    Telefono: editingCita.Telefono ? String(editingCita.Telefono) : '', 
+                    Precio: editingCita.Precio ? String(editingCita.Precio) : '',
+                    pago: editingCita.pago || undefined
+                } as any : {
                     Nombre: '', servicio: '', barbero: '', barbero_id: '', Dia: selectedDate, Hora: '09:00', Telefono: '', Precio: '', confirmada: false
                 }}
             />

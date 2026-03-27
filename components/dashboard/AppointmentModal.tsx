@@ -12,9 +12,10 @@ interface AppointmentModalProps {
     isEditing: boolean;
     services?: any[]; // New prop
     barbers?: { id: string, nombre: string }[]; // Updated prop
+    showBarberSelector?: boolean; // New prop
 }
 
-export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onClose, onSave, initialData, isEditing, services = [], barbers = [] }) => {
+export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onClose, onSave, initialData, isEditing, services = [], barbers = [], showBarberSelector = true }) => {
     const [formData, setFormData] = useState<AppointmentFormData>(initialData);
     const [isFastMode, setIsFastMode] = useState(false);
     console.log('🎯 Modal received services:', services);
@@ -134,37 +135,39 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                                 ))}
                             </select>
 
-                            {/* Barber Selector */}
-                            <select
-                                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
-                                value={formData.barbero_id || formData.barbero || ""}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    const selectedBarber = barbers?.find(b => String(b.id) === val || b.nombre === val || String(b) === val);
-                                    if (selectedBarber) {
-                                        setFormData({ 
-                                            ...formData, 
-                                            barbero: selectedBarber.nombre || String(selectedBarber),
-                                            barbero_id: String(selectedBarber.id) || undefined
-                                        });
-                                    } else {
-                                        // Case empty
-                                        setFormData({ ...formData, barbero: "", barbero_id: undefined })
-                                    }
-                                }}
-                            >
-                                <option value="">Selecciona un barbero (Opcional)</option>
-                                {barbers?.map((barber: any, index: number) => {
-                                    const key = barber.id || index;
-                                    const label = barber.nombre || barber;
-                                    const value = barber.id ? String(barber.id) : label;
-                                    return (
-                                        <option key={key} value={value}>
-                                            {label}
-                                        </option>
-                                    );
-                                })}
-                            </select>
+                            {/* Barber Selector - Hidden if showBarberSelector is false */}
+                            {showBarberSelector && (
+                                <select
+                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
+                                    value={formData.barbero_id || formData.barbero || ""}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        const selectedBarber = barbers?.find(b => String(b.id) === val || b.nombre === val || String(b) === val);
+                                        if (selectedBarber) {
+                                            setFormData({ 
+                                                ...formData, 
+                                                barbero: selectedBarber.nombre || String(selectedBarber),
+                                                barbero_id: String(selectedBarber.id) || undefined
+                                            });
+                                        } else {
+                                            // Case empty
+                                            setFormData({ ...formData, barbero: "", barbero_id: undefined })
+                                        }
+                                    }}
+                                >
+                                    <option value="">Selecciona un barbero (Opcional)</option>
+                                    {barbers?.map((barber: any, index: number) => {
+                                        const key = barber.id || index;
+                                        const label = barber.nombre || barber;
+                                        const value = barber.id ? String(barber.id) : label;
+                                        return (
+                                            <option key={key} value={value}>
+                                                {label}
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                            )}
                             {!isFastMode && (
                                 <>
                                     <div className="grid grid-cols-2 gap-3">
