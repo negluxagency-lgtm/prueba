@@ -24,8 +24,10 @@ export interface FacturaVerifactuData {
     nombre_servicio?: string
 }
 
-export async function emitirFacturaVerifactu(data: FacturaVerifactuData) {
-    await checkBarberiaOwnership(data.barberia_id);
+export async function emitirFacturaVerifactu(data: FacturaVerifactuData, ignoreOwnership = false) {
+    if (!ignoreOwnership) {
+        await checkBarberiaOwnership(data.barberia_id);
+    }
     try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!

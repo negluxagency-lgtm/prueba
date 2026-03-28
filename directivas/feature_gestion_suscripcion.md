@@ -1,6 +1,6 @@
 # FEATURE-GESTION-SUSCRIPCION: PORTAL DE CLIENTE STRIPE
 > **Estado:** ACTIVA
-> **Última Actualización:** 2026-01-30
+> **Última Actualización:** 2026-03-28
 > **Responsable:** Antigravity Agent
 
 ## 1. Objetivo Primario
@@ -29,4 +29,5 @@ Permitir a los usuarios gestionar su suscripción (actualizar tarjeta, cancelar,
 ## 5. Bitácora de Anomalías (Aprendizaje Continuo)
 | Fecha | Error Detectado | Solución Implementada |
 | :--- | :--- | :--- |
-| | | |
+| 2026-03-28 | Simplificación de banner de prueba | Se eliminó la mención "No incluye IA/mensajes" de `TrialBanner.tsx` por solicitud de negocio para limpiar la UI y se corrigieron espacios. |
+| 2026-03-28 | Solapamiento de planes en /perfil (desktop) | Se unificó el comportamiento del `Paywall` en modo sección (`isSection=true`) para que en escritorio use el layout vertical de móvil, truncando beneficios y permitiendo expansión manual. |

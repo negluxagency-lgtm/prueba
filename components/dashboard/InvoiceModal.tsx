@@ -16,6 +16,7 @@ interface InvoiceModalProps {
     onClose: () => void
     appointment: any
     shopData: {
+        id: string
         name: string
         address?: string
         phone?: string
@@ -175,10 +176,10 @@ export function InvoiceModal({ isOpen, onClose, appointment, shopData, onUpdateC
                                         setIsGenerating(true);
                                         try {
                                             const { data: { session } } = await supabase.auth.getSession()
-                                            const barberia_id = session?.user?.id
+                                            const barberia_id = session?.user?.id || shopData.id
 
                                             if (!barberia_id) {
-                                                toast.error('Sesión no encontrada')
+                                                toast.error('Identificador de barbería no encontrado')
                                                 return
                                             }
 
@@ -196,7 +197,8 @@ export function InvoiceModal({ isOpen, onClose, appointment, shopData, onUpdateC
                                                 nombre_servicio: appointment.servicio
                                             }
 
-                                            const res = await emitirFacturaVerifactu(factData)
+                                            // Usamos ignoreOwnership=true si no hay sesión (procedente de staff)
+                                            const res = await emitirFacturaVerifactu(factData, !session)
                                             if (res.success && res.factura) {
                                                 const rawDate = res.factura.fecha_documento || factData.fecha_documento;
                                                 const [year, month, day] = rawDate.split('-');

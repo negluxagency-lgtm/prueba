@@ -38,3 +38,4 @@ Implementar un programa de afiliados en Next.js y Supabase donde los usuarios pu
 | Fecha | Error Detectado | Solución Implementada |
 | :--- | :--- | :--- |
 | 2026-03-24 | Inicialización del feature | Creación de directiva base |
+| 2026-03-28 | Restricción de afiliados en prueba | Se añadió lógica en `/afiliados/page.tsx` para bloquear el registro y mostrar un mensaje restrictivo si el plan del usuario es `"prueba"`. |

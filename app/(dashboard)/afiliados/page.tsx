@@ -249,7 +249,19 @@ export default function AfiliadosPage() {
                 </div>
 
                 <div className="pt-8 flex flex-col items-center gap-4">
-                    {!profile?.afiliado ? (
+                    {profile?.plan?.toLowerCase() === 'prueba' ? (
+                        <div className="flex flex-col items-center gap-4 w-full">
+                            <button
+                                disabled
+                                className="flex items-center justify-center gap-2 px-8 py-4 bg-zinc-800 text-zinc-500 font-black text-sm uppercase tracking-widest rounded-2xl cursor-not-allowed border border-zinc-700 w-full lg:w-fit"
+                            >
+                                Restringido: Suscríbete para activar
+                            </button>
+                            <p className="text-amber-500 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-center max-w-md">
+                                No puedes acceder al programa de afiliados hasta que te suscribas a cualquier plan.
+                            </p>
+                        </div>
+                    ) : !profile?.afiliado ? (
                         <button
                             onClick={handleJoinProgram}
                             disabled={joining}

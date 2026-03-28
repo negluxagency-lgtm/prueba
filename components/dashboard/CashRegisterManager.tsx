@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { AlertCircle, Lock, Unlock, DollarSign, Calculator, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react'
 import { getTodayCaja, abrirCaja, cerrarCaja, getExpectedCash, getDashboardStats } from '@/app/actions/cash'
+import { CashRegisterSkeleton } from '@/components/ui/SkeletonLoader'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -117,9 +118,7 @@ export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId
         }
     }
 
-    if (loading) return null
-
-    if (loading) return null
+    if (loading) return <CashRegisterSkeleton />
 
     return (
         <>
@@ -152,7 +151,7 @@ export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId
                 ) : (
                     <div className="w-full space-y-1 lg:space-y-2">
                         <p className="text-[8px] lg:text-xs font-bold text-zinc-500 truncate italic leading-tight">
-                            {!caja ? 'Caja pendiente por abrirse hoy' : 'La caja de hoy ha sido cerrada correctamente'}
+                            {!caja ? 'Caja pendiente por abrirse hoy' : 'La caja de hoy ha sido cerrada'}
                         </p>
                         <button 
                             onClick={() => setIsOpeningModal(true)}

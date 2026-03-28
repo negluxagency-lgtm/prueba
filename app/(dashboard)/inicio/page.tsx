@@ -327,7 +327,7 @@ export default function Dashboard() {
 
             <InvoiceModal
                 isOpen={isInvoiceModalOpen} onClose={() => { setIsInvoiceModalOpen(false); setInvoiceAppointment(null); }}
-                appointment={invoiceAppointment} shopData={shopProfile ? { name: shopProfile.nombre_barberia || 'Mi Barbería', cif: shopProfile["CIF/NIF"] || '' } : { name: 'Mi Barbería', cif: '' }}
+                appointment={invoiceAppointment} shopData={shopProfile ? { id: shopProfile.id, name: shopProfile.nombre_barberia || 'Mi Barbería', cif: shopProfile["CIF/NIF"] || '' } : { id: '', name: 'Mi Barbería', cif: '' }}
                 onUpdateCIF={updateShopCIF}
             />
 

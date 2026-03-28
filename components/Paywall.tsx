@@ -185,7 +185,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
 
 
 
-                <div className={`grid grid-cols-1 gap-6 lg:gap-8 items-start pb-6 lg:pb-0 ${normalPlans.length > 1 ? 'lg:grid-cols-3' : 'lg:max-w-md mx-auto'}`}>
+                <div className={`grid grid-cols-1 gap-6 lg:gap-8 items-start pb-6 lg:pb-0 ${(!isSection && normalPlans.length > 1) ? 'lg:grid-cols-3' : 'lg:max-w-md mx-auto w-full'}`}>
                     {normalPlans.map((plan, index) => (
                         <div
                             key={index}
@@ -222,7 +222,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                     const isHiddenOnMobile = !expandedPlans.includes(index) && i >= 3;
 
                                     return (
-                                        <li key={i} className={`items-start gap-3 text-xs lg:text-sm ${isHiddenOnMobile ? 'hidden lg:flex' : 'flex'}`}>
+                                        <li key={i} className={`items-start gap-3 text-xs lg:text-sm ${isHiddenOnMobile ? (isSection ? 'hidden' : 'hidden lg:flex') : 'flex'}`}>
                                             {isNegative ? (
                                                 <X className="w-4 h-4 lg:w-5 lg:h-5 shrink-0 text-zinc-600 mt-0.5" />
                                             ) : (
@@ -238,7 +238,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                 {(isCurrentPlanView ? plan.perfilFeatures : plan.features).length > 3 && (
                                     <button 
                                         onClick={() => togglePlan(index)}
-                                        className="lg:hidden w-full text-center mt-4 text-[10px] font-bold uppercase tracking-widest text-amber-500/80 hover:text-amber-400 transition-colors py-2.5 border border-dashed border-amber-500/20 rounded-xl"
+                                        className={`${isSection ? '' : 'lg:hidden'} w-full text-center mt-4 text-[10px] font-bold uppercase tracking-widest text-amber-500/80 hover:text-amber-400 transition-colors py-2.5 border border-dashed border-amber-500/20 rounded-xl`}
                                     >
                                         {expandedPlans.includes(index) ? 'Ver menos' : 'Ver todos los beneficios'}
                                     </button>
@@ -266,7 +266,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                 {iaPlan && (
                     <div className={`mt-8 lg:mt-12 w-full mx-auto ${isSection ? 'max-w-3xl' : 'max-w-4xl'}`}>
                         <div className={`
-                            relative border transition-all duration-300 group flex flex-col lg:flex-row items-center bg-zinc-900/60 border-amber-500/30 hover:border-amber-500/60 shadow-2xl overflow-hidden
+                            relative border transition-all duration-300 group flex flex-col ${isSection ? '' : 'lg:flex-row'} items-center bg-zinc-900/60 border-amber-500/30 hover:border-amber-500/60 shadow-2xl overflow-hidden
                             ${isSection ? 'p-6 gap-6 rounded-3xl' : 'p-6 lg:p-10 gap-8 lg:gap-12 rounded-[2rem]'}
                         `}>
                             {/* Brillo de fondo sutil */}
@@ -299,7 +299,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                     {(isCurrentPlanView ? iaPlan.perfilFeatures : iaPlan.features).map((feature, i) => {
                                         const isHiddenOnMobile = !expandedIa && i >= 3;
                                         return (
-                                        <li key={i} className={`items-start gap-3 ${isSection ? 'text-[10px] lg:text-xs' : 'text-xs lg:text-sm'} ${isHiddenOnMobile ? 'hidden lg:flex' : 'flex'}`}>
+                                        <li key={i} className={`items-start gap-3 ${isSection ? 'text-[10px] lg:text-xs' : 'text-xs lg:text-sm'} ${isHiddenOnMobile ? (isSection ? 'hidden' : 'hidden lg:flex') : 'flex'}`}>
                                             <Check className={`shrink-0 text-amber-500 mt-0.5 ${isSection ? 'w-3 h-3 lg:w-4 lg:h-4' : 'w-4 h-4 lg:w-5 lg:h-5'}`} />
                                             <span className="leading-tight text-zinc-300 font-medium">
                                                 {feature}
@@ -310,7 +310,7 @@ export const Paywall = ({ variant = 'lock', isSection = false, showAllPlans = fa
                                     {(isCurrentPlanView ? iaPlan.perfilFeatures : iaPlan.features).length > 3 && (
                                         <button 
                                             onClick={() => setExpandedIa(!expandedIa)}
-                                            className="lg:hidden w-full text-center mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-500/80 hover:text-amber-400 transition-colors py-2.5 border border-dashed border-amber-500/20 rounded-xl md:col-span-2"
+                                            className={`${isSection ? '' : 'lg:hidden'} w-full text-center mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-500/80 hover:text-amber-400 transition-colors py-2.5 border border-dashed border-amber-500/20 rounded-xl md:col-span-2`}
                                         >
                                             {expandedIa ? 'Ver menos' : 'Ver todos los beneficios'}
                                         </button>

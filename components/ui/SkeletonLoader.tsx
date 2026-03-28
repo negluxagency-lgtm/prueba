@@ -165,3 +165,21 @@ export function TableSkeleton() {
         </div>
     );
 }
+
+/**
+ * CashRegisterSkeleton: Skeleton para el Gestor de Caja
+ */
+export function CashRegisterSkeleton() {
+    return (
+        <div className="h-full w-full bg-zinc-900/50 border border-zinc-800 rounded-xl lg:rounded-[2rem] p-5 md:p-6 animate-pulse flex flex-col justify-between items-start min-h-[120px] lg:min-h-[160px]">
+            <div className="flex items-center gap-2 mb-4">
+                <Skeleton className="w-2 h-2 rounded-full" />
+                <Skeleton className="w-20 h-3 rounded-md" />
+            </div>
+            <div className="w-full space-y-3">
+                <Skeleton className="w-2/3 h-3 rounded-md" />
+                <Skeleton className="w-full h-10 rounded-xl lg:rounded-2xl" />
+            </div>
+        </div>
+    );
+}

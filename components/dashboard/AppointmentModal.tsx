@@ -170,8 +170,11 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                             )}
                             {!isFastMode && (
                                 <>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-2 md:px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-zinc-500 font-bold uppercase ml-2">Día</label>
+                                            <input type="date" required className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors h-[52px]" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />
+                                        </div>
                                         <div className="space-y-1">
                                             <label className="text-[10px] text-zinc-500 font-bold uppercase ml-2">Hora (24h)</label>
                                             <TimePicker24h

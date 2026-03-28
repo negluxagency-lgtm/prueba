@@ -19,6 +19,32 @@ const PLAN_MAPPING: Record<string, string> = {
     [process.env.STRIPE_PRICE_PREMIUM || 'price_dummy_3']: 'Premium',
 };
 
+// Función auxiliar para obtener el nombre del plan de forma robusta
+async function getPlanName(priceId: string | undefined): Promise<string> {
+    if (!priceId) return 'Básico';
+
+    // 1. Intentar mapeo local (rápido)
+    if (PLAN_MAPPING[priceId]) return PLAN_MAPPING[priceId];
+
+    // 2. Fallback: Consultar Stripe para ver metadatos del producto
+    try {
+        console.log(`🔍 Consultando metadatos en Stripe para PriceID: ${priceId}`);
+        const price = await stripe.prices.retrieve(priceId, { expand: ['product'] });
+        const product = price.product as Stripe.Product;
+        
+        if (product.metadata && product.metadata.plan) {
+            console.log(`✅ Plan detectado en metadatos: ${product.metadata.plan}`);
+            return product.metadata.plan;
+        }
+    } catch (e) {
+        console.error('⚠️ Error al recuperar producto de Stripe:', e);
+    }
+
+    // 3. Fallback final: Básico (más seguro que Profesional)
+    console.warn(`⚠️ No se pudo determinar el plan para ${priceId}. Usando 'Básico' por defecto.`);
+    return 'Básico';
+}
+
 // ------------------------------------------------------
 // 2. EL WEBHOOK
 // ------------------------------------------------------
@@ -80,7 +106,7 @@ export async function POST(req: Request) {
                 const customerName = session.customer_details?.name || 'Barbero';
                 const priceId = session.line_items?.data[0]?.price?.id;
 
-                const planName = (priceId && PLAN_MAPPING[priceId]) ? PLAN_MAPPING[priceId] : 'Profesional';
+                const planName = await getPlanName(priceId);
 
                 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
                 console.log('💰 [STRIPE] checkout.session.completed');
@@ -182,30 +208,63 @@ export async function POST(req: Request) {
 
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object as Stripe.Invoice;
-                if (invoice.billing_reason === 'subscription_cycle') {
-                    const { data, error } = await supabaseAdmin
-                        .from('perfiles')
-                        .update({
-                            ultimo_pago: new Date().toISOString(),
-                            estado: 'pagado'
-                        })
-                        .eq('stripe_customer_id', invoice.customer as string)
-                        .select();
+                console.log(`💰 Pago de factura confirmado: ${invoice.id} (Razón: ${invoice.billing_reason})`);
+                
+                // Siempre actualizamos ultimo_pago si es un éxito
+                const stripeCustomerId = invoice.customer as string;
+                
+                // Intentamos extraer el plan de los items de la factura para mantenerlo sincronizado
+                const priceId = (invoice.lines.data[0] as any)?.price?.id;
+                const currentPlan = await getPlanName(priceId);
 
-                    if (error) {
-                        console.error('❌ Error al registrar renovación:', error);
-                    } else if (data && data.length > 0) {
-                        console.log(`✅ Renovación registrada para: ${invoice.customer}`);
-                    } else {
-                        console.warn('⚠️ No se encontró perfil para renovar:', invoice.customer);
-                    }
+                const { data, error } = await supabaseAdmin
+                    .from('perfiles')
+                    .update({
+                        ultimo_pago: new Date().toISOString(),
+                        estado: 'pagado',
+                        plan: currentPlan // Aseguramos que el plan esté actualizado tras la renovación o cambio
+                    })
+                    .eq('stripe_customer_id', stripeCustomerId)
+                    .select();
+
+                if (error) {
+                    console.error('❌ Error al actualizar tras pago de factura:', error);
+                } else if (data && data.length > 0) {
+                    console.log(`✅ Perfil actualizado tras pago de factura para: ${stripeCustomerId}`);
                 }
+                break;
+            }
+
+            case 'customer.subscription.updated': {
+                const subscription = event.data.object as Stripe.Subscription;
+                console.log(`🔄 Suscripción actualizada: ${subscription.id}`);
+
+                const stripeCustomerId = subscription.customer as string;
+                const priceId = subscription.items.data[0]?.price?.id;
+                const currentPlan = await getPlanName(priceId);
+                
+                const status = (subscription.status === 'active' || subscription.status === 'trialing') 
+                    ? 'pagado' 
+                    : (subscription.status === 'past_due' ? 'impago' : 'vencido');
+
+                const { error } = await supabaseAdmin
+                    .from('perfiles')
+                    .update({
+                        plan: currentPlan,
+                        estado: status
+                    })
+                    .eq('stripe_customer_id', stripeCustomerId);
+
+                if (error) console.error('❌ Error al sincronizar cambio de suscripción:', error);
+                else console.log(`✅ Plan sincronizado en actualización de suscripción: ${currentPlan}`);
+                
                 break;
             }
 
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object as Stripe.Subscription;
-                // Al cancelar, pasamos a 'impago' (según useSubscription.ts)
+                console.log(`🛑 Suscripción eliminada: ${subscription.id}`);
+
                 const { data, error } = await supabaseAdmin
                     .from('perfiles')
                     .update({ estado: 'impago' })
@@ -215,9 +274,7 @@ export async function POST(req: Request) {
                 if (error) {
                     console.error('❌ Error al marcar impago:', error);
                 } else if (data && data.length > 0) {
-                    console.log(`🛑 Suscripción cancelada: ${subscription.customer}`);
-                } else {
-                    console.warn('⚠️ No se encontró perfil para marcar impago:', subscription.customer);
+                    console.log(`✅ Perfil marcado como impago: ${subscription.customer}`);
                 }
                 break;
             }
