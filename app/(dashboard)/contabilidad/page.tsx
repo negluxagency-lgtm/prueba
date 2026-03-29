@@ -17,13 +17,12 @@ import SalaryCalculatorModal from '@/components/trends/SalaryCalculatorModal'
 import { PaymentReportModal } from '@/components/accounting/PaymentReportModal'
 import { AccountingReportModal } from '@/components/accounting/AccountingReportModal'
 import AutonomoGuide from '@/components/accounting/AutonomoGuide'
-import { BarberManager } from '@/components/management/BarberManager'
+import { Barber360View } from '@/components/management/Barber360View'
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 const TABS = [
     { id: 'financiera', label: 'Gestión Financiera', icon: BarChart3 },
-    { id: 'equipo', label: 'Equipo y Presencia', icon: Users },
-    { id: 'salarios', label: 'Liquidaciones', icon: Calculator },
+    { id: 'equipo', label: 'Equipo (360º)', icon: Users },
     { id: 'facturas', label: 'Facturas e Informes', icon: FileText },
 ] as const
 
@@ -61,10 +60,10 @@ export default function AccountingPage() {
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
     const [isAccountingModalOpen, setIsAccountingModalOpen] = useState(false)
 
-    // Ensure we don't stay on 'jornadas' or 'salarios' if hidden
+    // Ensure we don't stay on 'equipo' if hidden
     useEffect(() => {
         const isTeamHidden = barberCount <= 1 || plan === 'Básico'
-        if (isTeamHidden && (activeTab === 'equipo' || activeTab === 'salarios')) {
+        if (isTeamHidden && activeTab === 'equipo') {
             setActiveTab('financiera')
         }
     }, [barberCount, plan, activeTab])
@@ -83,7 +82,7 @@ export default function AccountingPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                    <Link 
+                    <Link
                         href="/historial_caja"
                         className="p-1.5 lg:px-4 lg:py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-400 hover:text-amber-500 hover:border-amber-500/50 transition-all flex items-center gap-2 group"
                     >
@@ -111,7 +110,7 @@ export default function AccountingPage() {
             {/* ── Tab Selector ──────────────────────────────────────────────── */}
             <div className="flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 p-1 rounded-2xl mb-6 w-full overflow-x-auto">
                 {TABS.filter(tab => {
-                    if (tab.id === 'equipo' || tab.id === 'salarios') {
+                    if (tab.id === 'equipo') {
                         return barberCount > 1 && plan !== 'Básico'
                     }
                     return true
@@ -119,7 +118,7 @@ export default function AccountingPage() {
 
                     const Icon = tab.icon
                     const isActive = activeTab === tab.id
-                    const shortLabel = tab.id === 'financiera' ? 'Finanzas' : tab.id === 'equipo' ? 'Equipo' : tab.id === 'salarios' ? 'Salarios' : 'Facturas'
+                    const shortLabel = tab.id === 'financiera' ? 'Finanzas' : tab.id === 'equipo' ? 'Equipo' : 'Facturas'
                     return (
                         <button
                             key={tab.id}
@@ -151,7 +150,7 @@ export default function AccountingPage() {
                     {/* ── TAB 1: Gestión Financiera ─────────────────────── */}
                     {activeTab === 'financiera' && (
                         <div className="space-y-8">
-                            
+
                             <AccountingSummary
                                 selectedMonth={selectedMonth}
                                 onNetIncomeCalculated={setNetIncome}
@@ -213,80 +212,31 @@ export default function AccountingPage() {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
 
+                    {/* ── TAB 2: Barber 360 ────────────────────────────── */}
+                    {activeTab === 'equipo' && (
+                        <div className="space-y-8">
+                            {accountingProfile?.userId && (
+                                <Barber360View
+                                    perfilId={accountingProfile.userId}
+                                    initialMonth={selectedMonth}
+                                />
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── TAB 3: Facturas e Informes ────────────────────── */}
+                    {activeTab === 'facturas' && (
+                        <div className="space-y-8">
                             {/* Guía Autónomo */}
                             {isAutonomo && (
                                 <div className="w-full">
                                     <AutonomoGuide />
                                 </div>
                             )}
-                        </div>
-                    )}
 
-                    {/* ── TAB 2: Equipo y Presencia ────────────────────── */}
-                    {activeTab === 'equipo' && (
-                        <div className="space-y-8">
-                            {/* Control de Presencia — Inline */}
-                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] overflow-hidden">
-                                <div className="px-6 py-5 border-b border-zinc-800/50 flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                                        <Clock className="w-5 h-5 text-amber-500" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-base font-black italic uppercase tracking-tighter text-white">Asistencia del Equipo</h2>
-                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Registro de jornadas y fichajes</p>
-                                    </div>
-                                </div>
-                                <div className="min-h-[400px]">
-                                    <AttendanceReportModal
-                                        onClose={() => { }}
-                                        month={selectedMonth}
-                                        inline
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Gestión de Personal */}
-                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] overflow-hidden p-6 lg:p-8">
-                                <div className="flex items-center gap-4 mb-8">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                                        <Users className="w-5 h-5 text-amber-500" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-base font-black italic uppercase tracking-tighter text-white">Gestión de Personal</h2>
-                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Añade o edita los miembros de tu barbería</p>
-                                    </div>
-                                </div>
-                                
-                                {accountingProfile?.userId && (
-                                    <BarberManager perfilId={accountingProfile.userId} />
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── TAB 3: Liquidación Mensual ────────────────────── */}
-                    {activeTab === 'salarios' && (
-                        <div className="space-y-8">
-                            {/* Liquidación — Inline */}
-                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2rem] overflow-hidden">
-                                <div className="px-6 py-5 border-b border-zinc-800/50 flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                                        <Calculator className="w-5 h-5 text-amber-500" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-base font-black italic uppercase tracking-tighter text-white">Liquidación Mensual</h2>
-                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Cálculo de nóminas y comisiones</p>
-                                    </div>
-                                </div>
-                                <SalaryCalculatorModal onClose={() => { }} inline />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ── TAB 4: Facturas e Informes ────────────────────── */}
-                    {activeTab === 'facturas' && (
-                        <div className="space-y-8">
                             {/* Archivo de Facturas */}
                             <InvoicesSection initialMonth={selectedMonth} />
                         </div>

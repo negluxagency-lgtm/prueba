@@ -15,6 +15,7 @@ interface BarberDaySchedule {
 interface Barber {
     id: string;
     nombre: string;
+    foto?: string | null;
     horario_semanal: BarberDaySchedule[];
     salario_base?: number | null;
     porcentaje_comision?: number | null;
@@ -33,6 +34,7 @@ const getDefaultBarberSchedule = (): BarberDaySchedule[] => {
 
 interface BarberManagerProps {
     perfilId: string;
+    inlineBarberId?: string;
 }
 
 // ─── Modal de Edición de Barbero ────────────────────────────────────────────
@@ -47,9 +49,11 @@ interface BarberModalProps {
     onUpdateField: (barberId: string, field: 'salario_base' | 'porcentaje_comision' | 'jefe/dueño', value: any) => void;
     onUpdateTurn: (barberId: string, dayIndex: number, turnIndex: number, field: 'inicio' | 'fin', value: string) => void;
     onUpdatePin: (barberId: string, newPin: string) => Promise<boolean>;
+    inline?: boolean;
+    hasChanges?: boolean;
 }
 
-function BarberModal({ barber, saving, onClose, onSave, onUpdateDay, onUpdateField, onUpdateTurn, onUpdatePin }: BarberModalProps) {
+function BarberModal({ barber, saving, onClose, onSave, onUpdateDay, onUpdateField, onUpdateTurn, onUpdatePin, inline, hasChanges }: BarberModalProps) {
     const [expandedDays, setExpandedDays] = useState<string[]>([]);
     const [isChangingPin, setIsChangingPin] = useState(false);
     const [newPin, setNewPin] = useState('');
@@ -63,24 +67,21 @@ function BarberModal({ barber, saving, onClose, onSave, onUpdateDay, onUpdateFie
     const getInitials = (name: string) =>
         name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
-    return (
+    const innerContent = (
         <div
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4"
-            onClick={onClose}
+            className={cn("flex flex-col", inline ? "w-full" : "relative w-full sm:max-w-lg bg-zinc-950 border border-zinc-800 rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[90dvh]")}
+            onClick={(e) => !inline && e.stopPropagation()}
         >
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-
-            {/* Modal */}
-            <div
-                className="relative w-full sm:max-w-lg bg-zinc-950 border border-zinc-800 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[90dvh] animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header del modal */}
+            {/* Header del modal (sólo si no es inline) */}
+            {!inline && (
                 <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-zinc-800 shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                            <span className="text-sm font-black text-amber-400">{getInitials(barber.nombre)}</span>
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center shrink-0 overflow-hidden">
+                            {barber.foto ? (
+                                <img src={barber.foto} alt={barber.nombre} className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-sm font-black text-amber-400">{getInitials(barber.nombre)}</span>
+                            )}
                         </div>
                         <div>
                             <h3 className="text-white font-black text-base leading-tight">{barber.nombre}</h3>
@@ -94,9 +95,10 @@ function BarberModal({ barber, saving, onClose, onSave, onUpdateDay, onUpdateFie
                         <X className="w-5 h-5" />
                     </button>
                 </div>
+            )}
 
-                {/* Contenido scrollable */}
-                <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+            {/* Contenido scrollable */}
+            <div className={cn("space-y-4", !inline && "overflow-y-auto flex-1 px-5 py-4")}>
 
                     {/* Toggle Dueño */}
                     <div className="bg-zinc-900/60 p-3 rounded-xl border border-zinc-800/80 flex items-center justify-between hover:border-amber-500/30 transition-all">
@@ -273,28 +275,51 @@ function BarberModal({ barber, saving, onClose, onSave, onUpdateDay, onUpdateFie
                 </div>
             </div>
 
-                {/* Footer con botón guardar */}
+            {/* Footer con botón guardar */}
+            {inline ? (
+                <div className="pt-6 mt-4 flex justify-end">
+                    <button
+                        onClick={() => onSave(barber.id)}
+                        disabled={saving || !hasChanges}
+                        className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-sm uppercase tracking-wide rounded-xl transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50 flex items-center gap-2"
+                    >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : hasChanges ? <Save className="w-4 h-4" /> : null}
+                        {hasChanges ? 'Guardar Cambios' : 'Sin cambios'}
+                    </button>
+                </div>
+            ) : (
                 <div className="px-5 py-4 border-t border-zinc-800 shrink-0">
                     <button
                         onClick={() => onSave(barber.id)}
                         disabled={saving}
                         className="w-full flex items-center justify-center gap-2 py-3.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-sm uppercase tracking-wide rounded-xl transition-all shadow-[0_4px_16px_-4px_rgba(245,158,11,0.4)] disabled:opacity-60 disabled:cursor-wait"
                     >
-                        {saving
-                            ? <Loader2 className="w-4 h-4 animate-spin" />
-                            : <Save className="w-4 h-4" />
-                        }
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         Guardar Cambios
                     </button>
                 </div>
-            </div>
+            )}
+        </div>
+    );
+
+    if (inline) {
+        return innerContent;
+    }
+
+    return (
+        <div
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4"
+            onClick={onClose}
+        >
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            {innerContent}
         </div>
     );
 }
 
 // ─── BarberManager ───────────────────────────────────────────────────────────
 
-export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
+export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId, inlineBarberId }) => {
     const [barbers, setBarbers] = useState<Barber[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -308,7 +333,7 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
         try {
             const { data, error } = await supabase
                 .from('barberos')
-                .select('id, nombre, horario_semanal, salario_base, porcentaje_comision, "jefe/dueño"')
+                .select('id, nombre, foto, horario_semanal, salario_base, porcentaje_comision, "jefe/dueño"')
                 .eq('barberia_id', perfilId)
                 .order('nombre', { ascending: true });
 
@@ -476,6 +501,41 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
         </div>
     );
 
+    // Modo inline para Barber360View
+    if (inlineBarberId) {
+        const inlineBarber = barbers.find(b => b.id === inlineBarberId);
+        if (!inlineBarber) {
+             return <div className="text-zinc-500 text-sm italic">Barbero no encontrado.</div>;
+        }
+        
+        return (
+            <div className="animate-in fade-in duration-300">
+                <BarberModal
+                    barber={inlineBarber}
+                    allBarbers={barbers}
+                    saving={saving}
+                    onClose={() => {}}
+                    onSave={handleSaveBarber}
+                    onUpdateDay={updateBarberDay}
+                    onUpdateField={updateBarberField}
+                    onUpdateTurn={updateBarberTurn}
+                    onUpdatePin={async (id, pin) => {
+                        const res = await updateBarberPinByAdmin(id, pin);
+                        if (res.success) {
+                            toast.success('PIN actualizado correctamente');
+                            return true;
+                        } else {
+                            toast.error('Error al actualizar PIN: ' + res.error);
+                            return false;
+                        }
+                    }}
+                    inline={true}
+                    hasChanges={barbersWithChanges.includes(inlineBarber.id)}
+                />
+            </div>
+        );
+    }
+
     const getInitials = (name: string) =>
         name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
@@ -549,8 +609,12 @@ export const BarberManager: React.FC<BarberManagerProps> = ({ perfilId }) => {
                                         className="flex items-center gap-3 min-w-0 flex-1 text-left"
                                         onClick={() => setSelectedBarber(barber)}
                                     >
-                                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                                            <span className="text-[10px] sm:text-xs font-black text-amber-400">{getInitials(barber.nombre)}</span>
+                                        <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center shrink-0 overflow-hidden">
+                                            {barber.foto ? (
+                                                <img src={barber.foto} alt={barber.nombre} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-[10px] sm:text-xs font-black text-amber-400">{getInitials(barber.nombre)}</span>
+                                            )}
                                         </div>
                                         <div className="min-w-0 flex flex-col justify-center">
                                             <div className="flex items-center gap-2 flex-nowrap overflow-hidden">

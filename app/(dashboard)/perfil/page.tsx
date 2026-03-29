@@ -457,7 +457,7 @@ export default function PerfilPage() {
                                 </div>
 
                                 <div className="border-t border-zinc-800 pt-4">
-                                    <div className="lg:scale-75 lg:origin-top lg:-mb-57">
+                                    <div className="lg:scale-75 lg:origin-top lg:-mb-[11rem]">
                                         <Paywall variant="pricing" isSection={true} showAllPlans={false} />
                                     </div>
                                 </div>

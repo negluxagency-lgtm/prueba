@@ -308,7 +308,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                 </form>
             )}
 
-            <div className="bg-zinc-900 shadow-2xl border border-zinc-800/50 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden">
+            <div className="bg-zinc-900 shadow-2xl border border-zinc-800/50 rounded-[1.5rem] overflow-hidden">
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left">

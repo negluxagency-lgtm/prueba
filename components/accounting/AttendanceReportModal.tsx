@@ -17,6 +17,7 @@ interface AttendanceReportModalProps {
     onClose: () => void
     month: string // format: YYYY-MM
     inline?: boolean
+    barberId?: string
 }
 
 const TIPO_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
@@ -26,7 +27,7 @@ const TIPO_CONFIG: Record<string, { label: string; color: string; dot: string }>
     pausa_fin: { label: 'Fin Pausa', color: 'bg-sky-500/10 text-sky-400 border-sky-500/20', dot: 'bg-sky-500' },
 }
 
-export default function AttendanceReportModal({ onClose, month, inline }: AttendanceReportModalProps) {
+export default function AttendanceReportModal({ onClose, month, inline, barberId }: AttendanceReportModalProps) {
     const [barbers, setBarbers] = useState<any[]>([])
     const [selectedBarber, setSelectedBarber] = useState<any | null>(null)
     const [attendanceDate, setAttendanceDate] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -104,7 +105,12 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                 .eq('barberia_id', user.id)
             if (bData) {
                 setBarbers(bData)
-                if (bData.length > 0) setSelectedBarber(bData[0])
+                if (barberId) {
+                    const found = bData.find(b => String(b.id) === String(barberId))
+                    if (found) setSelectedBarber(found)
+                } else if (bData.length > 0) {
+                    setSelectedBarber(bData[0])
+                }
             }
         } catch (error) {
             console.error(error)
@@ -260,49 +266,51 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
         return (
             <div className="flex-1 overflow-hidden flex flex-col md:flex-row h-full">
                 {/* ── SIDEBAR ──────────────────────────────────────── */}
-                <div className="w-full md:w-52 shrink-0 border-b md:border-b-0 md:border-r border-zinc-800/50 p-3 md:p-4 flex flex-col gap-2 md:gap-3">
-                    <p className="text-[8px] md:text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1">Trabajadores</p>
-                    <div className="flex md:flex-col gap-1.5 md:gap-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0 scrollbar-hide">
-                        {barbers.map(b => (
+                {!barberId && (
+                    <div className="w-full md:w-52 shrink-0 border-b md:border-b-0 md:border-r border-zinc-800/50 p-3 md:p-4 flex flex-col gap-2 md:gap-3">
+                        <p className="text-[8px] md:text-[9px] font-black text-zinc-600 uppercase tracking-widest px-1">Trabajadores</p>
+                        <div className="flex md:flex-col gap-1.5 md:gap-2 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0 scrollbar-hide">
+                            {barbers.map(b => (
+                                <button
+                                    key={b.id}
+                                    onClick={() => setSelectedBarber(b)}
+                                    className={cn(
+                                        'flex items-center gap-2 px-3 py-2 md:px-3 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-bold transition-all shrink-0 md:w-full',
+                                        selectedBarber?.id === b.id
+                                            ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
+                                            : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                                    )}
+                                >
+                                    <div className={cn('w-5 h-5 md:w-6 md:h-6 rounded-md md:rounded-lg flex items-center justify-center text-[8px] md:text-[9px] font-black shrink-0',
+                                        selectedBarber?.id === b.id ? 'bg-black/20' : 'bg-zinc-700'
+                                    )}>
+                                        {b.nombre.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span className="truncate max-w-[80px] md:max-w-none">{b.nombre}</span>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="hidden md:block flex-1" />
+                        <div className="flex md:flex-col gap-2">
                             <button
-                                key={b.id}
-                                onClick={() => setSelectedBarber(b)}
+                                onClick={() => setIsAuditing(!isAuditing)}
                                 className={cn(
-                                    'flex items-center gap-2 px-3 py-2 md:px-3 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-bold transition-all shrink-0 md:w-full',
-                                    selectedBarber?.id === b.id
-                                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
-                                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                                    'flex-1 md:w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2 md:py-2.5 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all border',
+                                    isAuditing ? 'bg-zinc-800 border-zinc-700 text-white' : 'border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-700'
                                 )}
                             >
-                                <div className={cn('w-5 h-5 md:w-6 md:h-6 rounded-md md:rounded-lg flex items-center justify-center text-[8px] md:text-[9px] font-black shrink-0',
-                                    selectedBarber?.id === b.id ? 'bg-black/20' : 'bg-zinc-700'
-                                )}>
-                                    {b.nombre.charAt(0).toUpperCase()}
-                                </div>
-                                <span className="truncate max-w-[80px] md:max-w-none">{b.nombre}</span>
+                                <AlertTriangle className="w-3 md:w-3.5 h-3 md:h-3.5 text-amber-500" /> <span className="hidden xs:inline">Auditar</span><span className="xs:hidden">Audit</span>
                             </button>
-                        ))}
+                            <button
+                                onClick={generatePDF}
+                                disabled={!selectedBarber || logs.length === 0}
+                                className="flex-1 md:w-full flex items-center justify-center gap-2 px-3 py-2 md:py-2.5 bg-white text-black rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest disabled:opacity-40"
+                            >
+                                <Download className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span className="hidden xs:inline">Exportar PDF</span><span className="xs:hidden">PDF</span>
+                            </button>
+                        </div>
                     </div>
-                    <div className="hidden md:block flex-1" />
-                    <div className="flex md:flex-col gap-2">
-                        <button
-                            onClick={() => setIsAuditing(!isAuditing)}
-                            className={cn(
-                                'flex-1 md:w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2 md:py-2.5 rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all border',
-                                isAuditing ? 'bg-zinc-800 border-zinc-700 text-white' : 'border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-700'
-                            )}
-                        >
-                            <AlertTriangle className="w-3 md:w-3.5 h-3 md:h-3.5 text-amber-500" /> <span className="hidden xs:inline">Auditar</span><span className="xs:hidden">Audit</span>
-                        </button>
-                        <button
-                            onClick={generatePDF}
-                            disabled={!selectedBarber || logs.length === 0}
-                            className="flex-1 md:w-full flex items-center justify-center gap-2 px-3 py-2 md:py-2.5 bg-white text-black rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest disabled:opacity-40"
-                        >
-                            <Download className="w-3 md:w-3.5 h-3 md:h-3.5" /> <span className="hidden xs:inline">Exportar PDF</span><span className="xs:hidden">PDF</span>
-                        </button>
-                    </div>
-                </div>
+                )}
                 {/* Content area */}
                 <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-5">
                     {loading ? (
@@ -351,6 +359,16 @@ export default function AttendanceReportModal({ onClose, month, inline }: Attend
                         </div>
                     ) : (
                         <>
+                            {inline && (
+                                <div className="flex items-center justify-end gap-2 mb-2">
+                                    <button onClick={() => setIsAuditing(!isAuditing)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 font-black text-[10px] uppercase tracking-widest hover:text-white hover:border-zinc-700 transition-colors">
+                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" /> Auditar
+                                    </button>
+                                    <button onClick={generatePDF} disabled={!selectedBarber || logs.length === 0} className="flex items-center gap-2 px-3 py-2 bg-white text-black rounded-lg font-black text-[10px] uppercase tracking-widest disabled:opacity-40 hover:bg-zinc-200 transition-colors">
+                                        <Download className="w-3.5 h-3.5" /> Exportar PDF
+                                    </button>
+                                </div>
+                            )}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
                                     <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Días Trabajados</p>

@@ -22,20 +22,33 @@ interface SalaryRow {
 interface SalaryCalculatorModalProps {
     onClose: () => void
     inline?: boolean
+    barberId?: string
+    initialMonth?: string
 }
 
-export default function SalaryCalculatorModal({ onClose, inline }: SalaryCalculatorModalProps) {
+export default function SalaryCalculatorModal({ onClose, inline, barberId, initialMonth }: SalaryCalculatorModalProps) {
     const now = new Date()
-    const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const defaultMonth = initialMonth || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
     const [selectedMonth, setSelectedMonth] = useState(defaultMonth)
-    const { stats, loading, refresh } = useBarberStats(selectedMonth) as any
+    const { stats: allStats, loading, refresh } = useBarberStats(selectedMonth) as any
+
+    // Filtrar stats si se proporciona barberId
+    const stats = barberId ? allStats.filter((b: any) => String(b.id) === String(barberId)) : allStats
 
     const [rows, setRows] = useState<Record<string, SalaryRow>>({})
     const [calculated, setCalculated] = useState(false)
     const [shopId, setShopId] = useState<string | null>(null)
     const [shopName, setShopName] = useState('Mi Barbería')
+    
+    // Pre-expandir el barbero si se proporciona barberId
     const [expandedBarbers, setExpandedBarbers] = useState<Record<string, boolean>>({})
+
+    useEffect(() => {
+        if (barberId && stats.length > 0) {
+            setExpandedBarbers({ [stats[0].nombre]: true })
+        }
+    }, [barberId, stats])
 
     const toggleBarber = (nombre: string) => {
         setExpandedBarbers(prev => ({ ...prev, [nombre]: !prev[nombre] }))

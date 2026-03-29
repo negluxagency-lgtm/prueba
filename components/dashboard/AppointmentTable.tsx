@@ -77,7 +77,7 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
     };
 
     return (
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg lg:rounded-[2rem] backdrop-blur-sm shadow-2xl relative overflow-hidden">
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-[1.5rem] backdrop-blur-sm shadow-2xl relative overflow-hidden">
             <div className="px-3 py-1.5 lg:px-8 lg:py-6 border-b border-zinc-800 bg-zinc-800/20">
                 <h3 className="font-bold text-[10px] lg:text-xl flex items-center gap-2 lg:gap-4 text-zinc-300">
                     <Clock size={12} className="text-amber-500 w-3 h-3 lg:w-5 lg:h-5" /> Agenda — <span className="text-zinc-500 font-normal">{fechaFormateada}</span>

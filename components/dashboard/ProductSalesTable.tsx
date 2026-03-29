@@ -109,7 +109,7 @@ function ActionsDropdown({ sale, onEdit, onDelete, onGenerateInvoice }: {
 
 export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onEdit, onDelete, onGenerateInvoice, loading }) => {
     return (
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg lg:rounded-[2rem] overflow-hidden backdrop-blur-sm shadow-2xl mt-8">
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-[1.5rem] overflow-hidden backdrop-blur-sm shadow-2xl mt-8">
             <div className="px-3 py-1.5 lg:px-8 lg:py-6 border-b border-zinc-800 bg-amber-500/5">
                 <h3 className="font-bold text-[10px] lg:text-xl flex items-center gap-2 lg:gap-4 text-amber-500">
                     <ShoppingBag size={12} className="text-amber-500 w-3 h-3 lg:w-5 lg:h-5" /> Ventas de Productos

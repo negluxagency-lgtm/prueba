@@ -93,17 +93,16 @@ export default function HistorialCajaPage() {
                         <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">Cargando bitácora...</p>
                     </div>
                 ) : arqueos.length > 0 ? (
-                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                    <div className="bg-zinc-900/50 border border-zinc-800 rounded-[1.5rem] overflow-hidden shadow-2xl">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
+                            <table className="w-full text-center border-collapse">
                                 <thead>
                                     <tr className="border-b border-zinc-800 bg-zinc-900/80">
-                                        <th className="py-3 px-4 lg:py-5 lg:px-6 text-[10px] text-zinc-500 uppercase font-black tracking-widest">Día</th>
-                                        <th className="py-3 px-4 lg:py-5 lg:px-6 text-[10px] text-zinc-500 uppercase font-black tracking-widest">Apertura</th>
-                                        <th className="py-3 px-4 lg:py-5 lg:px-6 text-[10px] text-zinc-500 uppercase font-black tracking-widest hidden sm:table-cell">Caja Esperada</th>
-                                        <th className="py-3 px-4 lg:py-5 lg:px-6 text-[10px] text-zinc-500 uppercase font-black tracking-widest">Caja Real</th>
-                                        <th className="py-3 px-4 lg:py-5 lg:px-6 text-[10px] text-zinc-500 uppercase font-black tracking-widest">Descuadre</th>
-                                        <th className="py-3 px-4 lg:py-5 lg:px-6 text-[10px] text-zinc-500 uppercase font-black tracking-widest text-right whitespace-nowrap"></th>
+                                        <th className="py-2 px-2 lg:py-5 lg:px-6 text-[9px] lg:text-[10px] text-zinc-500 uppercase font-black tracking-widest">Día</th>
+                                        <th className="py-2 px-2 lg:py-5 lg:px-6 text-[9px] lg:text-[10px] text-zinc-500 uppercase font-black tracking-widest">Apertura</th>
+                                        <th className="py-2 px-2 lg:py-5 lg:px-6 text-[9px] lg:text-[10px] text-zinc-500 uppercase font-black tracking-widest">Cierre (Exp./Real)</th>
+                                        <th className="py-2 px-2 lg:py-5 lg:px-6 text-[9px] lg:text-[10px] text-zinc-500 uppercase font-black tracking-widest">Descuadre</th>
+                                        <th className="py-2 px-2 lg:py-5 lg:px-6 text-[9px] lg:text-[10px] text-zinc-500 uppercase font-black tracking-widest text-right whitespace-nowrap"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-800/30">
@@ -114,43 +113,47 @@ export default function HistorialCajaPage() {
 
                                         return (
                                             <tr key={arq.id} className="hover:bg-zinc-800/30 transition-colors group">
-                                                <td className="py-3 px-4 lg:py-6 lg:px-6">
+                                                <td className="py-2 px-2 lg:py-6 lg:px-6">
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] lg:text-xs font-black text-white uppercase italic">{format(date, 'EEEE d', { locale: es })}</span>
+                                                        <span className="text-[9px] lg:text-xs font-black text-white uppercase italic leading-none">{format(date, 'EEEE d', { locale: es })}</span>
                                                         <span className="text-[8px] lg:text-[10px] text-zinc-600 font-bold uppercase tracking-tighter">{format(date, 'MMMM', { locale: es })}</span>
                                                     </div>
                                                 </td>
-                                                <td className="py-3 px-4 lg:py-6 lg:px-6">
-                                                    <span className="text-[10px] lg:text-xs font-bold text-zinc-400">{arq.monto_apertura?.toFixed(2)}€</span>
+                                                <td className="py-2 px-2 lg:py-6 lg:px-6 text-center">
+                                                    <span className="text-[9px] lg:text-xs font-bold text-zinc-400">{arq.monto_apertura?.toFixed(2)}€</span>
                                                 </td>
-                                                <td className="py-3 px-4 lg:py-6 lg:px-6 hidden sm:table-cell">
-                                                    <span className="text-[10px] lg:text-xs font-bold text-zinc-600">{arq.monto_cierre_esperado?.toFixed(2)}€</span>
-                                                </td>
-                                                <td className="py-3 px-4 lg:py-6 lg:px-6">
-                                                    <span className="text-xs lg:text-sm font-black text-white italic">{arq.monto_cierre_real?.toFixed(2)}€</span>
-                                                </td>
-                                                <td className="py-3 px-4 lg:py-6 lg:px-6">
-                                                    <div className={cn(
-                                                        "inline-flex items-center gap-1.5 px-2 py-0.5 lg:px-3 lg:py-1 rounded-full text-[8px] lg:text-[10px] font-black uppercase tracking-widest",
-                                                        margen === 0 ? "bg-emerald-500/10 text-emerald-500" :
-                                                        margen > 0 ? "bg-amber-500/10 text-amber-500" : "bg-red-500/10 text-red-500"
-                                                    )}>
-                                                        {margen === 0 ? "OK" : `${margen > 0 ? '+' : ''}${margen.toFixed(2)}€`}
+                                                <td className="py-2 px-2 lg:py-6 lg:px-6 text-center">
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="text-[8px] lg:text-[10px] text-zinc-600 font-bold">{arq.monto_cierre_esperado?.toFixed(1)}€</span>
+                                                        <span className="text-[10px] lg:text-sm font-black text-white italic">{arq.monto_cierre_real?.toFixed(2)}€</span>
                                                     </div>
                                                 </td>
-                                                <td className="py-3 px-4 lg:py-6 lg:px-6 text-right space-x-2">
-                                                    <button 
-                                                        onClick={() => handleEditClick(arq)}
-                                                        className="p-2 lg:p-3 rounded-xl lg:rounded-2xl bg-zinc-800/50 text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all active:scale-90"
-                                                    >
-                                                        <Edit3 className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => setSelectedArqueoDetail(arq)}
-                                                        className="p-2 lg:p-3 rounded-xl lg:rounded-2xl bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-black transition-all active:scale-90 shadow-lg shadow-amber-500/10"
-                                                    >
-                                                        <ChevronRight className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                                                    </button>
+                                                <td className="py-2 px-2 lg:py-6 lg:px-6 text-center">
+                                                    <div className={cn(
+                                                        "inline-flex items-center gap-1 px-1.5 py-0.5 lg:px-3 lg:py-1 rounded-full text-[8px] lg:text-[10px] font-black uppercase tracking-widest",
+                                                        margen === 0 ? "bg-emerald-500/10 text-emerald-500" :
+                                                            margen > 0 ? "bg-amber-500/10 text-amber-500" : "bg-red-500/10 text-red-500"
+                                                    )}>
+                                                        {margen === 0 ? "OK" : `${margen > 0 ? '+' : ''}${margen.toFixed(1)}€`}
+                                                    </div>
+                                                </td>
+                                                <td className="py-2 px-2 lg:py-6 lg:px-6 text-right">
+                                                    <div className="flex flex-col sm:flex-row items-center justify-end gap-1.5 lg:gap-2">
+                                                        <button
+                                                            onClick={() => handleEditClick(arq)}
+                                                            className="p-1.5 lg:p-3 rounded-lg lg:rounded-2xl bg-zinc-800/50 text-zinc-500 hover:text-white hover:bg-zinc-800 transition-all active:scale-90"
+                                                            title="Editar"
+                                                        >
+                                                            <Edit3 className="w-3 h-3 lg:w-4 lg:h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSelectedArqueoDetail(arq)}
+                                                            className="p-1.5 lg:p-3 rounded-lg lg:rounded-2xl bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-black transition-all active:scale-90 shadow-lg shadow-amber-500/10"
+                                                            title="Ver Detalle"
+                                                        >
+                                                            <ChevronRight className="w-3 h-3 lg:w-4 lg:h-4" />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         )
@@ -218,13 +221,13 @@ export default function HistorialCajaPage() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
-                                <button 
+                                <button
                                     onClick={() => setIsEditModalOpen(false)}
                                     className="py-4 bg-zinc-950 hover:bg-zinc-900 text-zinc-500 text-[10px] font-black uppercase tracking-widest rounded-2xl border border-zinc-800 transition-all"
                                 >
                                     Cerrar
                                 </button>
-                                <button 
+                                <button
                                     onClick={handleUpdate}
                                     disabled={isUpdating}
                                     className="py-4 bg-white hover:bg-zinc-200 text-black text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 disabled:opacity-50"
@@ -242,7 +245,7 @@ export default function HistorialCajaPage() {
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in zoom-in duration-300">
                     <div className="bg-zinc-900 border border-zinc-800 rounded-[3rem] p-1 lg:p-10 max-w-2xl w-full shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar">
                         {/* Botón Cerrar */}
-                        <button 
+                        <button
                             onClick={() => setSelectedArqueoDetail(null)}
                             className="absolute top-6 right-6 w-10 h-10 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 hover:text-white transition-all z-10"
                         >
@@ -278,8 +281,8 @@ export default function HistorialCajaPage() {
                                         <div className="flex justify-between items-center">
                                             <span className="text-[10px] text-zinc-600 font-bold uppercase">Hora Cierre</span>
                                             <span className="text-xs font-black text-white italic">
-                                                {selectedArqueoDetail.hora_cierre 
-                                                    ? `${selectedArqueoDetail.hora_cierre.split('T')[1].substring(0, 5)} HS` 
+                                                {selectedArqueoDetail.hora_cierre
+                                                    ? `${selectedArqueoDetail.hora_cierre.split('T')[1].substring(0, 5)} HS`
                                                     : 'Pendiente'}
                                             </span>
                                         </div>
@@ -323,7 +326,7 @@ export default function HistorialCajaPage() {
                                             <span className={cn(
                                                 "text-xs font-black italic",
                                                 selectedArqueoDetail.margen === 0 ? "text-emerald-500" :
-                                                selectedArqueoDetail.margen > 0 ? "text-amber-500" : "text-red-500"
+                                                    selectedArqueoDetail.margen > 0 ? "text-amber-500" : "text-red-500"
                                             )}>
                                                 {selectedArqueoDetail.margen > 0 ? '+' : ''}{selectedArqueoDetail.margen?.toFixed(2)}€
                                             </span>
