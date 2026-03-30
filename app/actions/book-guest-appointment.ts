@@ -263,22 +263,21 @@ export async function bookGuestAppointment(data: BookingData): Promise<ActionRes
                     return !hasConflict
                 })
 
-                if (availableBarbers.length > 0) {
-                    const randomBarber = availableBarbers[Math.floor(Math.random() * availableBarbers.length)]
-                    finalBarberId = String(randomBarber.id)
-                    barberName = randomBarber.nombre
-                } else {
+                if (availableBarbers.length === 0) {
                     return {
                         success: false,
-                        error: 'No hay barberos disponibles en este horario. Por favor, selecciona otro.'
+                        error: 'No hay profesionales disponibles en este horario. Por favor, selecciona otro.'
                     }
                 }
+                
+                // CRITICAL: We NO LONGER assign a random barber here.
+                // finalBarberId and barberName remain null/undefined.
             }
         }
 
-        const barberValueToStore = barberName || (finalBarberId ? String(finalBarberId) : null)
-        if (barberValueToStore) appointmentData.barbero = barberValueToStore
-        if (finalBarberId) appointmentData.barbero_id = finalBarberId
+        // Only store if we actually have values (Specific barber selected)
+        appointmentData.barbero = barberName || null
+        appointmentData.barbero_id = finalBarberId || null
 
         console.log('📦 [Booking] Final payload:', JSON.stringify(appointmentData));
 

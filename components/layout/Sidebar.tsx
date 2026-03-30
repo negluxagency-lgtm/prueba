@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { TrendingUp, MessageSquare, Scissors, Package, CreditCard, User, FileText } from "lucide-react";
+import { TrendingUp, MessageSquare, Scissors, Package, CreditCard, User, Briefcase } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 
 export function Sidebar() {
@@ -32,7 +32,7 @@ export function Sidebar() {
                 </Link>
 
                 <Link href="/contabilidad" className="p-2 lg:p-4">
-                    <FileText className={`${isActive("/contabilidad")} hover:text-amber-500 transition-colors cursor-pointer`} size={mounted && window.innerWidth < 1024 ? 22 : 26} />
+                    <Briefcase className={`${isActive("/contabilidad")} hover:text-amber-500 transition-colors cursor-pointer`} size={mounted && window.innerWidth < 1024 ? 22 : 26} />
                 </Link>
 
                 <Link href="/productos" className="p-2 lg:p-4">

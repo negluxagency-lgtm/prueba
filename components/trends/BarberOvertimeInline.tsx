@@ -199,11 +199,11 @@ export function BarberOvertimeInline({ barberId, barberiaId, month, onChanged }:
                     {showForm && (
                         <div className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-700/30 mb-3 animate-in fade-in slide-in-from-top-2 duration-200">
                             <div className="grid grid-cols-2 gap-2 mb-2">
-                                <div className="space-y-1">
-                                    <label className="text-[8px] font-black text-zinc-500 uppercase px-1">Fecha</label>
+                                <div className="space-y-1 min-w-0">
+                                    <label className="text-[8px] font-black text-zinc-500 uppercase px-1 block truncate">Fecha</label>
                                     <input
                                         type="date"
-                                        className="bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-2 text-[10px] text-white outline-none focus:border-amber-500 w-full"
+                                        className="bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-2 text-[10px] text-white outline-none focus:border-amber-500 w-full min-w-0 max-w-full [color-scheme:dark]"
                                         value={newRecord.fecha}
                                         onChange={e => setNewRecord(p => ({ ...p, fecha: e.target.value }))}
                                     />

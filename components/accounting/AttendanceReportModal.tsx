@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { X, Download, Plus, Clock, Loader2, Calendar as CalendarIcon, User, AlertTriangle, MapPin, Zap, TrendingUp, ChevronDown } from 'lucide-react'
+import { X, Download, Plus, Clock, Loader2, Calendar as CalendarIcon, User, AlertTriangle, MapPin, Zap, TrendingUp, ChevronDown, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { getMonthlyLogs, auditPunch, TipoFichaje, FichajeLog } from '@/app/actions/attendance'
 import { getBarberOvertimeFromSchedule, type BarberOvertimeResult } from '@/app/actions/overtime'
-import { getBarberAbsences } from '@/app/actions/staff'
+import { getBarberAbsences, markBarberAbsence } from '@/app/actions/staff'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { toast } from 'sonner'
@@ -40,6 +40,8 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
     const [loadingOvertime, setLoadingOvertime] = useState(false)
     const [activeView, setActiveView] = useState<'day' | 'month' | 'overtime' | 'absences'>('month')
     const [barberAbsences, setBarberAbsences] = useState<string[]>([])
+    const [newAbsenceDate, setNewAbsenceDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+    const [isUpdatingAbsence, setIsUpdatingAbsence] = useState(false)
     const [showAllDays, setShowAllDays] = useState(false)
 
     // Audit State
@@ -151,6 +153,42 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
             setBarberAbsences(data)
         } catch (e) {
             console.error(e)
+        }
+    }
+
+    const handleAddAbsence = async () => {
+        if (!selectedBarber || !newAbsenceDate) return
+        setIsUpdatingAbsence(true)
+        try {
+            const res = await markBarberAbsence(String(selectedBarber.id), newAbsenceDate)
+            if (res.success) {
+                toast.success('Ausencia añadida correctamente')
+                fetchAbsences(selectedBarber.id)
+            } else {
+                toast.error(res.error || 'Error al añadir ausencia')
+            }
+        } catch {
+            toast.error('Error de conexión')
+        } finally {
+            setIsUpdatingAbsence(false)
+        }
+    }
+
+    const handleRemoveAbsence = async (date: string) => {
+        if (!selectedBarber) return
+        setIsUpdatingAbsence(true)
+        try {
+            const res = await markBarberAbsence(String(selectedBarber.id), date, true)
+            if (res.success) {
+                toast.success('Ausencia eliminada')
+                fetchAbsences(selectedBarber.id)
+            } else {
+                toast.error(res.error || 'Error al eliminar ausencia')
+            }
+        } catch {
+            toast.error('Error de conexión')
+        } finally {
+            setIsUpdatingAbsence(false)
         }
     }
 
@@ -369,7 +407,7 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                     </button>
                                 </div>
                             )}
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
                                     <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Días Trabajados</p>
                                     <p className="text-sm lg:text-lg font-black text-white">{dailySummaries.length}</p>
@@ -378,7 +416,7 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                     <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Horas Totales</p>
                                     <p className="text-sm lg:text-lg font-black text-white">{formatHours(totalMonthSecs)}</p>
                                 </div>
-                                <div className={cn("border rounded-2xl p-4 text-center", autoOvertime?.totalHoras ? "bg-amber-500/10 border-amber-500/20" : "bg-zinc-900 border-zinc-800")}>
+                                <div className={cn("border rounded-2xl p-4 text-center hidden md:block", autoOvertime?.totalHoras ? "bg-amber-500/10 border-amber-500/20" : "bg-zinc-900 border-zinc-800")}>
                                     <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Horas Extra</p>
                                     {loadingOvertime ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-amber-500" /> : <p className={cn("text-sm lg:text-lg font-black", autoOvertime?.totalHoras ? "text-amber-500" : "text-white")}>{autoOvertime?.totalHoras ? `${autoOvertime.totalHoras.toFixed(1)}h` : '—'}</p>}
                                 </div>
@@ -417,7 +455,7 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                                                 </div>
                                                             </div>
                                                             <div className="flex items-center gap-3">
-                                                                {dayOt && dayOt.minutos_extra > 0 && <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">+{(dayOt.minutos_extra / 60).toFixed(1)}h extra</span>}
+                                                                {dayOt && dayOt.minutos_extra > 0 && <span className="hidden md:inline-flex text-[9px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">+{(dayOt.minutos_extra / 60).toFixed(1)}h extra</span>}
                                                                 <div className="text-right"><p className="text-sm font-black text-white tabular-nums">{formatHours(d.totalSeconds)}</p><p className="text-[9px] text-zinc-600 font-medium">efectivas</p></div>
                                                             </div>
                                                         </div>
@@ -498,15 +536,35 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                             {activeView === 'absences' && (
                                 <div className="space-y-4">
                                     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-                                                <AlertTriangle className="w-5 h-5 text-red-500" />
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                                                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm font-black text-white uppercase italic">Historial de Ausencias</h3>
+                                                    <p className="text-[9px] text-zinc-500 font-medium mt-0.5">Días marcados como no laborables por {selectedBarber?.nombre}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h3 className="text-sm font-black text-white uppercase italic">Historial de Ausencias</h3>
-                                                <p className="text-[9px] text-zinc-500 font-medium mt-0.5">Días marcados como no laborables por {selectedBarber?.nombre}</p>
+
+                                            <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-xl border border-zinc-800/50">
+                                                <input
+                                                    type="date"
+                                                    value={newAbsenceDate}
+                                                    onChange={(e) => setNewAbsenceDate(e.target.value)}
+                                                    className="bg-transparent text-xs font-bold text-white outline-none px-2 [color-scheme:dark]"
+                                                />
+                                                <button
+                                                    onClick={handleAddAbsence}
+                                                    disabled={isUpdatingAbsence}
+                                                    className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5"
+                                                >
+                                                    {isUpdatingAbsence ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                                                    Añadir
+                                                </button>
                                             </div>
                                         </div>
+
                                         {barberAbsences.length === 0 ? (
                                             <div className="text-center py-8">
                                                 <Clock className="w-8 h-8 mx-auto mb-3 text-zinc-700 opacity-50" />
@@ -514,8 +572,8 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                             </div>
                                         ) : (
                                             <div className="space-y-2">
-                                                {[...barberAbsences].sort((a,b) => b.localeCompare(a)).map(date => (
-                                                    <div key={date} className="flex items-center justify-between bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-3.5">
+                                                {[...barberAbsences].sort((a, b) => b.localeCompare(a)).map(date => (
+                                                    <div key={date} className="flex items-center justify-between bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-3.5 group">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-8 h-8 rounded-lg bg-red-500/10 flex flex-col items-center justify-center">
                                                                 <span className="text-[7px] font-black text-red-500 uppercase">{format(parseISO(date), 'EEE', { locale: es })}</span>
@@ -523,7 +581,16 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                                             </div>
                                                             <p className="text-sm font-black text-white capitalize">{format(parseISO(date), "MMMM yyyy", { locale: es })}</p>
                                                         </div>
-                                                        <span className="px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-lg text-[10px] text-red-500 font-black uppercase tracking-widest">Ausente</span>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="hidden sm:inline-block px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-lg text-[10px] text-red-500 font-black uppercase tracking-widest">Ausente</span>
+                                                            <button
+                                                                onClick={() => handleRemoveAbsence(date)}
+                                                                disabled={isUpdatingAbsence}
+                                                                className="p-2 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -640,18 +707,18 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                 </div>
                                 <form onSubmit={handleAuditSubmit} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Tipo de Acción</label>
-                                            <select value={auditForm.tipo} onChange={(e) => setAuditForm({ ...auditForm, tipo: e.target.value as TipoFichaje })} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500">
+                                        <div className="space-y-1.5 min-w-0">
+                                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1 block truncate">Tipo de Acción</label>
+                                            <select value={auditForm.tipo} onChange={(e) => setAuditForm({ ...auditForm, tipo: e.target.value as TipoFichaje })} className="w-full min-w-0 bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500 appearance-none">
                                                 <option value="entrada">Entrada</option>
                                                 <option value="salida">Salida</option>
                                                 <option value="pausa_inicio">Inicio Pausa</option>
                                                 <option value="pausa_fin">Fin Pausa</option>
                                             </select>
                                         </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Fecha y Hora Real</label>
-                                            <input type="datetime-local" required value={auditForm.fechaHora} onChange={(e) => setAuditForm({ ...auditForm, fechaHora: e.target.value })} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" style={{ colorScheme: 'dark' }} />
+                                        <div className="space-y-1.5 min-w-0">
+                                            <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1 block truncate">Fecha y Hora Real</label>
+                                            <input type="datetime-local" required value={auditForm.fechaHora} onChange={(e) => setAuditForm({ ...auditForm, fechaHora: e.target.value })} className="w-full min-w-0 max-w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500 [color-scheme:dark]" />
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
@@ -669,7 +736,7 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                         ) : (
                             <>
                                 {/* ── STATS STRIP ──────────────────────── */}
-                                <div className="grid grid-cols-3 gap-3">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
                                         <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Días Trabajados</p>
                                         <p className="text-sm lg:text-lg font-black text-white">{dailySummaries.length}</p>
@@ -678,7 +745,7 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                         <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Horas Totales</p>
                                         <p className="text-sm lg:text-lg font-black text-white">{formatHours(totalMonthSecs)}</p>
                                     </div>
-                                    <div className={cn("border rounded-2xl p-4 text-center", autoOvertime?.totalHoras ? "bg-amber-500/10 border-amber-500/20" : "bg-zinc-900 border-zinc-800")}>
+                                    <div className={cn("border rounded-2xl p-4 text-center hidden md:block", autoOvertime?.totalHoras ? "bg-amber-500/10 border-amber-500/20" : "bg-zinc-900 border-zinc-800")}>
                                         <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Horas Extra</p>
                                         {loadingOvertime
                                             ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-amber-500" />
@@ -747,7 +814,7 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                                                 </div>
                                                                 <div className="flex items-center gap-3">
                                                                     {dayOt && dayOt.minutos_extra > 0 && (
-                                                                        <span className="text-[9px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">
+                                                                        <span className="hidden md:inline-flex text-[9px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">
                                                                             +{(dayOt.minutos_extra / 60).toFixed(1)}h extra
                                                                         </span>
                                                                     )}
@@ -873,6 +940,73 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                                         ))}
                                                     </div>
                                                 </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* ── ABSENCES VIEW ────────────────────── */}
+                                {activeView === 'absences' && (
+                                    <div className="space-y-4">
+                                        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                                                        <AlertTriangle className="w-5 h-5 text-red-500" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-black text-white uppercase italic">Historial de Ausencias</h3>
+                                                        <p className="text-[9px] text-zinc-500 font-medium mt-0.5">Días marcados como no laborables por {selectedBarber?.nombre}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-xl border border-zinc-800/50">
+                                                    <input
+                                                        type="date"
+                                                        value={newAbsenceDate}
+                                                        onChange={(e) => setNewAbsenceDate(e.target.value)}
+                                                        className="bg-transparent text-xs font-bold text-white outline-none px-2 [color-scheme:dark]"
+                                                    />
+                                                    <button
+                                                        onClick={handleAddAbsence}
+                                                        disabled={isUpdatingAbsence}
+                                                        className="bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5"
+                                                    >
+                                                        {isUpdatingAbsence ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                                                        Añadir
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {barberAbsences.length === 0 ? (
+                                                <div className="text-center py-8">
+                                                    <Clock className="w-8 h-8 mx-auto mb-3 text-zinc-700 opacity-50" />
+                                                    <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Sin ausencias registradas</p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {[...barberAbsences].sort((a, b) => b.localeCompare(a)).map(date => (
+                                                        <div key={date} className="flex items-center justify-between bg-zinc-950/50 border border-zinc-800/50 rounded-xl p-3.5">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex flex-col items-center justify-center">
+                                                                    <span className="text-[7px] font-black text-red-500 uppercase">{format(parseISO(date), 'EEE', { locale: es })}</span>
+                                                                    <span className="text-sm font-black text-white leading-none">{format(parseISO(date), 'dd')}</span>
+                                                                </div>
+                                                                <p className="text-sm font-black text-white capitalize">{format(parseISO(date), "MMMM yyyy", { locale: es })}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="hidden sm:inline-block px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-lg text-[10px] text-red-500 font-black uppercase tracking-widest">Ausente</span>
+                                                                <button
+                                                                    onClick={() => handleRemoveAbsence(date)}
+                                                                    disabled={isUpdatingAbsence}
+                                                                    className="p-2 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             )}
                                         </div>
                                     </div>

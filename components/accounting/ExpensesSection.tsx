@@ -201,18 +201,18 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
             {showAdd && (
                 <form onSubmit={handleAddGasto} className="p-5 bg-zinc-900 border border-zinc-800 rounded-3xl space-y-5 animate-in fade-in slide-in-from-top-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Concepto</label>
+                        <div className="space-y-1.5 min-w-0">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 block truncate">Concepto</label>
                             <input
                                 required
                                 value={newGasto.concepto}
                                 onChange={e => setNewGasto({ ...newGasto, concepto: e.target.value })}
                                 placeholder="Ej: Café clientes, Pilas..."
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
+                                className="w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
                             />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Monto (€)</label>
+                        <div className="space-y-1.5 min-w-0">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 block truncate">Monto (€)</label>
                             <input
                                 required
                                 type="number"
@@ -220,17 +220,17 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                                 value={newGasto.monto}
                                 onChange={e => setNewGasto({ ...newGasto, monto: e.target.value })}
                                 placeholder="0.00"
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm font-black outline-none focus:border-amber-500/50 transition-all font-mono"
+                                className="w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm font-black outline-none focus:border-amber-500/50 transition-all font-mono"
                             />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Fecha</label>
+                        <div className="space-y-1.5 min-w-0">
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 block truncate">Fecha</label>
                             <input
                                 required
                                 type="date"
                                 value={newGasto.fecha}
                                 onChange={e => setNewGasto({ ...newGasto, fecha: e.target.value })}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-amber-500/50 transition-all"
+                                className="w-full min-w-0 max-w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold [color-scheme:dark]"
                             />
                         </div>
                         <div className="space-y-1.5">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Receipt, FileText, Loader2, ExternalLink, Upload, Calendar as CalendarIcon, Filter, X, Download, Search, Edit3, Save, Eye, FileDigit, Calendar } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -19,9 +20,11 @@ interface Factura {
 
 interface InvoicesSectionProps {
     initialMonth?: string
+    externalShowAdd?: boolean
+    onCloseExternal?: () => void
 }
 
-export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) {
+export default function InvoicesSection({ initialMonth, externalShowAdd, onCloseExternal }: InvoicesSectionProps) {
     const [selectedMonth, setSelectedMonth] = useState<string>(initialMonth || '')
     const [selectedType, setSelectedType] = useState<string>('')
 
@@ -72,6 +75,18 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
     }, [mutate])
 
     const [showAdd, setShowAdd] = useState(false)
+
+    // Sincronización con el disparador externo
+    useEffect(() => {
+        if (externalShowAdd) {
+            setShowAdd(true)
+        }
+    }, [externalShowAdd])
+
+    const handleCloseAdd = () => {
+        setShowAdd(false)
+        if (onCloseExternal) onCloseExternal()
+    }
     const [newFactura, setNewFactura] = useState({
         titulo: '',
         tipo: 'otros',
@@ -133,7 +148,7 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
             toast.success('Factura archivada correctamente')
             setNewFactura({ titulo: '', tipo: 'otros', fecha_documento: getLocalISOString() })
             setFile(null)
-            setShowAdd(false)
+            handleCloseAdd()
             mutate()
         } catch (error: any) {
             console.error('Error uploading invoice:', error)
@@ -239,79 +254,114 @@ export default function InvoicesSection({ initialMonth }: InvoicesSectionProps) 
                 </div>
             </div>
 
-            {showAdd && (
-                <form onSubmit={handleAddFactura} className="p-5 bg-zinc-900 border border-zinc-800 rounded-3xl space-y-5 animate-in fade-in slide-in-from-top-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Título del Documento</label>
-                            <input
-                                required
-                                value={newFactura.titulo}
-                                onChange={e => setNewFactura({ ...newFactura, titulo: e.target.value })}
-                                placeholder="Ej: Factura Alquiler Febrero..."
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Fecha del Documento</label>
-                            <input
-                                required
-                                type="date"
-                                value={newFactura.fecha_documento}
-                                onChange={e => setNewFactura({ ...newFactura, fecha_documento: e.target.value })}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
-                            />
-                        </div>
-                        <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Tipo de Factura</label>
-                            <select
-                                required
-                                value={newFactura.tipo}
-                                onChange={e => setNewFactura({ ...newFactura, tipo: e.target.value })}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold appearance-none cursor-pointer"
-                            >
-                                <option value="alquiler">Alquiler</option>
-                                <option value="suministros">Suministros</option>
-                                <option value="material y productos">Material y Productos</option>
-                                <option value="herramientas">Herramientas</option>
-                                <option value="limpieza y mantenimiento">Limpieza y Mantenimiento</option>
-                                <option value="marketing y publicidad">Marketing y Publicidad</option>
-                                <option value="gestoría y seguros">Gestoría y Seguros</option>
-                                <option value="dietas">Dietas</option>
-                                <option value="otros">Otros</option>
-                            </select>
-                        </div>
-                        <div className="md:col-span-2">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 block mb-2">Archivo PDF</label>
-                            <div className="relative group/upload">
-                                <input
-                                    type="file"
-                                    accept=".pdf"
-                                    onChange={handleFileChange}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                />
-                                <div className={cn(
-                                    "border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all",
-                                    file ? "border-amber-500/50 bg-amber-500/5" : "border-zinc-800 bg-zinc-950 group-hover/upload:border-zinc-700"
-                                )}>
-                                    <Upload className={cn("w-8 h-8 mb-2 transition-colors", file ? "text-amber-500" : "text-zinc-600")} />
-                                    <p className="text-xs font-bold text-zinc-400">
-                                        {file ? file.name : "Selecciona o arrastra el PDF aquí"}
-                                    </p>
-                                    <p className="text-[9px] text-zinc-600 mt-1 uppercase font-black">Máximo 5MB</p>
+            <AnimatePresence>
+                {showAdd && (
+                    <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                            className="bg-zinc-900 border-t md:border border-zinc-800 rounded-t-[2.5rem] md:rounded-3xl w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90dvh]"
+                        >
+                            <div className="p-6 md:p-8 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                                        <Upload className="w-5 h-5 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Subir Factura</h3>
+                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Archivador Inteligente 2026</p>
+                                    </div>
                                 </div>
+                                <button
+                                    onClick={handleCloseAdd}
+                                    className="p-2 hover:bg-white/10 rounded-full transition-all text-zinc-500 hover:text-white"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
                             </div>
-                        </div>
+
+                            <form onSubmit={handleAddFactura} className="p-6 md:p-8 space-y-6 overflow-y-auto custom-scrollbar">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Título del Documento</label>
+                                        <input
+                                            required
+                                            value={newFactura.titulo}
+                                            onChange={e => setNewFactura({ ...newFactura, titulo: e.target.value })}
+                                            placeholder="Ej: Factura Alquiler Febrero..."
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Fecha del Documento</label>
+                                        <input
+                                            required
+                                            type="date"
+                                            value={newFactura.fecha_documento}
+                                            onChange={e => setNewFactura({ ...newFactura, fecha_documento: e.target.value })}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold [color-scheme:dark]"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5 md:col-span-2">
+                                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Tipo de Factura</label>
+                                        <select
+                                            required
+                                            value={newFactura.tipo}
+                                            onChange={e => setNewFactura({ ...newFactura, tipo: e.target.value })}
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold appearance-none cursor-pointer"
+                                        >
+                                            <option value="alquiler">Alquiler</option>
+                                            <option value="suministros">Suministros</option>
+                                            <option value="material y productos">Material y Productos</option>
+                                            <option value="herramientas">Herramientas</option>
+                                            <option value="limpieza y mantenimiento">Limpieza y Mantenimiento</option>
+                                            <option value="marketing y publicidad">Marketing y Publicidad</option>
+                                            <option value="gestoría y seguros">Gestoría y Seguros</option>
+                                            <option value="dietas">Dietas</option>
+                                            <option value="otros">Otros</option>
+                                        </select>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 mb-2 block">Archivo PDF</label>
+                                        <div className="relative group/upload">
+                                            <input
+                                                type="file"
+                                                accept=".pdf"
+                                                onChange={handleFileChange}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                            />
+                                            <div className={cn(
+                                                "border-2 border-dashed rounded-2xl p-8 sm:p-12 flex flex-col items-center justify-center transition-all",
+                                                file ? "border-amber-500/50 bg-amber-500/5" : "border-zinc-800 bg-zinc-950 group-hover/upload:border-amber-500/20"
+                                            )}>
+                                                <Upload className={cn("w-10 h-10 mb-3 transition-colors", file ? "text-amber-500" : "text-zinc-600")} />
+                                                <p className="text-sm font-bold text-zinc-400">
+                                                    {file ? file.name : "Selecciona o arrastra el PDF aquí"}
+                                                </p>
+                                                <p className="text-[10px] text-zinc-600 mt-2 uppercase font-black tracking-widest">Formato PDF Máximo 5MB</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={saving || !file}
+                                    className="w-full py-5 bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-[0.2em] rounded-2xl text-[10px] transition-all flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(245,158,11,0.2)] active:scale-[0.98] disabled:opacity-20 mt-4"
+                                >
+                                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                        <>
+                                            <Save className="w-4 h-4" />
+                                            Archivar en la Nube
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        </motion.div>
                     </div>
-                    <button
-                        type="submit"
-                        disabled={saving || !file}
-                        className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-[0.2em] rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-xl shadow-amber-500/10 active:scale-[0.98] disabled:opacity-20"
-                    >
-                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Archivar Factura en la Nube'}
-                    </button>
-                </form>
-            )}
+                )}
+            </AnimatePresence>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {loading ? (

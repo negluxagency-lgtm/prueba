@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { BarChart3, Clock, FileText, Filter, X, DollarSign, Users, Loader2, Download, Receipt, Calculator, BookOpen, History } from 'lucide-react'
+import { BarChart3, Clock, FileText, Filter, X, DollarSign, Users, Loader2, Download, Receipt, Calculator, BookOpen, History, Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -59,6 +59,13 @@ export default function AccountingPage() {
     const [netIncome, setNetIncome] = useState(0)
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
     const [isAccountingModalOpen, setIsAccountingModalOpen] = useState(false)
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false) // Estado para el FAB móvil
+
+    const handleGlobalUpload = () => {
+        setActiveTab('facturas')
+        // Un pequeño delay para asegurar que el componente se monte antes de abrir el modal
+        setTimeout(() => setIsUploadModalOpen(true), 50)
+    }
 
     // Ensure we don't stay on 'equipo' if hidden
     useEffect(() => {
@@ -242,12 +249,28 @@ export default function AccountingPage() {
                             )}
 
                             {/* Archivo de Facturas */}
-                            <InvoicesSection initialMonth={selectedMonth} />
+                            <InvoicesSection 
+                                initialMonth={selectedMonth} 
+                                externalShowAdd={isUploadModalOpen}
+                                onCloseExternal={() => setIsUploadModalOpen(false)}
+                            />
                         </div>
                     )}
 
                 </motion.div>
             </AnimatePresence>
+
+            {/* Botón Flotante para Móvil (Solo en Facturas) */}
+            {activeTab === 'facturas' && (
+                <div className="fixed bottom-24 right-6 lg:hidden z-40">
+                    <button
+                        onClick={handleGlobalUpload}
+                        className="w-14 h-14 bg-amber-500 hover:bg-amber-400 text-black rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(245,158,11,0.4)] active:scale-90 transition-all border-4 border-zinc-950 animate-in fade-in slide-in-from-bottom-10 duration-500"
+                    >
+                        <Plus className="w-8 h-8" />
+                    </button>
+                </div>
+            )}
 
             <PaymentReportModal
                 isOpen={isPaymentModalOpen}

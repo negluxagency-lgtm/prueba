@@ -314,7 +314,15 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
 
                         {activeTab === 'cortes' && (
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pt-2 pb-10">
-                                <div className="flex justify-between items-center mb-8"><h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Rendimiento</h3><input type="month" value={currentMonth} onChange={(e) => setCurrentMonth(e.target.value)} className="bg-black border border-zinc-800 text-white rounded-full px-4 py-2 text-sm outline-none" style={{ colorScheme: 'dark' }} /></div>
+                                <div className="flex justify-between items-start md:items-center gap-4 mb-8">
+                                    <h3 className="text-xl font-black text-white italic uppercase tracking-tighter">Rendimiento</h3>
+                                    <input 
+                                        type="month" 
+                                        value={currentMonth} 
+                                        onChange={(e) => setCurrentMonth(e.target.value)} 
+                                        className="bg-black border border-zinc-800 text-white rounded-full px-4 py-2 text-sm outline-none min-w-0 max-w-[120px] md:max-w-none [color-scheme:dark]" 
+                                    />
+                                </div>
                                 {cutsData && cutsData.total > 0 ? (
                                     <div className="space-y-6">
                                         <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-[2rem] shadow-xl relative overflow-hidden group">
@@ -364,7 +372,15 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                                     {attendanceStatus === 'pausa_inicio' && <button onClick={() => handlePunch('pausa_fin')} disabled={isSubmitting} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-3">{isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Play className="w-5 h-5 fill-current" /> Reanudar</>}</button>}
                                 </div>
                                 <div className="mt-6 bg-zinc-900 border border-zinc-800 rounded-[2rem] p-6 shadow-xl">
-                                    <div className="mb-4 flex items-center justify-between"><p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Actividad</p><input type="date" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} className="bg-black border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white outline-none" style={{ colorScheme: 'dark' }} /></div>
+                                    <div className="mb-4 flex items-center justify-between gap-4">
+                                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate">Actividad</p>
+                                        <input 
+                                            type="date" 
+                                            value={attendanceDate} 
+                                            onChange={(e) => setAttendanceDate(e.target.value)} 
+                                            className="bg-black border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white outline-none min-w-0 max-w-[130px] md:max-w-none [color-scheme:dark]" 
+                                        />
+                                    </div>
                                     <div className="w-full max-h-64 overflow-y-auto custom-scrollbar pr-2">
                                         {tableLogs.length > 0 ? (
                                             <table className="w-full text-left border-collapse"><thead><tr><th className="py-2 px-4 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Día</th><th className="py-2 px-4 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Hora</th><th className="py-2 px-4 text-[10px] text-zinc-500 uppercase font-bold tracking-widest">Movimiento</th></tr></thead><tbody className="divide-y divide-zinc-800/30">
@@ -378,7 +394,13 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                                 {renderSchedule()}
                                 <div className="mt-6 bg-zinc-900 border border-red-500/20 rounded-[2rem] p-6 shadow-xl">
                                     <div className="flex items-center gap-2 mb-4"><div className="w-2 h-2 rounded-full bg-red-500" /><p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Ausencias</p></div>
-                                    <div className="flex gap-3 items-center"><input type="date" value={absenceTarget} onChange={e => setAbsenceTarget(e.target.value)} className="flex-1 bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none" style={{ colorScheme: 'dark' }} />
+                                    <div className="flex gap-3 items-center">
+                                        <input 
+                                            type="date" 
+                                            value={absenceTarget} 
+                                            onChange={e => setAbsenceTarget(e.target.value)} 
+                                            className="flex-1 min-w-0 max-w-full bg-black border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white outline-none [color-scheme:dark]" 
+                                        />
                                         {absenceDates.includes(absenceTarget) ? (
                                             <button onClick={async () => { setIsMarkingAbsence(true); const res = await markBarberAbsence(barber.id, absenceTarget, true); if (res.success) { mutateAbsences(); toast.success('Cancelada') } else toast.error('Error'); setIsMarkingAbsence(false) }} disabled={isMarkingAbsence} className="px-4 py-2 bg-zinc-800 text-zinc-300 text-xs font-bold uppercase rounded-xl flex items-center gap-2 transition-colors">{isMarkingAbsence ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4 text-green-500" />}Recuperar</button>
                                         ) : (

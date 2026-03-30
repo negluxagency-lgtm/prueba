@@ -180,7 +180,7 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
                             <p className="text-xs text-zinc-500 font-bold uppercase">Barbero</p>
                             <p className="text-white font-medium">
                                 {selectedBarberId === null
-                                    ? 'Cualquiera (asignación automática)'
+                                    ? 'Cualquiera'
                                     : barbers.find((b) => b.id === selectedBarberId)?.nombre || 'Cualquiera'}
                             </p>
                         </div>

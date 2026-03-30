@@ -142,7 +142,7 @@ export const PaymentReportModal: React.FC<PaymentReportModalProps> = ({ isOpen, 
                                         type="month"
                                         value={selectedMonth}
                                         onChange={(e) => setSelectedMonth(e.target.value)}
-                                        className="bg-transparent border-none text-white font-bold outline-none flex-1 focus:ring-0 [&::-webkit-calendar-picker-indicator]:invert"
+                                        className="bg-transparent border-none text-white font-bold outline-none flex-1 min-w-0 max-w-full focus:ring-0 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert"
                                     />
                                 </div>
                             </div>

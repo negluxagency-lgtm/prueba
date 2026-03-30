@@ -144,9 +144,9 @@ export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId
                         )} />
                         <span className={cn(
                             "text-[8px] lg:text-[10px] font-black uppercase tracking-widest truncate",
-                            caja?.estado === 'abierta' ? "text-emerald-400" : (caja?.estado === 'cerrada' ? "text-zinc-400" : "text-amber-400")
+                            caja?.estado === 'abierta' ? "text-emerald-400" : (caja?.estado === 'cerrada' || (isPast && !caja) ? "text-zinc-400" : "text-amber-400")
                         )}>
-                            {caja?.estado === 'abierta' ? 'Caja Abierta' : (caja?.estado === 'cerrada' ? 'Caja Cerrada' : 'Apertura Pendiente')}
+                            {caja?.estado === 'abierta' ? 'Caja Abierta' : (caja?.estado === 'cerrada' ? 'Caja Cerrada' : (isPast ? 'Caja no abierta' : 'Apertura Pendiente'))}
                         </span>
                     </div>
                 </div>
@@ -154,11 +154,17 @@ export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId
                 {isPast ? (
                     <div className="w-full space-y-3 lg:space-y-4 relative z-10 mt-auto">
                         <div>
-                            <p className="hidden lg:block text-[8px] lg:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-0.5">Caja del día {targetDate.split('-').reverse().join('-')}</p>
-                            <p className="text-[10px] lg:text-xs font-medium text-zinc-400">
-                                Apertura: <span className="text-white">{caja?.monto_apertura || 0}€</span> <br/>
-                                Cierre: <span className="text-emerald-400">{caja?.monto_cierre_real || 0}€</span>
-                            </p>
+                            <p className="hidden lg:block text-[8px] lg:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-1">Caja del día {targetDate.split('-').reverse().join('-')}</p>
+                            {!caja ? (
+                                <p className="text-[10px] lg:text-xs font-black text-zinc-500 uppercase tracking-widest">
+                                    Caja no abierta
+                                </p>
+                            ) : (
+                                <p className="text-[10px] lg:text-xs font-medium text-zinc-400">
+                                    Apertura: <span className="text-white">{caja.monto_apertura || 0}€</span> <br/>
+                                    Cierre: <span className="text-emerald-400">{caja.monto_cierre_real || 0}€</span>
+                                </p>
+                            )}
                         </div>
                         <Link 
                             href="/historial_caja"

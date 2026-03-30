@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { X, Calculator, Info, Calendar, ChevronRight } from 'lucide-react'
 import { useBarberStats } from '@/hooks/useBarberStats'
 import { supabase } from '@/lib/supabase'
@@ -33,8 +33,10 @@ export default function SalaryCalculatorModal({ onClose, inline, barberId, initi
     const [selectedMonth, setSelectedMonth] = useState(defaultMonth)
     const { stats: allStats, loading, refresh } = useBarberStats(selectedMonth) as any
 
-    // Filtrar stats si se proporciona barberId
-    const stats = barberId ? allStats.filter((b: any) => String(b.id) === String(barberId)) : allStats
+    // Filtrar stats si se proporciona barberId (Memoizado para evitar bucles de renderizado)
+    const stats = useMemo(() => {
+        return barberId ? allStats.filter((b: any) => String(b.id) === String(barberId)) : allStats
+    }, [barberId, allStats])
 
     const [rows, setRows] = useState<Record<string, SalaryRow>>({})
     const [calculated, setCalculated] = useState(false)
@@ -196,7 +198,7 @@ export default function SalaryCalculatorModal({ onClose, inline, barberId, initi
                                             </div>
                                             <div className="flex flex-wrap items-center gap-1.5 md:gap-3 mt-1.5 md:mt-2">
                                                 <span className="text-[8px] md:text-[10px] font-black text-zinc-500 uppercase tracking-widest bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700">Fact: {barber.totalRevenue.toFixed(0)}€</span>
-                                                <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700 inline-flex items-center gap-1">
+                                                <span className="hidden md:inline-flex text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-700 items-center gap-1">
                                                     <Clock className="w-2.5 h-2.5 text-amber-500" /> {barber.totalExtraHours?.toFixed(1) || 0}h Extra
                                                 </span>
                                             </div>
