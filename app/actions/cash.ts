@@ -10,19 +10,15 @@ export type CashActionResponse = {
     data?: any
 }
 
-/**
- * Obtiene el estado de la caja de hoy para una barbería.
- */
-export async function getTodayCaja(shopId: string): Promise<CashActionResponse> {
+export async function getCajaByDate(shopId: string, date?: string): Promise<CashActionResponse> {
     try {
-        // Obtenemos la fecha local de España (+1h respecto a UTC)
-        const dateSpain = new Date(Date.now() + 3600000).toISOString().split('T')[0]
+        const effectiveDate = date || new Date(Date.now() + 3600000).toISOString().split('T')[0]
         
         const { data, error } = await supabaseAdmin
             .from('arqueos_caja')
             .select('*')
             .eq('barberia_id', shopId)
-            .eq('dia', dateSpain)
+            .eq('dia', effectiveDate)
             .single()
 
         if (error && error.code !== 'PGRST116') {

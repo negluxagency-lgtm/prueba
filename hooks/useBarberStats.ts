@@ -6,6 +6,7 @@ import useSWR from 'swr'
 export interface BarberStat {
     id?: string
     nombre: string
+    foto?: string | null
     totalRevenue: number
     totalCuts: number
     salario_base?: number
@@ -36,7 +37,7 @@ export function useBarberStats(mes?: string) {
             // 1. Obtener la lista de barberos
             const { data: barberosData, error: barberosError } = await supabase
                 .from('barberos')
-                .select(`id, nombre, salario_base, porcentaje_comision, "jefe/dueño"`)
+                .select(`id, nombre, foto, salario_base, porcentaje_comision, "jefe/dueño"`)
                 .eq('barberia_id', userId)
 
             if (barberosError) throw barberosError
@@ -63,6 +64,7 @@ export function useBarberStats(mes?: string) {
                 map[String(b.id)] = {
                     id: String(b.id),
                     nombre: b.nombre?.trim() || 'Desconocido',
+                    foto: b.foto,
                     totalRevenue: 0,
                     totalCuts: 0,
                     salario_base: Number((b as any).salario_base) || 0,

@@ -13,7 +13,7 @@ interface AppointmentTableProps {
     userPlan?: string;
     onEdit: (cita: Appointment) => void;
     onDelete: (item: Appointment) => void;
-    onUpdateStatus: (id: number, status: 'pendiente' | 'confirmada' | 'cancelada', pago?: string) => void;
+    onUpdateStatus: (id: number, status: 'pendiente' | 'confirmada' | 'cancelada', pago?: string, barberId?: string, barberName?: string) => void;
     onGenerateInvoice?: (cita: Appointment) => void;
     loading?: boolean;
     barbers?: any[]; // { id, nombre } objects
@@ -69,9 +69,9 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
         setPaymentModal({ id });
     };
 
-    const handlePaymentSelect = (method: PaymentMethod) => {
+    const handlePaymentSelect = (method: PaymentMethod, barberId?: string, barberName?: string) => {
         if (paymentModal) {
-            onUpdateStatus(paymentModal.id, 'confirmada', method);
+            onUpdateStatus(paymentModal.id, 'confirmada', method, barberId, barberName);
             setPaymentModal(null);
         }
     };
@@ -317,6 +317,8 @@ export const AppointmentTable: React.FC<AppointmentTableProps> = ({ appointments
                 isOpen={!!paymentModal}
                 onClose={() => setPaymentModal(null)}
                 onSelect={handlePaymentSelect}
+                requireBarber={paymentModal ? !appointments.find(a => a.id === paymentModal.id)?.barbero_id && !appointments.find(a => a.id === paymentModal.id)?.barbero : false}
+                barbers={barbers}
             />
         </div>
     );

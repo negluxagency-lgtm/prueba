@@ -97,7 +97,6 @@ const MonthlyGoalsChart: React.FC<MonthlyGoalsChartProps> = ({ data, loading }) 
                             tick={{ fill: '#71717a', fontSize: 9, fontWeight: 'bold' }}
                             tickFormatter={(val) => `${val}€`}
                             width={65}
-                            domain={[0, 1000]}
                             allowDataOverflow={false}
                         />
 
@@ -110,7 +109,6 @@ const MonthlyGoalsChart: React.FC<MonthlyGoalsChartProps> = ({ data, loading }) 
                             tick={{ fill: '#71717a', fontSize: 9 }}
                             tickFormatter={(val) => `${val}`}
                             width={35}
-                            domain={[0, 60]}
                         />
 
                         <Tooltip

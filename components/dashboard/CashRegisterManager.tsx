@@ -1,32 +1,39 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { AlertCircle, Lock, Unlock, DollarSign, Calculator, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react'
-import { getTodayCaja, abrirCaja, cerrarCaja, getExpectedCash, getDashboardStats } from '@/app/actions/cash'
+import { AlertCircle, Lock, Unlock, DollarSign, Calculator, AlertTriangle, CheckCircle, TrendingUp, ArrowRight } from 'lucide-react'
+import { getCajaByDate, abrirCaja, cerrarCaja, getExpectedCash, getDashboardStats } from '@/app/actions/cash'
 import { CashRegisterSkeleton } from '@/components/ui/SkeletonLoader'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import useSWR from 'swr'
+import Link from 'next/link'
 
 interface CashRegisterManagerProps {
     shopId: string
     userName?: string
     onStatusChange?: () => void
+    selectedDate?: string
 }
 
-export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId, userName, onStatusChange }) => {
+export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId, userName, onStatusChange, selectedDate }) => {
     const [isOpeningModal, setIsOpeningModal] = useState(false)
     const [isClosingModal, setIsClosingModal] = useState(false)
     const [monto, setMonto] = useState('')
     const [expectedCash, setExpectedCash] = useState<number | null>(null)
     const [observaciones, setObservaciones] = useState('')
 
-    // SWR para la caja hoy
+    const dateSpain = new Date(Date.now() + 3600000).toISOString().split('T')[0]
+    const targetDate = selectedDate || dateSpain
+    const isPast = targetDate < dateSpain
+    const isFuture = targetDate > dateSpain
+
+    // SWR para la caja
     const { data: caja, mutate: mutateCaja, isLoading: boxLoading } = useSWR(
-        shopId ? ['today-caja', shopId] : null,
+        shopId ? ['caja', shopId, targetDate] : null,
         async () => {
-            const res = await getTodayCaja(shopId)
+            const res = await getCajaByDate(shopId, targetDate)
             return res.success ? res.data : null
         }
     )
@@ -122,42 +129,99 @@ export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId
 
     return (
         <>
-            <div className={cn(
-                "h-full w-full border rounded-xl lg:rounded-3xl p-2.5 lg:p-6 shadow-xl flex flex-col justify-between items-start min-w-[140px] lg:min-w-[200px] transition-all",
-                (caja?.estado === 'abierta' || !caja) ? "bg-zinc-900/80 border-zinc-800" : "bg-emerald-500/10 border-emerald-500/20"
-            )}>
-                <div className="w-full flex items-center justify-between mb-1 lg:mb-2">
-                    <div className="flex items-center gap-1.5 lg:gap-2">
+            <div className="h-full w-full bg-zinc-900/80 border border-zinc-800 rounded-xl lg:rounded-3xl p-3 lg:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex flex-col justify-between items-start min-w-[140px] lg:min-w-[200px] min-h-[90px] lg:min-h-[140px] transition-all relative overflow-hidden group">
+                {/* Glow de fondo ambiental muy sutil */}
+                <div className={cn(
+                    "absolute -top-10 -right-10 w-32 h-32 blur-3xl opacity-20 pointer-events-none transition-colors duration-1000",
+                    caja?.estado === 'abierta' ? "bg-emerald-500" : (caja?.estado === 'cerrada' ? "bg-zinc-500" : "bg-amber-500")
+                )} />
+
+                <div className="w-full flex items-center justify-between mb-3 border-b border-zinc-800/50 pb-2.5 relative z-10">
+                    <div className="flex items-center gap-2">
                         <div className={cn(
-                            "w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full",
-                            caja?.estado === 'abierta' ? "bg-emerald-500 animate-pulse" : (caja?.estado === 'cerrada' ? "bg-red-500" : "bg-amber-500")
+                            "w-2 h-2 rounded-full shadow-sm",
+                            caja?.estado === 'abierta' ? "bg-emerald-500 shadow-emerald-500/50 animate-pulse" : (caja?.estado === 'cerrada' ? "bg-zinc-500" : "bg-amber-500 shadow-amber-500/50 animate-pulse")
                         )} />
-                        <span className="text-[7px] lg:text-[10px] font-black text-white uppercase tracking-widest italic truncate">
-                            {caja?.estado === 'abierta' ? 'Caja Activa' : (caja?.estado === 'cerrada' ? 'Caja Cerrada' : 'Caja Pendiente')}
+                        <span className={cn(
+                            "text-[8px] lg:text-[10px] font-black uppercase tracking-widest truncate",
+                            caja?.estado === 'abierta' ? "text-emerald-400" : (caja?.estado === 'cerrada' ? "text-zinc-400" : "text-amber-400")
+                        )}>
+                            {caja?.estado === 'abierta' ? 'Caja Abierta' : (caja?.estado === 'cerrada' ? 'Caja Cerrada' : 'Apertura Pendiente')}
                         </span>
                     </div>
                 </div>
 
-                {caja?.estado === 'abierta' ? (
-                    <div className="w-full space-y-1 lg:space-y-2">
-                        <p className="text-[8px] lg:text-xs font-bold text-zinc-500 truncate">Fondo: {caja.monto_apertura}€</p>
+                {isPast ? (
+                    <div className="w-full space-y-3 lg:space-y-4 relative z-10 mt-auto">
+                        <div>
+                            <p className="hidden lg:block text-[8px] lg:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-0.5">Caja del día {targetDate.split('-').reverse().join('-')}</p>
+                            <p className="text-[10px] lg:text-xs font-medium text-zinc-400">
+                                Apertura: <span className="text-white">{caja?.monto_apertura || 0}€</span> <br/>
+                                Cierre: <span className="text-emerald-400">{caja?.monto_cierre_real || 0}€</span>
+                            </p>
+                        </div>
+                        <Link 
+                            href="/historial_caja"
+                            className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all flex items-center justify-center gap-1.5"
+                        >
+                            Ver Historial <ArrowRight className="w-3 h-3" />
+                        </Link>
+                    </div>
+                ) : isFuture ? (
+                    <div className="w-full space-y-3 lg:space-y-4 relative z-10 mt-auto opacity-50">
+                        <div className="hidden lg:block">
+                            <p className="text-[8px] lg:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-0.5">Pendiente</p>
+                            <p className="text-[10px] lg:text-xs font-medium text-zinc-400 truncate">
+                                Día no iniciado
+                            </p>
+                        </div>
+                        <div className="w-full py-2 bg-zinc-900 border border-zinc-800 text-zinc-500 text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl flex items-center justify-center gap-1.5 cursor-not-allowed">
+                            <Lock className="w-3 h-3" /> Futuro
+                        </div>
+                    </div>
+                ) : caja?.estado === 'abierta' ? (
+                    <div className="w-full space-y-3 lg:space-y-4 relative z-10 mt-auto">
+                        <div>
+                            <p className="text-[8px] lg:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-0.5">Fondo Inicial</p>
+                            <p className="text-xs lg:text-xl font-black text-white">{caja.monto_apertura}€</p>
+                        </div>
                         <button 
                             onClick={prepareClosure}
-                            className="w-full py-1.5 lg:py-2.5 bg-zinc-950 hover:bg-red-500/10 border border-zinc-800 hover:border-red-500/20 text-white hover:text-red-500 text-[7px] lg:text-[9px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all active:scale-95"
+                            className="w-full py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-500 hover:text-red-400 text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all shadow-sm"
                         >
-                            Cerrar Caja
+                            Cerrar Jornada
                         </button>
                     </div>
+                ) : caja?.estado === 'cerrada' ? (
+                    <div className="w-full space-y-3 lg:space-y-4 relative z-10 mt-auto">
+                        <div>
+                            <p className="hidden lg:block text-[8px] lg:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-0.5">Caja del día {targetDate.split('-').reverse().join('-')}</p>
+                            <p className="text-[10px] lg:text-xs font-medium text-zinc-400">
+                                Apertura: <span className="text-white">{caja?.monto_apertura || 0}€</span> <br/>
+                                Cierre: <span className="text-emerald-400">{caja?.monto_cierre_real || 0}€</span>
+                            </p>
+                        </div>
+                        <Link 
+                            href="/historial_caja"
+                            className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all flex items-center justify-center gap-1.5"
+                        >
+                            Ver Historial <ArrowRight className="w-3 h-3" />
+                        </Link>
+                    </div>
                 ) : (
-                    <div className="w-full space-y-1 lg:space-y-2">
-                        <p className="text-[8px] lg:text-xs font-bold text-zinc-500 truncate italic leading-tight">
-                            {!caja ? 'Caja pendiente por abrirse hoy' : 'La caja de hoy ha sido cerrada'}
-                        </p>
+                    <div className="w-full space-y-3 lg:space-y-4 relative z-10 mt-auto">
+                        <div className="hidden lg:block">
+                            <p className="text-[8px] lg:text-[9px] text-zinc-500 uppercase font-bold tracking-widest mb-0.5">Estado actual</p>
+                            <p className="text-[10px] lg:text-xs font-medium text-zinc-400 truncate">
+                                Inicia la caja para cobrar
+                            </p>
+                        </div>
                         <button 
                             onClick={() => setIsOpeningModal(true)}
-                            className="w-full py-1.5 lg:py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-500 text-[7px] lg:text-[9px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                            className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-black text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] flex items-center justify-center gap-1.5"
                         >
-                            <Unlock size={10} /> {caja?.estado === 'cerrada' ? 'Reabrir / Nueva' : 'Abrir Caja'}
+                            <Unlock className="w-3 h-3 lg:w-3.5 lg:h-3.5" strokeWidth={2.5} /> 
+                            Abrir Caja
                         </button>
                     </div>
                 )}

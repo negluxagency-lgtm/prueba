@@ -28,38 +28,38 @@ const TrendItem: React.FC<TrendItemProps> = ({
     const realPercentage = objetivo > 0 ? Math.round((actual / objetivo) * 100) : 0;
 
     return (
-        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-4 transition-all active:scale-[0.98]">
-            <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                    <div className={cn("p-2.5 rounded-xl flex items-center justify-center", bgColor, color)}>
-                        <div className="w-5 h-5 *:w-full *:h-full">
+        <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-3 lg:p-4 transition-all active:scale-[0.98]">
+            <div className="flex justify-between items-start mb-3 lg:mb-4">
+                <div className="flex items-center gap-2 lg:gap-3">
+                    <div className={cn("p-2 lg:p-2.5 rounded-xl flex items-center justify-center", bgColor, color)}>
+                        <div className="w-4 h-4 lg:w-5 lg:h-5 *:w-full *:h-full">
                             {icon}
                         </div>
                     </div>
                     <div>
-                        <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{label}</p>
-                        <div className="flex items-baseline gap-2">
-                            <h4 className="text-xl font-bold text-white">
+                        <p className="text-[9px] lg:text-[10px] text-zinc-500 font-black uppercase tracking-widest">{label}</p>
+                        <div className="flex items-baseline gap-1.5 lg:gap-2">
+                            <h4 className="text-lg lg:text-xl font-bold text-white">
                                 {actual.toLocaleString()}{unit}
                             </h4>
                             {subValue && (
-                                <span className="text-xs text-zinc-400 font-bold">({subValue})</span>
+                                <span className="text-[10px] lg:text-xs text-zinc-400 font-bold">({subValue})</span>
                             )}
                         </div>
                     </div>
                 </div>
-                <div className={cn("flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800/50 font-bold text-xs", color)}>
-                    <ArrowUpRight size={14} />
+                <div className={cn("flex items-center gap-1 px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-lg bg-zinc-800/50 font-bold text-[10px] lg:text-xs", color)}>
+                    <ArrowUpRight size={12} className="lg:w-[14px] lg:h-[14px]" />
                     {realPercentage}%
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter">
-                    <span className="text-zinc-500">Progreso Mensual</span>
+            <div className="space-y-1.5 lg:space-y-2">
+                <div className="flex justify-between text-[9px] lg:text-[10px] font-bold uppercase tracking-tighter">
+                    <span className="text-zinc-500">Progreso</span>
                     <span className="text-zinc-400">Meta: {objetivo.toLocaleString()}{unit}</span>
                 </div>
-                <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-1.5 lg:h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
                     <div
                         className={cn("h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,0,0,0.5)]", barColor)}
                         style={{ width: `${percentage}%` }}
@@ -111,7 +111,7 @@ export const MonthlyTrends: React.FC<MonthlyTrendsProps> = ({
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 lg:gap-4">
                 <TrendItem
                     label="Ingresos Totales"
                     actual={revenue}

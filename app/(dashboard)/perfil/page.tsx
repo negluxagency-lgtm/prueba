@@ -9,14 +9,13 @@ import {
     Store, CreditCard, LogOut, Headset,
     Settings, Rocket as RocketIcon, Coins,
     Save, Loader2, Calendar as CalendarIcon, ChevronRight,
-    Users, CheckCircle2, AlertTriangle, Shield
+    CheckCircle2, AlertTriangle, Shield
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
 import { ResetPasswordButton } from '@/components/ResetPasswordButton'
 import ManageSubscriptionButton from '@/components/ManageSubscriptionButton'
 import { useSubscription } from '@/hooks/useSubscription'
-import { BarberManager } from '@/components/management/BarberManager'
 import { AvatarUpload } from '@/components/AvatarUpload'
 import { ImageCropperDialog } from '@/components/ImageCropperDialog'
 import { getCroppedImg } from '@/utils/cropImage'
@@ -262,131 +261,84 @@ export default function PerfilPage() {
                         {/* ══════════ COLUMNA IZQUIERDA (7/12) ══════════ */}
                         <div className="lg:col-span-7 flex flex-col gap-6 order-1 lg:order-1">
 
-                            {/* Datos Generales (compacto) */}
-                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-                                <div className="flex items-center gap-2.5 mb-4">
-                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
-                                        <Store className="w-4 h-4 text-amber-500" />
+                            {/* Datos Generales y Cierres Mensuales */}
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-5 md:p-7 space-y-7">
+                                {/* Datos de Negocio */}
+                                <div>
+                                    <div className="flex items-center gap-2.5 mb-5">
+                                        <div className="p-1.5 bg-amber-500/10 rounded-xl">
+                                            <Store className="w-4 h-4 text-amber-500" />
+                                        </div>
+                                        <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Datos Generales</h2>
                                     </div>
-                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Datos Generales</h2>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Nombre del Negocio</p>
-                                        <p className="text-sm text-white font-medium truncate">{perfil.nombre_barberia || '—'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Email</p>
-                                        <p className="text-sm text-white font-medium truncate">{email}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Link de Citas</p>
-                                        <p className="text-xs text-zinc-300 font-mono truncate">app.nelux.es/{perfil.slug || '(sin-slug)'}</p>
-                                    </div>
-                                    {perfil.plan !== 'Básico' && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                         <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Portal de Barberos</p>
-                                            <p className="text-xs text-amber-500/80 font-mono truncate">app.nelux.es/{perfil.slug || '(sin-slug)'}/staff</p>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Nombre del Negocio</p>
+                                            <p className="text-sm text-white font-bold truncate">{perfil.nombre_barberia || '—'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Email Registrado</p>
+                                            <p className="text-sm text-white font-bold truncate">{email}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Enlace de Reservas</p>
+                                            <p className="text-xs text-amber-500 font-mono font-medium truncate">app.nelux.es/{perfil.slug || '(sin-slug)'}</p>
+                                        </div>
+                                        {perfil.plan !== 'Básico' && (
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Portal de Equipo</p>
+                                                <p className="text-xs text-amber-500 font-mono font-medium truncate">app.nelux.es/{perfil.slug || '(sin-slug)'}/staff</p>
+                                            </div>
+                                        )}
+                                        <div className="sm:col-span-2">
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Alta en Sisema</p>
+                                            <p className="text-sm text-zinc-400 font-medium">{formatearFecha(perfil.created_at)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Días de Cierre */}
+                                <div className="pt-6 border-t border-zinc-800/60 transition-all">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 bg-amber-500/10 rounded-xl">
+                                                <CalendarIcon className="w-4 h-4 text-amber-500" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-sm font-black uppercase tracking-widest text-white">Cierres Mensuales</h2>
+                                                <p className={cn(
+                                                    "text-[10px] font-black uppercase tracking-wider mt-0.5",
+                                                    perfil.calendario_confirmado ? "text-emerald-500/80" : "text-amber-500 animate-pulse"
+                                                )}>
+                                                    {perfil.calendario_confirmado ? '✓ Calendario Verificado' : '⚠ Confirmación Pendiente'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => setShowClosingModal(true)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-amber-500 font-bold text-[10px] uppercase tracking-widest rounded-lg transition-colors group border border-zinc-700"
+                                        >
+                                            Gestionar
+                                            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-zinc-500 mb-3">Fechas designadas donde los clientes no podrán agendar cita.</p>
+                                    {perfil.fechas_cierre && perfil.fechas_cierre.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {[...perfil.fechas_cierre].sort().map((fecha: string) => (
+                                                <span key={fecha} className="px-3 py-1.5 whitespace-nowrap bg-zinc-800 border border-zinc-700/80 text-white rounded-lg text-xs font-black shadow-sm">
+                                                    {fecha.split('-').reverse().slice(0, 2).join('/')}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
+                                            <p className="text-[11px] font-medium text-emerald-500/80 uppercase tracking-widest">Abierto todos los días este mes</p>
                                         </div>
                                     )}
-                                    <div className="sm:col-span-2">
-                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Miembro desde</p>
-                                        <p className="text-sm text-zinc-300">{formatearFecha(perfil.created_at)}</p>
-                                    </div>
                                 </div>
                             </div>
-
-                            {/* Gestión de Equipo */}
-                            {perfil.plan !== 'Básico' && (
-                                <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-                                    <div className="flex items-center gap-2.5 mb-4">
-                                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
-                                            <Users className="w-4 h-4 text-amber-500" />
-                                        </div>
-                                        <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">
-                                            Gestión de Equipo
-                                        </h2>
-                                    </div>
-                                    <BarberManager perfilId={userId} />
-                                </div>
-                            )}
-
-                            {/* Cierres Mensuales */}
-                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
-                                            <CalendarIcon className="w-4 h-4 text-amber-500" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Cierres Mensuales</h2>
-                                            <p className={cn(
-                                                "text-[10px] font-black uppercase tracking-wider mt-0.5",
-                                                perfil.calendario_confirmado ? "text-zinc-600" : "text-red-500 animate-pulse"
-                                            )}>
-                                                {perfil.calendario_confirmado ? '✓ Calendario Verificado' : '⚠ Confirmación Pendiente'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => setShowClosingModal(true)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg border border-zinc-700/50 transition-all text-xs font-bold uppercase tracking-widest group"
-                                    >
-                                        Abrir
-                                        <ChevronRight className="w-3.5 h-3.5 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
-                                    </button>
-                                </div>
-                                <p className="text-xs text-zinc-500 mb-3">
-                                    Define los días de cierre del próximo mes. Los clientes no podrán agendar en esas fechas.
-                                </p>
-                                {perfil.fechas_cierre && perfil.fechas_cierre.length > 0 ? (
-                                    <div className="flex overflow-x-auto hide-scrollbar flex-nowrap gap-2 pb-2 -mx-5 px-5 lg:mx-0 lg:px-0">
-                                        {[...perfil.fechas_cierre].sort().map((fecha: string) => (
-                                            <span key={fecha} className="px-3 py-1.5 whitespace-nowrap bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-md text-[10px] font-bold">
-                                                {fecha.split('-').reverse().slice(0, 2).join('/')}
-                                            </span>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-xs text-zinc-600 italic">Sin fechas de cierre configuradas</p>
-                                )}
-                            </div>
-
-                            {/* Cuenta & Soporte (Desktop) */}
-                            <div className="hidden lg:block bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-3">
-                                <div className="flex items-center gap-2.5 mb-4">
-                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
-                                        <Shield className="w-4 h-4 text-amber-500" />
-                                    </div>
-                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Cuenta & Soporte</h2>
-                                </div>
-
-                                <a
-                                    href="https://wa.me/34623064127"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-white font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
-                                >
-                                    <Headset className="w-4 h-4 text-amber-500" />
-                                    Hablar con Soporte
-                                </a>
-
-                                <button
-                                    onClick={handleLogout}
-                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
-                                >
-                                    <LogOut className="w-4 h-4" />
-                                    Cerrar Sesión
-                                </button>
-
-                                <div className="pt-1 border-t border-zinc-800/60 flex justify-center">
-                                    <ResetPasswordButton email={email} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* ══════════ COLUMNA DERECHA (5/12) ══════════ */}
-                        <div className="lg:col-span-5 flex flex-col gap-6 order-2 lg:order-2">
 
                             {/* Tarjeta de Recompensas: Afiliados (Mobile Action Card) */}
                             <div className="bg-gradient-to-b from-[#1a1500] to-zinc-900/60 border border-amber-500/30 rounded-3xl p-6 relative overflow-hidden flex flex-col items-center text-center shadow-2xl">
@@ -437,6 +389,43 @@ export default function PerfilPage() {
                                 </div>
                             </div>
 
+                            {/* Cuenta & Soporte (Desktop) */}
+                            <div className="hidden lg:block bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-3">
+                                <div className="flex items-center gap-2.5 mb-4">
+                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                        <Shield className="w-4 h-4 text-amber-500" />
+                                    </div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Cuenta & Soporte</h2>
+                                </div>
+
+                                <a
+                                    href="https://wa.me/34623064127"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-white font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <Headset className="w-4 h-4 text-amber-500" />
+                                    Hablar con Soporte
+                                </a>
+
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Cerrar Sesión
+                                </button>
+
+                                <div className="pt-1 border-t border-zinc-800/60 flex justify-center">
+                                    <ResetPasswordButton email={email} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ══════════ COLUMNA DERECHA (5/12) ══════════ */}
+                        <div className="lg:col-span-5 flex flex-col gap-6 order-2 lg:order-2">
+
+
                             {/* Suscripción */}
                             <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-4">
                                 <div className="flex items-center gap-2.5">
@@ -457,13 +446,15 @@ export default function PerfilPage() {
                                 </div>
 
                                 <div className="border-t border-zinc-800 pt-4">
-                                    <div className="lg:scale-75 lg:origin-top lg:-mb-[11rem]">
+                                    <div className="lg:scale-75 lg:origin-top lg:-mb-[10rem]">
                                         <Paywall variant="pricing" isSection={true} showAllPlans={false} />
                                     </div>
                                 </div>
 
                                 {perfil.estado !== 'prueba' && perfil.estado !== 'periodo_prueba' && (
-                                    <ManageSubscriptionButton className="w-full" />
+                                    <div className="mt-10">
+                                        <ManageSubscriptionButton className="w-full" />
+                                    </div>
                                 )}
                             </div>
 

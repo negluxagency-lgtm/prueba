@@ -234,8 +234,8 @@ export default function Dashboard() {
         });
     };
 
-    const handleUpdateStatus = async (id: number, status: 'pendiente' | 'confirmada' | 'cancelada', pago?: string) => {
-        const promise = updateAppointmentStatus(id, status, pago).then((res: any) => {
+    const handleUpdateStatus = async (id: number, status: 'pendiente' | 'confirmada' | 'cancelada', pago?: string, barberId?: string, barberName?: string) => {
+        const promise = updateAppointmentStatus(id, status, pago, barberId, barberName).then((res: any) => {
             if (!res.success) throw new Error(res.error);
             mutateMetrics();
             return res;
@@ -288,6 +288,7 @@ export default function Dashboard() {
                                 shopId={userId} 
                                 userName={shopProfile?.nombre_encargado}
                                 onStatusChange={() => mutateMetrics()} 
+                                selectedDate={selectedDate}
                             />
                         )
                     }

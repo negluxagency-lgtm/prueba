@@ -114,9 +114,16 @@ export function useAppointments(selectedDate: string) {
         }
     };
 
-    const updateAppointmentStatus = async (id: number, verifyStatus: AppointmentStatus, pago?: string) => {
+    const updateAppointmentStatus = async (id: number, verifyStatus: AppointmentStatus, pago?: string, barberId?: string, barberName?: string) => {
         let dbValues: any = { confirmada: null, cancelada: null };
-        if (verifyStatus === 'confirmada') dbValues = { confirmada: true, cancelada: false, ...(pago ? { pago } : {}) };
+        if (verifyStatus === 'confirmada') {
+            dbValues = { 
+                confirmada: true, 
+                cancelada: false, 
+                ...(pago ? { pago } : {}),
+                ...(barberId ? { barbero_id: barberId, barbero: barberName } : {}) 
+            };
+        }
         if (verifyStatus === 'cancelada') dbValues = { confirmada: false, cancelada: true };
 
         // Optimistic Update

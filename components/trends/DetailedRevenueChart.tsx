@@ -13,6 +13,7 @@ interface DetailedRevenueChartProps {
     setRange: (range: TimeRange) => void;
     metrics: TrendsMetrics;
     previousMetrics: TrendsMetrics | null;
+    className?: string;
 }
 
 const METRIC_LABELS: Record<MetricType, string> = {
@@ -36,9 +37,9 @@ const METRIC_TO_METRICS_KEY: Record<MetricType, keyof TrendsMetrics> = {
     noShows: 'noShows'
 }
 
-export function DetailedRevenueChart({ data, activeMetric, loading, range, setRange, metrics, previousMetrics }: DetailedRevenueChartProps) {
+export function DetailedRevenueChart({ data, activeMetric, loading, range, setRange, metrics, previousMetrics, className }: DetailedRevenueChartProps) {
     if (loading) {
-        return <div className="h-[400px] w-full bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl backdrop-blur-sm animate-pulse flex items-center justify-center text-zinc-700 ">Cargando Datos...</div>;
+        return <div className={`h-[400px] w-full bg-zinc-900/50 border border-zinc-800 rounded-[2rem] p-8 shadow-2xl backdrop-blur-sm animate-pulse flex items-center justify-center text-zinc-700 ${className ?? ''}`}>Cargando Datos...</div>;
     }
 
     const currentKey = METRIC_KEYS[activeMetric];
@@ -67,7 +68,7 @@ export function DetailedRevenueChart({ data, activeMetric, loading, range, setRa
         : data;
 
     return (
-        <div className="h-[420px] md:h-[450px] w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl md:rounded-[2rem] p-5 md:p-8 shadow-2xl backdrop-blur-sm flex flex-col overflow-hidden">
+        <div className={`h-[420px] md:h-[450px] w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl md:rounded-[2rem] p-5 md:p-8 shadow-2xl backdrop-blur-sm flex flex-col overflow-hidden ${className ?? ''}`}>
             <div className="mb-4 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 shrink-0">
                 <div>
                     <h3 className="text-zinc-400 text-[10px] md:text-sm font-bold uppercase tracking-widest mb-1">

@@ -21,17 +21,20 @@ export default function BarberRankingCard({ stats, loading, globalCutsGoal, sele
     return (
         <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl md:rounded-3xl p-5 md:p-7">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h2 className="text-base md:text-lg font-black uppercase tracking-tight text-white flex items-center gap-2">
-                        <Scissors className="w-4 h-4 text-amber-500" />
-                        Rendimiento por Barbero {selectedMonthText ? `(${selectedMonthText})` : ''}
-                    </h2>
-                    <p className="text-xs text-zinc-500 mt-0.5 whitespace-nowrap">Meta individual: <span className="text-amber-500 font-bold">{perBarberGoal} cortes</span></p>
+            <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-2">
+                    <Scissors className="w-4 h-4 text-amber-500" strokeWidth={1.5} />
+                    <h2 className="text-sm font-black uppercase tracking-widest text-white">Rendimiento Equipo</h2>
                 </div>
-                <div className="text-right">
-                    <TrendingUp className="w-5 h-5 text-zinc-600 ml-auto mb-1" />
-                    <p className="text-[8px] text-zinc-600 uppercase font-black tracking-widest leading-none">Global: {globalCutsGoal}</p>
+                <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-baseline gap-1.5">
+                        <span className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Meta Indv:</span>
+                        <span className="text-xs font-black text-amber-500">{perBarberGoal}</span>
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                        <span className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">Meta Global:</span>
+                        <span className="text-[10px] font-black text-zinc-400">{globalCutsGoal}</span>
+                    </div>
                 </div>
             </div>
 
@@ -47,46 +50,76 @@ export default function BarberRankingCard({ stats, loading, globalCutsGoal, sele
                     No hay datos de barberos para este período.
                 </p>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {sortedByCuts.map((barber, idx) => {
-                        const progressPct = Math.min(Math.round((barber.totalCuts / perBarberGoal) * 100), 100)
-                        const realPct = Math.round((barber.totalCuts / perBarberGoal) * 100)
-                        const key = barber.id || barber.nombre
+                        const progressPct = Math.min(Math.round((barber.totalCuts / perBarberGoal) * 100), 100);
+                        const realPct = Math.round((barber.totalCuts / perBarberGoal) * 100);
+                        const key = barber.id || barber.nombre;
+
+                        const isFirst = idx === 0;
+                        const isSecond = idx === 1;
+                        const isThird = idx === 2;
+
+                        let badgeColor = 'bg-zinc-800 text-zinc-400 border-zinc-700';
+                        if (isFirst) badgeColor = 'bg-amber-400 text-black border-amber-300';
+                        else if (isSecond) badgeColor = 'bg-zinc-300 text-black border-zinc-200';
+                        else if (isThird) badgeColor = 'bg-[#cd7f32] text-white border-[#b8732d]';
+
+                        let cardClasses = 'bg-zinc-900/40 border border-zinc-800/60 rounded-xl p-3.5 transition-all';
+                        if (isFirst) {
+                            cardClasses = 'bg-zinc-900/60 border border-amber-500/30 rounded-xl p-3.5 shadow-[0_0_15px_rgba(245,158,11,0.1)] relative overflow-hidden transition-all';
+                        }
 
                         return (
-                            <div key={key} className="flex items-center gap-4">
-                                {/* Position badge */}
-                                <span className={`text-xs font-black w-5 text-center shrink-0 ${idx === 0 ? 'text-amber-400' : idx === 1 ? 'text-zinc-300' : 'text-zinc-600'}`}>
-                                    #{idx + 1}
-                                </span>
-
-                                {/* Avatar */}
-                                <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
-                                    <span className="text-sm font-black text-amber-500">
-                                        {barber.nombre.charAt(0).toUpperCase()}
-                                    </span>
-                                </div>
-
-                                {/* Bar + name */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm font-bold text-white truncate">{barber.nombre}</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest ${realPct >= 100 ? 'bg-green-500/10 text-green-500' : 'bg-amber-500/10 text-amber-500'
-                                                }`}>
-                                                {barber.totalCuts} / {perBarberGoal} ({realPct}%)
-                                            </span>
+                            <div key={key} className={cardClasses}>
+                                {/* First Place Glow Effect */}
+                                {isFirst && <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />}
+                                
+                                <div className="flex items-center gap-3 sm:gap-4 relative z-10">
+                                    {/* Avatar with absolute badge directly integrated */}
+                                    <div className="relative shrink-0">
+                                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+                                            {barber.foto ? (
+                                                <img src={barber.foto} alt={barber.nombre} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-sm font-black text-amber-500">
+                                                    {barber.nombre.charAt(0).toUpperCase()}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className={`absolute -bottom-1 -right-1 w-[22px] h-[22px] flex items-center justify-center rounded-full border-[1.5px] text-[10px] font-black shadow-sm ${badgeColor}`}>
+                                            {idx + 1}
                                         </div>
                                     </div>
-                                    <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden relative">
-                                        {/* Meta Marker at 100% */}
-                                        <div
-                                            className="h-full rounded-full transition-all duration-700 shadow-[0_0_10px_rgba(245,158,11,0.3)]"
-                                            style={{
-                                                width: `${progressPct}%`,
-                                                backgroundColor: realPct >= 100 ? '#22c55e' : '#f59e0b'
-                                            }}
-                                        />
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                        {/* Top line: Name + % */}
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-bold text-white truncate">{barber.nombre}</span>
+                                            <span className={`text-[11px] font-black uppercase tracking-widest ${realPct >= 100 ? 'text-green-500' : 'text-amber-500'}`}>
+                                                {realPct}%
+                                            </span>
+                                        </div>
+                                        
+                                        {/* Progress Bar */}
+                                        <div className="h-2 bg-zinc-950 rounded-full overflow-hidden shadow-inner w-full mb-1.5 border border-zinc-800/50">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-1000 ease-out ${
+                                                    realPct >= 100 
+                                                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' 
+                                                        : 'bg-gradient-to-r from-orange-600 to-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                                                }`}
+                                                style={{ width: `${progressPct}%` }}
+                                            />
+                                        </div>
+                                        
+                                        {/* Bottom Data */}
+                                        <div className="text-right mt-0.5">
+                                            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
+                                                {barber.totalCuts} / {perBarberGoal} cortes
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

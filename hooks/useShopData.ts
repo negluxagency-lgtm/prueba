@@ -28,7 +28,7 @@ export function useShopData() {
         async () => {
             const [servicesRes, barbersRes, profileRes] = await Promise.all([
                 supabase.from('servicios').select('id, nombre, precio').eq('barberia_id', userId),
-                supabase.from('barberos').select('id, nombre').eq('barberia_id', userId),
+                supabase.from('barberos').select('id, nombre, foto').eq('barberia_id', userId),
                 supabase.from('perfiles').select('*').eq('id', userId).single()
             ]);
 

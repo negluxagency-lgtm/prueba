@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ShoppingBag, MoreHorizontal, Pencil, Trash2, FileText } from 'lucide-react';
+import { ShoppingBag, MoreHorizontal, Pencil, Trash2, FileText, Banknote, CreditCard, Smartphone } from 'lucide-react';
 import { Appointment } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -14,6 +14,20 @@ interface ProductSalesTableProps {
     onGenerateInvoice?: (sale: Appointment) => void;
     loading?: boolean;
 }
+
+const PAGO_ICONS: Record<string, React.ReactNode> = {
+    efectivo: <Banknote className="w-2.5 h-2.5 lg:w-3 lg:h-3" />,
+    tarjeta: <CreditCard className="w-2.5 h-2.5 lg:w-3 lg:h-3" />,
+    bizum: <Smartphone className="w-2.5 h-2.5 lg:w-3 lg:h-3" />,
+    otra: <MoreHorizontal className="w-2.5 h-2.5 lg:w-3 lg:h-3" />,
+};
+
+const PAGO_COLORS: Record<string, string> = {
+    efectivo: 'bg-green-500/10 text-green-400 border-green-500/20',
+    tarjeta: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    bizum: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    otra: 'bg-zinc-800 text-zinc-400 border-zinc-700',
+};
 
 function ActionsDropdown({ sale, onEdit, onDelete, onGenerateInvoice }: {
     sale: Appointment
@@ -162,9 +176,14 @@ export const ProductSalesTable: React.FC<ProductSalesTableProps> = ({ sales, onE
                                                 {sale.Precio}€
                                             </td>
                                             <td className="px-3 py-1 lg:px-8 lg:py-6 text-center">
-                                                <span className="px-2 py-1 rounded-lg bg-zinc-800 text-zinc-400 text-[10px] lg:text-xs font-bold uppercase border border-zinc-700">
-                                                    {(sale as any).pago || '---'}
-                                                </span>
+                                                {sale.pago ? (
+                                                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-lg border text-[7px] lg:text-[10px] font-black uppercase tracking-widest ${PAGO_COLORS[sale.pago] || PAGO_COLORS.otra}`}>
+                                                        {PAGO_ICONS[sale.pago]}
+                                                        <span className="hidden lg:inline">{sale.pago}</span>
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-zinc-700 text-[7px] lg:text-xs italic">--</span>
+                                                )}
                                             </td>
                                             <td className="px-3 py-1 lg:px-8 lg:py-6 text-zinc-500 text-[10px] lg:text-base text-center">
                                                 {sale.Hora ? sale.Hora.slice(0, 5) : "--:--"}
