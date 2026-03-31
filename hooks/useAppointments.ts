@@ -6,16 +6,8 @@ import { toast } from "sonner";
 
 export type AppointmentStatus = 'pendiente' | 'confirmada' | 'cancelada';
 
-export function useAppointments(selectedDate: string) {
+export function useAppointments(selectedDate: string, userId: string | null) {
     const { mutate } = useSWRConfig();
-    const [userId, setUserId] = useState<string | null>(null);
-
-    // Get current user ID
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => {
-            if (data.user) setUserId(data.user.id);
-        });
-    }, []);
 
     // 1. Fetch Plan del Usuario
     const { data: userPlan = 'basico' } = useSWR(

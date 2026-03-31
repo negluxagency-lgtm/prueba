@@ -18,27 +18,33 @@ interface SubscriptionState {
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const TRIAL_DAYS = 7;
 
-export function useSubscription() {
-    const [userId, setUserId] = useState<string | null>(null);
-    const [loadingSession, setLoadingSession] = useState(true);
+export function useSubscription(initialUserId?: string | null) {
+    const [localUserId, setLocalUserId] = useState<string | null>(initialUserId || null);
+    const [loadingSession, setLoadingSession] = useState(!initialUserId);
 
     useEffect(() => {
+        if (initialUserId) {
+            setLocalUserId(initialUserId);
+            setLoadingSession(false);
+            return;
+        }
+
         supabase.auth.getUser().then(({ data }) => {
-            if (data.user) setUserId(data.user.id);
+            if (data.user) setLocalUserId(data.user.id);
             setLoadingSession(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
-                setUserId(session?.user?.id || null);
+                setLocalUserId(session?.user?.id || null);
             } else if (event === 'SIGNED_OUT') {
-                setUserId(null);
+                setLocalUserId(null);
             }
             setLoadingSession(false);
         });
 
         return () => subscription.unsubscribe();
-    }, []);
+    }, [initialUserId]);
 
     const { 
         data: state, 
@@ -46,7 +52,7 @@ export function useSubscription() {
         isLoading,
         mutate
     } = useSWR(
-        userId ? ['subscription', userId] : null,
+        localUserId ? ['subscription', localUserId] : null,
         async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return null;

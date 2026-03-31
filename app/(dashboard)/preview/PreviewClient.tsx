@@ -490,13 +490,6 @@ export default function PreviewClient({
                             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                             {saving ? 'Guardando...' : saved ? '¡Guardado!' : 'Guardar cambios'}
                         </button>
-                        <Link
-                            href="/perfil"
-                            className="flex items-center justify-center gap-2 w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all"
-                        >
-                            <ArrowLeft className="w-3.5 h-3.5" />
-                            Volver al perfil
-                        </Link>
                     </div>
                 </div>
             </div>

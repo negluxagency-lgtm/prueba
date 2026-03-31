@@ -44,15 +44,8 @@ const EMPTY_METRICS: TrendsMetrics = {
     noShows: 0,
 };
 
-export function useTrends(referenceDate?: string, initialRange: TimeRange = 'month') {
-    const [userId, setUserId] = useState<string | null>(null);
+export function useTrends(userId: string | null, referenceDate?: string, initialRange: TimeRange = 'month') {
     const [range, setRange] = useState<TimeRange>(initialRange);
-
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => {
-            if (data.user) setUserId(data.user.id);
-        });
-    }, []);
 
     const { 
         data, 

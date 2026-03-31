@@ -14,11 +14,13 @@ import Link from "next/link";
 
 export default function DashboardLayoutClient({
     children,
+    userId,
     initialProfile,
     serverStatus,
     calendarioConfirmed
 }: {
     children: React.ReactNode;
+    userId: string;
     initialProfile?: any;
     serverStatus?: string;
     calendarioConfirmed?: boolean;
@@ -31,7 +33,7 @@ export default function DashboardLayoutClient({
         calendario_confirmado: hookCalendarioConfirmed,
         fechas_cierre: hookFechasCierre,
         refresh: refreshSubscription
-    } = useSubscription();
+    } = useSubscription(userId);
     const router = useRouter();
     const pathname = usePathname();
     const [showClosingModal, setShowClosingModal] = useState(false);

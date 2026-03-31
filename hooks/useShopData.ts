@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { supabase } from '@/lib/supabase';
 import useSWR from 'swr';
 import { toast } from 'sonner';
@@ -9,15 +9,7 @@ export interface ShopData {
     profile: any;
 }
 
-export function useShopData() {
-    const [userId, setUserId] = useState<string | null>(null);
-
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => {
-            if (data.user) setUserId(data.user.id);
-        });
-    }, []);
-
+export function useShopData(userId?: string | null) {
     const { 
         data, 
         error, 

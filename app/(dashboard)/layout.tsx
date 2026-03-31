@@ -63,6 +63,7 @@ export default async function DashboardLayout({
 
     return (
         <DashboardLayoutClient
+            userId={user.id}
             initialProfile={profile}
             serverStatus={subscriptionStatus}
             calendarioConfirmed={calendarioConfirmed}
