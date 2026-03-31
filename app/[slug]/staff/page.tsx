@@ -1,72 +1,30 @@
-import { createClient } from '@supabase/supabase-js'
-import { notFound } from 'next/navigation'
-import StaffApp from '@/components/staff/StaffApp'
+import { Lock } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-interface PageProps {
-    params: Promise<{ slug: string }>
-}
-
-export default async function StaffPage(props: PageProps) {
-    const params = await props.params
-    // Use Service Role to allow fetching barbers unconditionally for the public URL
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    // 1. Fetch Profile (Shop) by Slug
-    const { data: profile, error: profileError } = await supabase
-        .from('perfiles')
-        .select('id, nombre_barberia, logo_url, "CIF/NIF", Direccion, telefono, correo, plan')
-        .eq('slug', params.slug)
-        .single()
-
-    if (profileError || !profile) {
-        return notFound()
-    }
-
-    // 2. Fetch Barbers (With their PIN mapping, Photo and Schedule)
-    const { data: barbers, error: barbersError } = await supabase
-        .from('barberos')
-        .select('id, nombre, pin, foto, horario_semanal, "jefe/dueño"')
-        .eq('barberia_id', profile.id)
-        .order('nombre', { ascending: true })
-
-    console.log(`[StaffPage] Fetched ${barbers?.length || 0} barbers for shop ${profile.nombre_barberia}`)
-    if (barbersError) console.error('[StaffPage] Error fetching barbers:', barbersError)
-    // console.log('[StaffPage] Barbers data:', barbers) // Careful with sensitive data in logs, but useful for debugging
-
-    if (!barbers || barbers.length === 0) {
-        return (
-            <div className="min-h-screen bg-black flex items-center justify-center text-white">
-                <div className="text-center">
-                    <h1 className="text-2xl font-black italic mb-2">Sin Equipo Registrado</h1>
-                    <p className="text-zinc-500">Contacta con el administrador.</p>
-                </div>
-            </div>
-        )
-    }
-
-    // Map `pin` to `hasPin` boolean to secure the PIN from the client
-    // Filter out the owner from the staff view
-    const secureBarbers = barbers
-        .filter(b => !b['jefe/dueño'])
-        .map(b => ({
-        id: b.id,
-        nombre: b.nombre,
-        foto: b.foto,
-        horario_semanal: b.horario_semanal,
-        hasPin: !!b.pin
-    }))
-
-    // Pass data to the Client Component
+export default function OldStaffPage() {
     return (
-        <StaffApp
-            shopData={profile}
-            barbers={secureBarbers}
-            slug={params.slug}
-        />
+        <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-20 h-20 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center mb-6 shadow-2xl">
+                <Lock className="w-10 h-10 text-amber-500" />
+            </div>
+            
+            <h1 className="text-2xl lg:text-3xl font-black text-white italic uppercase tracking-tighter mb-4">
+                Enlace Expirado o Inválido
+            </h1>
+            
+            <p className="max-w-md text-zinc-400 text-sm md:text-base mb-8">
+                Por motivos de seguridad, el acceso al portal de equipo requiere ahora de un <strong className="text-white">código de 4 dígitos</strong> en la URL.
+            </p>
+
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 w-full max-w-sm">
+                <p className="text-xs font-bold uppercase tracking-widest text-amber-500 mb-2">
+                    Acción Requerida
+                </p>
+                <p className="text-sm text-amber-400">
+                    Por favor, solicita a tu encargado o administrador el nuevo enlace seguro de la barbería.
+                </p>
+            </div>
+        </div>
     )
 }

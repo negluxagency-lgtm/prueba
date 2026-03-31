@@ -33,7 +33,10 @@ export default function ServiceStep({ services }: ServiceStepProps) {
             className="space-y-4"
         >
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-black text-xs font-bold">
+                <span
+                    className="flex items-center justify-center w-6 h-6 rounded-full text-black text-xs font-bold"
+                    style={{ backgroundColor: 'var(--color-secondary, #f59e0b)' }}
+                >
                     1
                 </span>
                 Selecciona un Servicio
@@ -44,14 +47,20 @@ export default function ServiceStep({ services }: ServiceStepProps) {
                     <button
                         key={service.id}
                         onClick={() => handleSelect(service)}
-                        className="relative group flex flex-col items-start p-4 rounded-xl border border-zinc-800/50 bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-800/60 hover:border-amber-500/50 transition-all text-left active:scale-[0.98]"
+                        className="relative group flex flex-col items-start p-4 rounded-xl border border-zinc-800/50 bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-800/60 transition-all text-left active:scale-[0.98]"
+                        style={{
+                            // @ts-ignore — CSS custom property
+                            '--hover-border': 'var(--color-secondary, #f59e0b)',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.borderColor = `color-mix(in srgb, var(--color-secondary, #f59e0b) 50%, transparent)`)}
+                        onMouseLeave={(e) => (e.currentTarget.style.borderColor = '')}
                     >
                         <h3 className="font-bold text-white text-sm md:text-base leading-tight mb-1">
                             {service.nombre}
                         </h3>
                         <div className="mt-auto w-full pt-2 flex items-center justify-between">
                             <span className="text-xs text-zinc-500">{service.duracion} min</span>
-                            <span className="text-sm font-bold text-amber-500">{service.precio}€</span>
+                            <span className="text-sm font-bold" style={{ color: 'var(--color-secondary, #f59e0b)' }}>{service.precio}€</span>
                         </div>
                     </button>
                 ))}

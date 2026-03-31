@@ -9,7 +9,7 @@ import {
     Store, CreditCard, LogOut, Headset,
     Settings, Rocket as RocketIcon, Coins,
     Save, Loader2, Calendar as CalendarIcon, ChevronRight,
-    CheckCircle2, AlertTriangle, Shield
+    CheckCircle2, AlertTriangle, Shield, Palette
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Paywall } from '@/components/Paywall'
@@ -127,10 +127,10 @@ export default function PerfilPage() {
         try {
             const fileExt = file.name.split('.').pop()
             const fileName = `${userId}/banner_${Date.now()}.${fileExt}`
-            const { error: uploadError } = await supabase.storage.from('banner').upload(fileName, file, { upsert: true })
+            const { error: uploadError = null } = await supabase.storage.from('banner').upload(fileName, file, { upsert: true })
             if (uploadError) throw uploadError
-            const { data: urlData } = supabase.storage.from('banner').getPublicUrl(fileName)
-            const { error: profileError } = await supabase.from('perfiles').update({ banner_url: urlData.publicUrl }).eq('id', userId)
+            const { data: urlData = { publicUrl: '' } } = supabase.storage.from('banner').getPublicUrl(fileName)
+            const { error: profileError = null } = await supabase.from('perfiles').update({ banner_url: urlData.publicUrl }).eq('id', userId)
             if (profileError) throw profileError
             setPerfil((prev: any) => ({ ...prev, banner_url: urlData.publicUrl }))
             setBannerFile(null)
@@ -167,17 +167,13 @@ export default function PerfilPage() {
         <div className="min-h-[calc(100vh+4.5rem)] bg-[#0a0a0a] -mt-[1.5rem] lg:mt-0 pb-24 lg:pb-8">
 
             {/* ── HEADER FUSION ── */}
-            <div className="relative group/banner">
+            <div className="relative">
                 <div
-                    className="h-[160px] lg:h-[480px] w-full bg-zinc-900 relative overflow-hidden"
+                    className="h-[140px] lg:h-[420px] w-full bg-zinc-900 relative overflow-hidden"
                     style={{ backgroundImage: `url(${perfil.banner_url || '/images/default_banner.jpg'})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
                 >
-                    {/* Glass Overlay Superior */}
-                    <div className="absolute inset-0 bg-black/20 group-hover/banner:bg-black/10 transition-all duration-700" />
-                    
-                    {/* Degradado inferior progresivo (High Visual Depth) */}
-                    <div className="absolute inset-x-0 bottom-0 h-40 lg:h-64 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent z-10" />
-                    
+                    {/* Degradado inferior */}
+                    <div className="absolute inset-x-0 bottom-0 h-30 lg:h-40 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/70 to-transparent pointer-events-none" />
                     {/* Banner upload overlay */}
                     <input
                         ref={bannerInputRef}
@@ -194,79 +190,70 @@ export default function PerfilPage() {
                             e.target.value = ''
                         }}
                     />
-                    <div className="absolute top-4 right-4 lg:bottom-10 lg:right-10 lg:top-auto z-30">
+                    <div className="absolute bottom-3 right-3 flex items-center gap-2 z-20">
                         <button
                             onClick={() => bannerInputRef.current?.click()}
                             disabled={uploadingBanner}
-                            className="flex items-center gap-2 px-4 py-2 bg-black/60 hover:bg-black/80 backdrop-blur-xl text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl border border-white/10 hover:border-amber-500/50 transition-all shadow-2xl disabled:opacity-50 active:scale-95 group/btn"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white font-bold text-[10px] uppercase tracking-widest rounded-lg border border-white/10 hover:border-white/20 transition-all shadow-lg disabled:opacity-50"
                         >
-                            {uploadingBanner ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RocketIcon className="w-3.5 h-3.5 text-amber-500 group-hover/btn:rotate-12 transition-transform" />}
-                            {uploadingBanner ? 'Sincronizando...' : 'Personalizar Banner'}
+                            {uploadingBanner ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                            {uploadingBanner ? 'Guardando...' : 'Cambiar banner'}
                         </button>
                     </div>
                 </div>
 
-                {/* Avatar flotante & Bio */}
-                <div className="px-4 lg:px-12 relative z-20 -mt-16 lg:-mt-24">
+                {/* Avatar flotante */}
+                <div className="px-4 lg:px-8">
                     <div className="max-w-7xl mx-auto">
-                        <div className="flex flex-col lg:flex-row items-center lg:items-end gap-6 lg:gap-10">
-                            {/* Logo Wrapper */}
-                            <div className="relative">
-                                <div className="w-28 h-28 lg:w-40 lg:h-40 rounded-[2rem] lg:rounded-[3rem] border-[6px] border-[#0a0a0a] overflow-hidden bg-zinc-900 shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform duration-500">
-                                    <AvatarUpload
-                                        currentImageUrl={perfil?.logo_url}
-                                        onFileSelect={setAvatarFile}
-                                        loading={uploadingLogo}
-                                    />
-                                </div>
-                                {/* Status Orb */}
-                                <div className={cn(
-                                    "absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-4 border-[#0a0a0a] shadow-lg",
-                                    perfil.estado === 'pagado' ? "bg-emerald-500" : "bg-amber-500"
-                                )} />
-                            </div>
-
-                            {/* Bio & Actions */}
-                            <div className="flex-1 flex flex-col lg:flex-row items-center lg:items-end justify-between gap-6 pb-2 text-center lg:text-left">
-                                <div className="space-y-1">
-                                    <h1 className="text-2xl lg:text-5xl font-black italic text-white leading-none tracking-tighter uppercase">
-                                        {perfil.nombre_barberia || 'Tu Barbería'}
-                                    </h1>
-                                    <div className="flex items-center justify-center lg:justify-start gap-2 pt-1">
-                                        <div className="px-3 py-1 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-full flex items-center gap-2 shadow-inner">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                            <p className="text-[10px] lg:text-xs text-zinc-400 font-black uppercase tracking-widest">
-                                                app.nelux.es/<span className="text-amber-500">{perfil.slug || 'sin-slug'}</span>
-                                            </p>
-                                        </div>
+                        <div className="flex flex-col lg:flex-row items-center lg:items-end lg:justify-between gap-3 -mt-10 lg:-mt-16 relative z-10 text-center lg:text-left">
+                            <div className="flex flex-col lg:flex-row items-center lg:items-end gap-3 lg:gap-4">
+                                <div className="relative">
+                                    <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-full border-4 border-[#0a0a0a] overflow-hidden bg-zinc-900 shadow-xl">
+                                        <AvatarUpload
+                                            currentImageUrl={perfil?.logo_url}
+                                            onFileSelect={setAvatarFile}
+                                            loading={uploadingLogo}
+                                        />
                                     </div>
                                 </div>
-
-                                <div className="flex flex-wrap justify-center lg:justify-end items-center gap-3">
-                                    {avatarFile && (
-                                        <button
-                                            onClick={handleUploadLogo}
-                                            disabled={uploadingLogo}
-                                            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-xl shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
-                                        >
-                                            {uploadingLogo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                            Guardar Cambios
-                                        </button>
-                                    )}
-                                    <Link
-                                        href="/ajustes"
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-xl active:scale-95 group"
-                                    >
-                                        <Settings className="w-4 h-4 text-amber-500 group-hover:rotate-45 transition-transform" />
-                                        Ajustes
-                                    </Link>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="lg:hidden flex items-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 text-red-400 font-black text-[10px] uppercase tracking-widest rounded-xl transition-all"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                    </button>
+                                <div className="pb-1">
+                                    <h1 className="text-xl lg:text-2xl font-black text-white leading-tight">
+                                        {perfil.nombre_barberia || 'Tu Barbería'}
+                                    </h1>
+                                    <p className="text-xs text-zinc-500 font-mono mt-0.5">
+                                        app.nelux.es/<span className="text-amber-500">{perfil.slug || 'sin-slug'}</span>
+                                    </p>
                                 </div>
+                            </div>
+                            <div className="flex flex-wrap justify-center lg:justify-end items-center gap-2 pb-1 lg:mt-0 mt-2">
+                                {avatarFile && (
+                                    <button
+                                        onClick={handleUploadLogo}
+                                        disabled={uploadingLogo}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[10px] uppercase rounded-lg transition-all disabled:opacity-50"
+                                    >
+                                        {uploadingLogo ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                                        Guardar Foto
+                                    </button>
+                                )}
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold ${getBadgeEstado(perfil.estado)}`}>
+                                    {perfil.estado === 'pagado' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                                    {getTextoEstado(perfil.estado)}
+                                </span>
+                                <Link
+                                    href="/preview"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all"
+                                >
+                                    <Palette className="w-3.5 h-3.5 text-amber-500" />
+                                    Editar mi portal
+                                </Link>
+                                <Link
+                                    href="/ajustes"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all"
+                                >
+                                    <Settings className="w-3.5 h-3.5 text-amber-500" />
+                                    Ajustes
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -279,95 +266,96 @@ export default function PerfilPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
                         {/* ══════════ COLUMNA IZQUIERDA (7/12) ══════════ */}
-                        <div className="lg:col-span-7 flex flex-col gap-6 order-1">
+                        <div className="lg:col-span-7 flex flex-col gap-6 order-1 lg:order-1">
 
                             {/* Datos Generales y Cierres Mensuales */}
-                            <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/50 rounded-[2.5rem] p-6 lg:p-10 space-y-10 shadow-2xl">
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-3xl p-5 md:p-7 space-y-7">
                                 {/* Datos de Negocio */}
                                 <div>
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-inner">
-                                            <Store className="w-6 h-6 text-amber-500" />
+                                    <div className="flex items-center gap-2.5 mb-5">
+                                        <div className="p-1.5 bg-amber-500/10 rounded-xl">
+                                            <Store className="w-4 h-4 text-amber-500" />
+                                        </div>
+                                        <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Datos Generales</h2>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Nombre del Negocio</p>
+                                            <p className="text-sm text-white font-bold truncate">{perfil.nombre_barberia || '—'}</p>
                                         </div>
                                         <div>
-                                            <h2 className="text-xl font-black uppercase tracking-tighter text-white italic">Gestión de Negocio</h2>
-                                            <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Identidad y credenciales registradas</p>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Email Registrado</p>
+                                            <p className="text-sm text-white font-bold truncate">{email}</p>
                                         </div>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="group/item">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mb-2 group-hover/item:text-amber-500 transition-colors">Nombre del Establecimiento</p>
-                                            <p className="text-base text-white font-black truncate">{perfil.nombre_barberia || '—'}</p>
-                                        </div>
-                                        <div className="group/item">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mb-2 group-hover/item:text-amber-500 transition-colors">Email de Administración</p>
-                                            <p className="text-base text-white font-black truncate">{email}</p>
-                                        </div>
-                                        <div className="group/item">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mb-2 group-hover/item:text-amber-500 transition-colors">Link de Reserva Público</p>
-                                            <p className="text-sm text-amber-500 font-black truncate bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2 mt-1">app.nelux.es/{perfil.slug || '(sin-slug)'}</p>
+                                        <div>
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Enlace de Reservas</p>
+                                            <Link 
+                                                href={`/${perfil.slug || ''}`} 
+                                                target="_blank" 
+                                                className="block text-xs text-amber-500 font-mono font-medium truncate hover:underline hover:text-amber-400 transition-colors w-max"
+                                            >
+                                                app.nelux.es/{perfil.slug || '(sin-slug)'}
+                                            </Link>
                                         </div>
                                         {perfil.plan !== 'Básico' && (
-                                            <div className="group/item">
-                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mb-2 group-hover/item:text-amber-500 transition-colors">Panel Staff 360º</p>
-                                                <p className="text-sm text-amber-500 font-black truncate bg-amber-500/5 border border-amber-500/10 rounded-lg px-3 py-2 mt-1">app.nelux.es/{perfil.slug || '(sin-slug)'}/staff</p>
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Portal de Equipo</p>
+                                                <Link 
+                                                    href={`/${perfil.slug || ''}/staff/${perfil.codigo_equipo || ''}`} 
+                                                    target="_blank" 
+                                                    className="block text-xs text-amber-500 font-mono font-medium truncate hover:underline hover:text-amber-400 transition-colors w-max"
+                                                >
+                                                    app.nelux.es/{perfil.slug || '(sin-slug)'}/staff/{perfil.codigo_equipo || 'XXXX'}
+                                                </Link>
                                             </div>
                                         )}
-                                        <div className="md:col-span-2 pt-2">
-                                            <div className="flex items-center gap-3 text-zinc-500 bg-zinc-950/50 p-4 rounded-2xl border border-zinc-800/50">
-                                                <CalendarIcon className="w-4 h-4 shrink-0" />
-                                                <p className="text-[11px] font-bold uppercase tracking-widest">Miembro desde el <span className="text-white">{formatearFecha(perfil.created_at)}</span></p>
-                                            </div>
+                                        <div className="sm:col-span-2">
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Alta en Sisema</p>
+                                            <p className="text-sm text-zinc-400 font-medium">{formatearFecha(perfil.created_at)}</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Días de Cierre */}
-                                <div className="pt-10 border-t border-zinc-800/60">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center border border-zinc-700/50 shadow-inner group-hover:bg-amber-500/10 transition-colors">
-                                                <CalendarIcon className="w-6 h-6 text-zinc-500" />
+                                <div className="pt-6 border-t border-zinc-800/60 transition-all">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-1.5 bg-amber-500/10 rounded-xl">
+                                                <CalendarIcon className="w-4 h-4 text-amber-500" />
                                             </div>
                                             <div>
-                                                <h2 className="text-xl font-black uppercase tracking-tighter text-white italic">Cierres Mensuales</h2>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className={cn(
-                                                        "w-2 h-2 rounded-full",
-                                                        perfil.calendario_confirmado ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
-                                                    )} />
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                                        {perfil.calendario_confirmado ? 'Calendario Verificado' : 'Confirmación Pendiente'}
-                                                    </p>
-                                                </div>
+                                                <h2 className="text-sm font-black uppercase tracking-widest text-white">Cierres Mensuales</h2>
+                                                <p className={cn(
+                                                    "text-[10px] font-black uppercase tracking-wider mt-0.5",
+                                                    perfil.calendario_confirmado ? "text-emerald-500/80" : "text-amber-500 animate-pulse"
+                                                )}>
+                                                    {perfil.calendario_confirmado ? '✓ Calendario Verificado' : '⚠ Confirmación Pendiente'}
+                                                </p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => setShowClosingModal(true)}
-                                            className="flex items-center gap-2 px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all border border-zinc-800 active:scale-95 group shadow-xl"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-amber-500 font-bold text-[10px] uppercase tracking-widest rounded-lg transition-colors group border border-zinc-700"
                                         >
-                                            Gestionar Cierres
-                                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                            Gestionar
+                                            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                                         </button>
                                     </div>
-                                    
-                                    <div className="p-6 bg-zinc-950/50 border border-zinc-800 rounded-3xl">
-                                        <p className="text-xs text-zinc-500 mb-4 font-medium leading-relaxed italic">Marca los días festivos o de baja para evitar solapamientos en la agenda.</p>
-                                        {perfil.fechas_cierre && perfil.fechas_cierre.length > 0 ? (
-                                            <div className="flex flex-wrap gap-2.5">
-                                                {[...perfil.fechas_cierre].sort().map((fecha: string) => (
-                                                    <span key={fecha} className="px-4 py-2 bg-zinc-900 border border-zinc-800 text-white rounded-xl text-xs font-black shadow-lg border-b-2 border-b-amber-500/20">
-                                                        {fecha.split('-').reverse().slice(0, 2).join('/')}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                                                <p className="text-[11px] font-black text-emerald-500/80 uppercase tracking-widest">Barbería operativa 24/7 este mes</p>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <p className="text-xs text-zinc-500 mb-3">Fechas designadas donde los clientes no podrán agendar cita.</p>
+                                    {perfil.fechas_cierre && perfil.fechas_cierre.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {[...perfil.fechas_cierre].sort().map((fecha: string) => (
+                                                <span key={fecha} className="px-3 py-1.5 whitespace-nowrap bg-zinc-800 border border-zinc-700/80 text-white rounded-lg text-xs font-black shadow-sm">
+                                                    {fecha.split('-').reverse().slice(0, 2).join('/')}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 p-3 bg-zinc-900/50 border border-zinc-800 rounded-xl">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
+                                            <p className="text-[11px] font-medium text-emerald-500/80 uppercase tracking-widest">Abierto todos los días este mes</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -419,122 +407,109 @@ export default function PerfilPage() {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Cuenta & Soporte (Desktop) */}
+                            <div className="hidden lg:block bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-3">
+                                <div className="flex items-center gap-2.5 mb-4">
+                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                        <Shield className="w-4 h-4 text-amber-500" />
+                                    </div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Cuenta & Soporte</h2>
+                                </div>
+
+                                <a
+                                    href="https://wa.me/34623064127"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-white font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <Headset className="w-4 h-4 text-amber-500" />
+                                    Hablar con Soporte
+                                </a>
+
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Cerrar Sesión
+                                </button>
+
+                                <div className="pt-1 border-t border-zinc-800/60 flex justify-center">
+                                    <ResetPasswordButton email={email} />
+                                </div>
+                            </div>
                         </div>
 
                         {/* ══════════ COLUMNA DERECHA (5/12) ══════════ */}
-                        <div className="lg:col-span-5 flex flex-col gap-6 order-2">
+                        <div className="lg:col-span-5 flex flex-col gap-6 order-2 lg:order-2">
+
 
                             {/* Suscripción */}
-                            <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/50 rounded-[2.5rem] p-6 lg:p-8 space-y-6 shadow-2xl">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shadow-inner">
-                                        <CreditCard className="w-6 h-6 text-amber-500" />
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-4">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                        <CreditCard className="w-4 h-4 text-amber-500" />
                                     </div>
-                                    <div>
-                                        <h2 className="text-xl font-black uppercase tracking-tighter text-white italic">Suscripción</h2>
-                                        <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Estado y facturación del servicio</p>
-                                    </div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Suscripción</h2>
                                 </div>
 
-                                <div className="flex items-center justify-between p-4 bg-zinc-950/50 border border-zinc-800 rounded-2xl">
+                                <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-1">Plan Nelux</p>
-                                        <p className="text-lg font-black text-white italic tracking-tighter uppercase">{perfil.plan || '—'}</p>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-600 mb-1">Plan Actual</p>
+                                        <p className="text-base font-black text-white">{perfil.plan || '—'}</p>
                                     </div>
-                                    <span className={cn(
-                                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest shadow-sm",
-                                        getBadgeEstado(perfil.estado)
-                                    )}>
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold ${getBadgeEstado(perfil.estado)}`}>
                                         {getTextoEstado(perfil.estado)}
                                     </span>
                                 </div>
 
-                                <div className="border-t border-zinc-800/80 pt-6">
-                                    <div className="rounded-[2.5rem] overflow-hidden border border-zinc-800/50 bg-black/40 p-1">
+                                <div className="border-t border-zinc-800 pt-4">
+                                    <div className="lg:scale-75 lg:origin-top lg:-mb-[10rem]">
                                         <Paywall variant="pricing" isSection={true} showAllPlans={false} />
                                     </div>
                                 </div>
 
                                 {perfil.estado !== 'prueba' && perfil.estado !== 'periodo_prueba' && (
-                                    <div className="mt-4">
-                                        <ManageSubscriptionButton className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all border border-zinc-700 shadow-xl active:scale-95" />
+                                    <div className="mt-10">
+                                        <ManageSubscriptionButton className="w-full" />
                                     </div>
                                 )}
                             </div>
 
-                            {/* Cuenta & Soporte (Desktop) */}
-                            <div className="hidden lg:block bg-zinc-900/40 backdrop-blur-md border border-zinc-800/50 rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center border border-zinc-700/50 shadow-inner">
-                                        <Shield className="w-6 h-6 text-zinc-500" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg font-black uppercase tracking-tighter text-white italic">Centro de Seguridad</h2>
-                                        <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Soporte y gestión de acceso</p>
-                                    </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 gap-3">
-                                    <a
-                                        href="https://wa.me/34623064127"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl transition-all shadow-lg active:scale-95 group"
-                                    >
-                                        <Headset className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
-                                        Asistencia en Directo
-                                    </a>
-
-                                    <button
-                                        onClick={handleLogout}
-                                        className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/30 text-red-500/80 hover:text-red-400 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-95"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                        Finalizar Sesión
-                                    </button>
-
-                                    <div className="pt-2 border-t border-zinc-800/50 mt-2 flex justify-center">
-                                        <ResetPasswordButton email={email} />
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
                         {/* ══════════ SECCIÓN FINAL (Cuenta & Soporte Mobile) ══════════ */}
                         <div className="lg:hidden lg:col-span-7 flex flex-col gap-6 order-3">
-                            <div className="bg-zinc-900/40 backdrop-blur-md border border-zinc-800/50 rounded-[2.5rem] p-8 space-y-4 shadow-2xl">
-                                <div className="flex items-center gap-4 mb-6">
-                                    <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center border border-zinc-700/50 shadow-inner">
-                                        <Shield className="w-6 h-6 text-zinc-500" />
+                            <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 space-y-3">
+                                <div className="flex items-center gap-2.5 mb-4">
+                                    <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                                        <Shield className="w-4 h-4 text-amber-500" />
                                     </div>
-                                    <div>
-                                        <h2 className="text-lg font-black uppercase tracking-tighter text-white italic">Centro de Seguridad</h2>
-                                        <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Soporte y gestión de acceso</p>
-                                    </div>
+                                    <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">Cuenta & Soporte</h2>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-3">
-                                    <a
-                                        href="https://wa.me/34623064127"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl transition-all shadow-lg active:scale-95 group"
-                                    >
-                                        <Headset className="w-4 h-4 text-amber-500 group-hover:scale-110 transition-transform" />
-                                        Asistencia en Directo
-                                    </a>
+                                <a
+                                    href="https://wa.me/34623064127"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/50 text-white font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <Headset className="w-4 h-4 text-amber-500" />
+                                    Hablar con Soporte
+                                </a>
 
-                                    <button
-                                        onClick={handleLogout}
-                                        className="flex items-center justify-center gap-3 w-full px-6 py-4 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/30 text-red-500/80 hover:text-red-400 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl transition-all active:scale-95"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                        Finalizar Sesión
-                                    </button>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 font-bold text-[11px] uppercase tracking-widest rounded-xl transition-all"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Cerrar Sesión
+                                </button>
 
-                                    <div className="pt-2 border-t border-zinc-800/50 mt-2 flex justify-center">
-                                        <ResetPasswordButton email={email} />
-                                    </div>
+                                <div className="pt-1 border-t border-zinc-800/60 flex justify-center">
+                                    <ResetPasswordButton email={email} />
                                 </div>
                             </div>
                         </div>

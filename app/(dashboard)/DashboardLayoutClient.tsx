@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import LogoutButton from "@/components/LogoutButton";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -33,8 +33,11 @@ export default function DashboardLayoutClient({
         refresh: refreshSubscription
     } = useSubscription();
     const router = useRouter();
+    const pathname = usePathname();
     const [showClosingModal, setShowClosingModal] = useState(false);
     const [localCalendarioConfirmed, setLocalCalendarioConfirmed] = useState(calendarioConfirmed);
+
+    const isPreview = pathname === '/preview';
 
     // Sincronizar con prop externa por si cambia por navegación
     useEffect(() => {
@@ -63,7 +66,7 @@ export default function DashboardLayoutClient({
     if (status === 'impago') {
         return (
             <div className="flex h-screen overflow-hidden flex-col lg:flex-row">
-                <Sidebar />
+                {!isPreview && <Sidebar />}
                 <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">
                     <Paywall showAllPlans={true} />
                 </div>
@@ -74,19 +77,19 @@ export default function DashboardLayoutClient({
     // 2. CASO ACCESO PERMITIDO (PAGADO o PRUEBA)
     return (
         <div className="flex h-[100dvh] overflow-hidden flex-col lg:flex-row">
-            <Sidebar />
+            {!isPreview && <Sidebar />}
 
             <div className="flex-1 flex flex-col overflow-hidden bg-[#0a0a0a] relative">
                 {/* Banner solo si está en prueba */}
-                {status === 'prueba' && (
+                {status === 'prueba' && !isPreview && (
                     <div className="fixed top-0 left-0 right-0 lg:relative lg:top-auto z-[60] shrink-0">
                         <TrialBanner daysRemaining={daysRemaining} />
                     </div>
                 )}
 
-                <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' ? 'pt-[52px] lg:pt-0' : ''}`}>
+                <div className={`flex-1 overflow-y-auto relative flex flex-col ${status === 'prueba' && !isPreview ? 'pt-[52px] lg:pt-0' : ''}`}>
                     {/* Banner de Confirmación de Calendario (NUEVO) */}
-                    {!isLoading && hookCalendarioConfirmed === false && (
+                    {!isLoading && hookCalendarioConfirmed === false && !isPreview && (
                         <div className="bg-amber-500/10 border-b border-amber-500/20 p-3 lg:p-4 flex flex-col lg:flex-row items-center justify-center gap-3 lg:gap-6 animate-in slide-in-from-top duration-500">
                             <div className="flex items-center gap-2 text-amber-500">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -106,7 +109,7 @@ export default function DashboardLayoutClient({
 
 
                     <div className="relative flex-1 pt-6 lg:pt-0 pb-20 lg:pb-0">
-                        <LogoutButton />
+                        {!isPreview && <LogoutButton />}
                         {children}
                     </div>
                 </div>

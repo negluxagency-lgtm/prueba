@@ -125,7 +125,10 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-black text-xs font-bold">
+                    <span
+                        className="flex items-center justify-center w-6 h-6 rounded-full text-black text-xs font-bold"
+                        style={{ backgroundColor: 'var(--color-secondary, #f59e0b)' }}
+                    >
                         2
                     </span>
                     Fecha y Hora
@@ -187,11 +190,12 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                                 className={cn(
                                     'aspect-square rounded-lg md:rounded-xl flex items-center justify-center text-sm font-bold transition-all relative',
                                     isSelected
-                                        ? 'bg-amber-500 text-black shadow-lg scale-105 z-10'
+                                        ? 'text-black shadow-lg scale-105 z-10'
                                         : 'bg-zinc-800/30 text-zinc-300 hover:bg-zinc-800',
                                     isDisabled &&
                                     'opacity-20 cursor-not-allowed bg-transparent text-zinc-600 hover:bg-transparent'
                                 )}
+                                style={isSelected ? { backgroundColor: 'var(--color-secondary, #f59e0b)' } : undefined}
                             >
                                 {format(date, 'd')}
                                 {isSelected && (
@@ -210,7 +214,7 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
             {barbers.length > 0 && ['premium', 'profesional'].includes((plan || '').toLowerCase()) && (
                 <div className="space-y-3">
                     <p className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-2">
-                        <User size={12} className="text-amber-500" />
+                        <User size={12} style={{ color: 'var(--color-secondary, #f59e0b)' }} />
                         Selecciona tu Barbero
                     </p>
                     <div className="grid grid-cols-2 gap-2">
@@ -219,9 +223,14 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                             className={cn(
                                 'flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2 backdrop-blur-sm',
                                 selectedBarberId === null
-                                    ? 'bg-amber-500/90 text-black border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                                    ? 'text-black border-transparent'
                                     : 'bg-zinc-900/40 border-zinc-800/50 text-zinc-400 hover:bg-zinc-800/60'
                             )}
+                            style={selectedBarberId === null ? {
+                                backgroundColor: 'var(--color-secondary, #f59e0b)',
+                                borderColor: 'var(--color-secondary, #f59e0b)',
+                                boxShadow: '0 0 15px color-mix(in srgb, var(--color-secondary, #f59e0b) 40%, transparent)'
+                            } : undefined}
                         >
                             <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
                                 <User className="w-5 h-5" />
@@ -239,9 +248,14 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                                     className={cn(
                                         'flex flex-col items-center justify-center p-3 rounded-xl border transition-all gap-2 backdrop-blur-sm',
                                         selectedBarberId === barber.id
-                                            ? 'bg-amber-500/90 text-black border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                                            ? 'text-black border-transparent'
                                             : 'bg-zinc-900/40 border-zinc-800/50 text-zinc-400 hover:bg-zinc-800/60'
                                     )}
+                                    style={selectedBarberId === barber.id ? {
+                                        backgroundColor: 'var(--color-secondary, #f59e0b)',
+                                        borderColor: 'var(--color-secondary, #f59e0b)',
+                                        boxShadow: '0 0 15px color-mix(in srgb, var(--color-secondary, #f59e0b) 40%, transparent)'
+                                    } : undefined}
                                 >
                                     {barber.foto ? (
                                         <img
@@ -272,7 +286,7 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                     }`}
             >
                 <p className="text-xs font-bold uppercase text-zinc-500 tracking-wider flex items-center gap-2">
-                    <Clock size={12} className="text-amber-500" />
+                    <Clock size={12} style={{ color: 'var(--color-secondary, #f59e0b)' }} />
                     Horas Disponibles
                 </p>
                 {!selectedDate ? (
@@ -281,7 +295,7 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                     </div>
                 ) : loadingSlots ? (
                     <div className="h-20 flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 animate-spin text-amber-500" />
+                        <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--color-secondary, #f59e0b)' }} />
                     </div>
                 ) : availableSlots.length === 0 ? (
                     <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-center">
@@ -299,8 +313,20 @@ export default function DateStep({ slug, closingDates = [], barbers = [], plan }
                                     'py-2 md:py-3 rounded-lg text-xs md:text-sm font-bold border transition-all active:scale-[0.98]',
                                     selectedTime === time
                                         ? 'bg-white text-black border-white shadow-lg scale-[1.02]'
-                                        : 'bg-zinc-950 border-zinc-800 text-zinc-300 hover:border-amber-500/50 hover:text-amber-500'
+                                        : 'bg-zinc-950 border-zinc-800 text-zinc-300'
                                 )}
+                                onMouseEnter={(e) => {
+                                    if (selectedTime !== time) {
+                                        e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--color-secondary, #f59e0b) 50%, transparent)'
+                                        e.currentTarget.style.color = 'var(--color-secondary, #f59e0b)'
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (selectedTime !== time) {
+                                        e.currentTarget.style.borderColor = ''
+                                        e.currentTarget.style.color = ''
+                                    }
+                                }}
                             >
                                 {time}
                             </button>

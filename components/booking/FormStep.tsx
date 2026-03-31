@@ -25,9 +25,10 @@ interface FormStepProps {
     slug: string
     shopName: string
     barbers: BookingBarber[]
+    previewMode?: boolean
 }
 
-export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
+export default function FormStep({ slug, shopName, barbers, previewMode = false }: FormStepProps) {
     // Local state for the classic checkbox reCAPTCHA token
     const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null)
     const recaptchaContainerRef = useRef<HTMLDivElement>(null)
@@ -141,7 +142,10 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-black text-xs font-bold">
+                    <span 
+                        className="flex items-center justify-center w-6 h-6 rounded-full text-black text-xs font-bold"
+                        style={{ backgroundColor: 'var(--color-secondary, #f59e0b)' }}
+                    >
                         3
                     </span>
                     Finalizar
@@ -161,7 +165,7 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
                         <p className="text-xs text-zinc-500 font-bold uppercase">Servicio</p>
                         <p className="text-white font-medium">{selectedService?.nombre}</p>
                     </div>
-                    <p className="text-amber-500 font-bold text-lg">{selectedService?.precio}€</p>
+                    <p className="text-lg font-bold" style={{ color: 'var(--color-secondary, #f59e0b)' }}>{selectedService?.precio}€</p>
                 </div>
                 <div className="flex justify-between items-center">
                     <div>
@@ -208,7 +212,10 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
                         placeholder="Ej: Alex"
-                        className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-700"
+                        className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-white outline-none transition-all placeholder:text-zinc-700"
+                        style={{ '--tw-ring-color': 'var(--color-secondary, #f59e0b)' } as React.CSSProperties}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-secondary, #f59e0b)' }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = '' }}
                     />
                 </div>
                 <div className="space-y-2">
@@ -246,12 +253,18 @@ export default function FormStep({ slug, shopName, barbers }: FormStepProps) {
             </div>
 
             {/* CTA Button */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black to-transparent z-50 md:static md:bg-none md:p-0 md:mt-8">
+            <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-8 bg-gradient-to-t from-black via-black to-transparent z-50 md:static md:bg-none md:p-0 md:mt-8">
                 <div className="max-w-2xl mx-auto space-y-4">
+                    {previewMode && (
+                        <div className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                            <span className="text-amber-400 text-xs font-bold uppercase tracking-widest">👁 Vista previa — las reservas están desactivadas</span>
+                        </div>
+                    )}
                     <button
-                        onClick={handleBook}
-                        disabled={!guestName || !guestPhone || !recaptchaToken || isSubmitting}
-                        className="w-full py-4 rounded-2xl bg-amber-500 text-black font-black text-lg uppercase tracking-wide shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-400 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        onClick={previewMode ? undefined : handleBook}
+                        disabled={previewMode || !guestName || !guestPhone || !recaptchaToken || isSubmitting}
+                        className="w-full py-4 rounded-2xl text-black font-black text-lg uppercase tracking-wide shadow-lg disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        style={{ backgroundColor: 'var(--color-secondary, #f59e0b)' }}
                     >
                         {isSubmitting && (
                             <motion.div

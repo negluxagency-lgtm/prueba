@@ -22,6 +22,7 @@ interface BookingFlowProps {
     profileId: string
     barbers?: BookingBarber[]
     plan?: string
+    previewMode?: boolean
 }
 
 // ──────────────────────────────────────────────
@@ -35,6 +36,7 @@ export default function BookingFlow({
     closingDates = [],
     barbers = [],
     plan,
+    previewMode = false,
 }: BookingFlowProps) {
     const step = useBookingStore((s) => s.step)
     const bookingUuid = useBookingStore((s) => s.bookingUuid)
@@ -62,9 +64,9 @@ export default function BookingFlow({
             {/* Steps Progress Bar */}
             {step !== 'SUCCESS' && (
                 <div className="flex items-center gap-2 mb-6 px-1">
-                    <div className={cn('h-1.5 rounded-full flex-1 transition-all', step === 'SERVICE' ? 'bg-amber-500' : 'bg-amber-500/30')} />
-                    <div className={cn('h-1.5 rounded-full flex-1 transition-all', step === 'DATE' ? 'bg-amber-500' : step === 'FORM' ? 'bg-amber-500' : 'bg-zinc-800')} />
-                    <div className={cn('h-1.5 rounded-full flex-1 transition-all', step === 'FORM' ? 'bg-amber-500' : 'bg-zinc-800')} />
+                    <div className="h-1.5 rounded-full flex-1 transition-all" style={{ backgroundColor: step === 'SERVICE' ? 'var(--color-secondary, #f59e0b)' : 'color-mix(in srgb, var(--color-secondary, #f59e0b) 30%, transparent)' }} />
+                    <div className="h-1.5 rounded-full flex-1 transition-all" style={{ backgroundColor: (step === 'DATE' || step === 'FORM') ? 'var(--color-secondary, #f59e0b)' : '#3f3f46' }} />
+                    <div className="h-1.5 rounded-full flex-1 transition-all" style={{ backgroundColor: step === 'FORM' ? 'var(--color-secondary, #f59e0b)' : '#3f3f46' }} />
                 </div>
             )}
 
@@ -85,7 +87,7 @@ export default function BookingFlow({
                 )}
 
                 {step === 'FORM' && (
-                    <FormStep key="form" slug={slug} shopName={shopName} barbers={barbers} />
+                    <FormStep key="form" slug={slug} shopName={shopName} barbers={barbers} previewMode={previewMode} />
                 )}
 
                 {step === 'SUCCESS' && (
@@ -146,7 +148,7 @@ export default function BookingFlow({
 
             {/* Continue CTA — only for DATE step (FORM manages its own CTA) */}
             {step === 'DATE' && (
-                <DateStepCTA />
+                <DateStepCTA previewMode={previewMode} />
             )}
         </div>
     )
@@ -156,18 +158,19 @@ export default function BookingFlow({
 // Internal CTA for DATE step
 // ──────────────────────────────────────────────
 
-function DateStepCTA() {
+function DateStepCTA({ previewMode = false }: { previewMode?: boolean }) {
     const selectedDate = useBookingStore((s) => s.selectedDate)
     const selectedTime = useBookingStore((s) => s.selectedTime)
     const setStep = useBookingStore((s) => s.setStep)
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black to-transparent z-50 md:static md:bg-none md:p-0 md:mt-8">
+        <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-8 bg-gradient-to-t from-black via-black to-transparent z-50 md:static md:bg-none md:p-0 md:mt-8">
             <div className="max-w-2xl mx-auto">
                 <button
                     onClick={() => setStep('FORM')}
                     disabled={!selectedDate || !selectedTime}
-                    className="w-full py-4 rounded-2xl bg-amber-500 text-black font-black text-lg uppercase tracking-wide shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-400 active:scale-[0.98] transition-all"
+                    className="w-full py-4 rounded-2xl text-black font-black text-lg uppercase tracking-wide shadow-lg disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
+                    style={{ backgroundColor: 'var(--color-secondary, #f59e0b)' }}
                 >
                     Continuar
                 </button>
