@@ -12,7 +12,10 @@ import Link from 'next/link'
 import useSWR from 'swr'
 
 export default function HistorialCajaPage() {
-    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().substring(0, 7))
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const spainDate = new Date().toLocaleString("sv-SE", { timeZone: "Europe/Madrid" })
+        return spainDate.substring(0, 7)
+    })
     const [editingArqueo, setEditingArqueo] = useState<any>(null)
     const [selectedArqueoDetail, setSelectedArqueoDetail] = useState<any>(null)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -20,18 +23,26 @@ export default function HistorialCajaPage() {
     const [newObs, setNewObs] = useState('')
     const [isUpdating, setIsUpdating] = useState(false)
 
-    // 1. Obtener ID de Usuario (ShopId)
-    const { data: userData } = useSWR('auth-user-data', async () => {
+    // 1. Obtener ID de Usuario o de Barbería (Soporte Staff)
+    const { data: shopId, isLoading: idLoading } = useSWR('resolved-shop-id', async () => {
         const { data: { user } } = await supabase.auth.getUser()
-        return user
+        if (!user) return null
+        
+        // 1. Intentar buscar en perfiles (Jefe/Admin)
+        const { data: profile } = await supabase.from('perfiles').select('id').eq('id', user.id).single()
+        if (profile) return profile.id
+        
+        // 2. Si no es admin, buscar en la tabla de barberos para ver a qué barbería pertenece
+        const { data: barber } = await supabase.from('barberos').select('barberia_id').eq('user_id', user.id).single()
+        return barber?.barberia_id || user.id
     })
-    const shopId = userData?.id
 
     // 2. Obtener Arqueos del Mes
-    const { data: arqueos = [], mutate: refreshArqueos, isLoading } = useSWR(
+    const { data: arqueos = [], mutate: refreshArqueos, isLoading: arqueosLoading } = useSWR(
         shopId && selectedMonth ? ['arqueos-history', shopId, selectedMonth] : null,
         () => getMonthlyArqueos(shopId!, selectedMonth).then(r => r.data || [])
     )
+    const isLoading = idLoading || arqueosLoading
 
     const handleEditClick = (arq: any) => {
         setEditingArqueo(arq)

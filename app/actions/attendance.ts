@@ -27,14 +27,16 @@ export interface FichajeLog {
  * Obtiene el último log de fichaje para un barbero determinado hoy.
  * Útil para determinar el estado de los botones UI de manera persistente.
  */
-export async function getAttendanceStatus(barberId: number) {
+export async function getAttendanceStatus(barberId: number, dateStr?: string) {
     try {
+        const targetDate = dateStr ? new Date(dateStr) : new Date();
+        const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0)).toISOString();
+
         const { data: log, error } = await supabaseAdmin
             .from('fichajes_logs')
             .select('tipo, timestamp_servidor')
             .eq('barbero_id', barberId)
-            // Filtrar solo los de hoy usando la zona horaria UTC o la local de la DB
-            .gte('timestamp_servidor', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+            .gte('timestamp_servidor', startOfDay)
             .order('timestamp_servidor', { ascending: false })
             .limit(1)
             .single();

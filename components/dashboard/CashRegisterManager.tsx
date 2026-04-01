@@ -15,9 +15,10 @@ interface CashRegisterManagerProps {
     userName?: string
     onStatusChange?: () => void
     selectedDate?: string
+    forceOpenModal?: boolean
 }
 
-export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId, userName, onStatusChange, selectedDate }) => {
+export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId, userName, onStatusChange, selectedDate, forceOpenModal }) => {
     const [isOpeningModal, setIsOpeningModal] = useState(false)
     const [isClosingModal, setIsClosingModal] = useState(false)
     const [monto, setMonto] = useState('')
@@ -86,6 +87,12 @@ export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId
             supabase.removeChannel(channel)
         }
     }, [shopId, mutateCaja, mutateStats])
+
+    useEffect(() => {
+        if (forceOpenModal && caja?.estado !== 'abierta') {
+            setIsOpeningModal(true)
+        }
+    }, [forceOpenModal, caja?.estado])
 
     const handleOpen = async () => {
         const val = parseFloat(monto)

@@ -90,10 +90,10 @@ export const TimePicker24h: React.FC<TimePicker24hProps> = ({ value, onChange, c
                 ref={buttonRef}
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs md:text-sm text-white flex items-center justify-between hover:border-amber-500/50 transition-all focus:border-amber-500 outline-none h-full min-h-[38px]"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2 md:px-3 py-1 md:py-2 text-[11px] md:text-sm text-white flex items-center justify-between hover:border-amber-500/50 transition-all focus:border-amber-500 outline-none h-full"
             >
                 <span className="font-mono font-bold">{value || '09:00'}</span>
-                <Clock className="w-3.5 h-3.5 text-zinc-500" />
+                <Clock className="w-3 md:w-3.5 h-3 md:h-3.5 text-zinc-500" />
             </button>
 
             {isOpen && typeof document !== 'undefined' && createPortal(
@@ -106,11 +106,11 @@ export const TimePicker24h: React.FC<TimePicker24hProps> = ({ value, onChange, c
                         minWidth: coords.width,
                         zIndex: 9999
                     }}
-                    className="p-3 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex gap-3 z-[9999]"
+                    className="p-2 md:p-3 bg-zinc-900 border border-zinc-800 rounded-xl md:rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex gap-2 md:gap-3 z-[9999]"
                 >
                     <div
                         ref={hourScrollRef}
-                        className="h-44 overflow-y-auto scrollbar-none flex flex-col gap-1 pr-1 custom-scrollbar"
+                        className="h-36 md:h-44 overflow-y-auto scrollbar-none flex flex-col gap-1 pr-1 custom-scrollbar"
                     >
                         <span className="text-[9px] text-zinc-500 font-black uppercase sticky top-0 bg-zinc-900 py-1 z-10 px-1 text-center">Hora</span>
                         {hours.map(h => (
@@ -120,7 +120,7 @@ export const TimePicker24h: React.FC<TimePicker24hProps> = ({ value, onChange, c
                                 type="button"
                                 onClick={() => handleSelectHour(h)}
                                 className={cn(
-                                    "px-4 py-1.5 rounded-lg text-xs transition-all",
+                                    "px-3 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs transition-all",
                                     hour === h ? "bg-amber-500 text-black font-black scale-105" : "text-zinc-500 hover:bg-zinc-800 hover:text-white"
                                 )}
                             >
@@ -133,7 +133,7 @@ export const TimePicker24h: React.FC<TimePicker24hProps> = ({ value, onChange, c
 
                     <div
                         ref={minuteScrollRef}
-                        className="h-44 overflow-y-auto scrollbar-none flex flex-col gap-1 pr-1 custom-scrollbar"
+                        className="h-36 md:h-44 overflow-y-auto scrollbar-none flex flex-col gap-1 pr-1 custom-scrollbar"
                     >
                         <span className="text-[9px] text-zinc-500 font-black uppercase sticky top-0 bg-zinc-900 py-1 z-10 px-1 text-center">Min</span>
                         {minutes.map(m => (
@@ -143,7 +143,7 @@ export const TimePicker24h: React.FC<TimePicker24hProps> = ({ value, onChange, c
                                 type="button"
                                 onClick={() => handleSelectMinute(m)}
                                 className={cn(
-                                    "px-4 py-1.5 rounded-lg text-xs transition-all",
+                                    "px-3 md:px-4 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs transition-all",
                                     minute === m ? "bg-amber-500 text-black font-black scale-105" : "text-zinc-500 hover:bg-zinc-800 hover:text-white"
                                 )}
                             >

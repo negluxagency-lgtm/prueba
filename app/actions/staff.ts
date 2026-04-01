@@ -67,10 +67,12 @@ export async function getStaffAgenda(shopId: string, barberName: string, dateStr
 
     if (!showAll) {
         if (barberId) {
-             query = query.or(`barbero_id.eq."${barberId}",barbero_id.is.null,barbero.eq.Cualquiera`)
+             // 1. Matched by ID OR (legacy fallback by name AND no ID assigned) OR unassigned
+             query = query.or(`barbero_id.eq."${barberId}",and(barbero_id.is.null,barbero.eq."${barberName}"),barbero.eq.Cualquiera`)
         } else {
              console.warn('[getStaffAgenda] WARNING: Executing legacy name match. Missing barberId!')
-             query = query.or(`barbero.eq."${barberName}",barbero.eq.Cualquiera,barbero.is.null`)
+             // 2. Fallback for systems without barber IDs
+             query = query.or(`barbero.eq."${barberName}",barbero.eq.Cualquiera`)
         }
     }
 

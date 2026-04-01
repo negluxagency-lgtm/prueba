@@ -5,6 +5,7 @@ import { StaffBarber } from './StaffApp'
 import { Calendar as CalendarIcon, Scissors, Clock, LogOut, Loader2, CheckCircle2, AlertCircle, Calendar as LucideCalendar, Plus, Target, MessageCircle, Settings2, Pencil, Trash2, Receipt, CheckCircle, XCircle, Play, Pause, StopCircle, Camera } from 'lucide-react'
 import { getStaffAgenda, getStaffCuts, updateStaffAppointmentStatus, deleteStaffAppointment, saveStaffAppointment, getShopServices, updateBarberPhoto, getBarberAbsences, markBarberAbsence } from '@/app/actions/staff'
 import { getAttendanceStatus, logAttendance, getDailySummary, getWeeklyLogs, TipoFichaje } from '@/app/actions/attendance'
+import { getCajaByDate } from '@/app/actions/cash'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
@@ -19,6 +20,8 @@ import { AppointmentFormData } from '@/types'
 import { AgendaSkeleton, PerformanceSkeleton } from '@/components/ui/SkeletonLoader'
 import useSWR from 'swr'
 import { CashRegisterManager } from '@/components/dashboard/CashRegisterManager'
+import { useBarberStats } from '@/hooks/useBarberStats'
+import BarberRankingCard from '@/components/trends/BarberRankingCard'
 
 interface StaffDashboardProps {
     shopData: any
@@ -48,7 +51,7 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
     } = useSWR(
         ['staff-agenda', shopData.id, barber.id, selectedDate, showAllAppointments],
         () => getStaffAgenda(shopData.id, barber.nombre, selectedDate, showAllAppointments, barber.id).then(r => r.data),
-        { revalidateOnFocus: true }
+        { revalidateOnFocus: true, keepPreviousData: true }
     )
     const agenda = agendaData || []
 
@@ -66,10 +69,11 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
     // 3. Attendance Status
     const { 
         data: attendanceStatusData, 
-        mutate: mutateAttendanceStatus 
+        mutate: mutateAttendanceStatus,
+        isLoading: loadingAttendance
     } = useSWR(
-        ['staff-attendance-status', barber.id],
-        () => getAttendanceStatus(Number(barber.id)).then(s => s?.tipo || null)
+        ['staff-attendance-status', barber.id, attendanceDate],
+        () => getAttendanceStatus(Number(barber.id), attendanceDate).then(s => s?.tipo || null)
     )
     const attendanceStatus = attendanceStatusData || null
 
@@ -97,19 +101,43 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
         () => getBarberAbsences(barber.id)
     )
     const absenceDates = absenceDatesData || []
+    
+    // 7. Team Stats
+    const { stats: teamStats, loading: loadingTeam } = useBarberStats(currentMonth, shopData.id)
+
+    // 8. Global Shop Goal (for ranking)
+    const { data: globalGoal } = useSWR(
+        ['global-shop-goal', shopData.id],
+        async () => {
+            const { data } = await supabase.from('perfiles').select('objetivo_cortes').eq('id', shopData.id).single()
+            return data?.objetivo_cortes || 0
+        }
+    )
+
+    // 9. Cash Register Status (Today)
+    const { data: cajaHoy, mutate: mutateCajaHoy } = useSWR(
+        ['caja-hoy', shopData.id],
+        async () => {
+            const dateSpain = new Date(Date.now() + 3600000).toISOString().split('T')[0]
+            const res = await getCajaByDate(shopData.id, dateSpain)
+            return res.success ? res.data : null
+        }
+    )
+    const isRegisterClosed = !cajaHoy || cajaHoy.estado !== 'abierta'
 
     const [showAttendanceReminder, setShowAttendanceReminder] = useState(false)
     const [hasCheckedAttendance, setHasCheckedAttendance] = useState(false)
 
     // Trigger reminder if not clocked in today
     useEffect(() => {
-        if (!loadingAgenda && attendanceStatus === null && !hasCheckedAttendance) {
+        // Only trigger if loading is finished AND we really have no status
+        if (!loadingAttendance && attendanceStatus === null && !hasCheckedAttendance) {
             setShowAttendanceReminder(true)
             setHasCheckedAttendance(true)
-        } else if (attendanceStatus !== null) {
+        } else if (!loadingAttendance && attendanceStatus !== null) {
             setHasCheckedAttendance(true)
         }
-    }, [attendanceStatus, loadingAgenda, hasCheckedAttendance])
+    }, [attendanceStatus, loadingAttendance, hasCheckedAttendance])
 
     // --- REALTIME ---
     useEffect(() => {
@@ -139,6 +167,7 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
     const [currentPhoto, setCurrentPhoto] = useState<string | undefined>(barber.foto)
     const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isForcingCashOpen, setIsForcingCashOpen] = useState(false)
     const [locationError, setLocationError] = useState<string | null>(null)
     const [absenceTarget, setAbsenceTarget] = useState(format(new Date(), 'yyyy-MM-dd'))
     const [isMarkingAbsence, setIsMarkingAbsence] = useState(false)
@@ -199,6 +228,11 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                 toast.success(`Fichaje registrado`); 
                 mutateAttendanceStatus(); 
                 mutateAttendanceLogs() 
+                
+                // Si ficha ENTRADA y la caja está cerrada, forzar apertura
+                if (tipo === 'entrada' && isRegisterClosed) {
+                    setIsForcingCashOpen(true)
+                }
             }
             else toast.error(res.error || "Error")
         } catch (e) { toast.error("Error de conexión.") } finally { setIsSubmitting(false) }
@@ -257,7 +291,13 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                 <CashRegisterManager 
                     shopId={shopData.id} 
                     userName={barber.nombre}
-                    onStatusChange={() => { mutateCuts(); mutateAgenda(); }} 
+                    forceOpenModal={isForcingCashOpen}
+                    onStatusChange={() => { 
+                        mutateCuts(); 
+                        mutateAgenda(); 
+                        mutateCajaHoy();
+                        setIsForcingCashOpen(false); 
+                    }} 
                 />
             </div>
 
@@ -284,12 +324,21 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center justify-between bg-black/40 border border-zinc-800/50 p-3 rounded-2xl">
+                                    <div className={cn("relative flex items-center justify-between bg-black/40 border border-zinc-800/50 p-3 rounded-2xl transition-all", loadingAgenda && "opacity-70 pointer-events-none cursor-not-allowed grayscale-[0.5]")}>
                                         <div className="flex items-center gap-3">
-                                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-colors", showAllAppointments ? "bg-amber-500/10 text-amber-500" : "bg-zinc-800 text-zinc-500")}><Settings2 className="w-4 h-4" /></div>
+                                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center transition-colors", showAllAppointments ? "bg-amber-500/10 text-amber-500" : "bg-zinc-800 text-zinc-500")}>
+                                                {loadingAgenda ? <Loader2 className="w-4 h-4 animate-spin" /> : <Settings2 className="w-4 h-4" />}
+                                            </div>
                                             <div><p className="text-xs font-black text-white uppercase tracking-tighter leading-tight">Visibilidad Global</p><p className="text-[10px] text-zinc-500 font-medium">Citas de todos</p></div>
                                         </div>
-                                        <button onClick={() => setShowAllAppointments(!showAllAppointments)} className={cn("relative w-11 h-6 rounded-full transition-colors outline-none", showAllAppointments ? "bg-amber-500" : "bg-zinc-800")}><div className={cn("absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm", showAllAppointments ? "translate-x-5" : "translate-x-0")} /></button>
+                                        <button 
+                                            onClick={() => setShowAllAppointments(!showAllAppointments)} 
+                                            disabled={loadingAgenda}
+                                            className={cn("relative w-11 h-6 rounded-full transition-colors outline-none", showAllAppointments ? "bg-amber-500" : "bg-zinc-800")}
+                                        >
+                                            <div className={cn("absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform shadow-sm", showAllAppointments ? "translate-x-5" : "translate-x-0")} />
+                                        </button>
+                                        {loadingAgenda && <div className="absolute inset-0 bg-transparent cursor-not-allowed" />}
                                     </div>
                                 </div>
                                 {agenda.length === 0 ? <div className="text-center py-12 bg-zinc-900/50 rounded-[2rem] border border-zinc-800 border-dashed"><CalendarIcon className="w-12 h-12 text-zinc-800 mx-auto mb-4" /><p className="text-zinc-500 font-bold">Sin citas</p></div> : (
@@ -323,16 +372,24 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                                         className="bg-black border border-zinc-800 text-white rounded-full px-4 py-2 text-sm outline-none min-w-0 max-w-[120px] md:max-w-none [color-scheme:dark]" 
                                     />
                                 </div>
+                                <div className="mb-0 bg-gradient-to-br from-amber-500 to-rose-600 p-8 rounded-[2rem] text-center shadow-2xl relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-black/10 mix-blend-overlay"></div>
+                                    <Scissors className="w-12 h-12 text-white/50 mx-auto mb-4" />
+                                    <p className="text-7xl font-black text-white tracking-tighter mb-2">{cutsData?.total || 0}</p>
+                                    <p className="text-white/80 font-medium uppercase tracking-widest text-sm italic">Citas Confirmadas</p>
+                                </div>
+
+                                {cutsData && cutsData.total > 0 && (
+                                    <div className="mt-8 mb-10">
+                                        <BarberRankingCard 
+                                            stats={teamStats} 
+                                            loading={loadingTeam} 
+                                            globalCutsGoal={globalGoal || 0}
+                                        />
+                                    </div>
+                                )}
                                 {cutsData && cutsData.total > 0 ? (
                                     <div className="space-y-6">
-                                        <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-[2rem] shadow-xl relative overflow-hidden group">
-                                            <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-6 flex items-center gap-2"><Target className="w-3 h-3 text-amber-500" /> Objetivos Mensuales</h4>
-                                            <div className="space-y-3 p-5 bg-black/40 rounded-3xl border border-zinc-800/50">
-                                                <div className="flex justify-between items-start"><p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Tu Meta de Cortes</p><Scissors className="w-3.5 h-3.5 text-zinc-600" /></div>
-                                                <div className="flex items-end gap-1.5"><span className="text-3xl font-black text-white tabular-nums leading-none">{cutsData.total}</span>{cutsData.targets.cuts > 0 && <span className="text-sm text-zinc-600 font-bold mb-1">/ {cutsData.targets.cuts}</span>}</div>
-                                                {cutsData.targets.cuts > 0 ? <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden"><div className="h-full bg-amber-500 rounded-full transition-all duration-1000" style={{ width: `${Math.min((cutsData.total / cutsData.targets.cuts) * 100, 100)}%` }} /></div> : <p className="text-[9px] text-zinc-700 italic">Sin meta configurada.</p>}
-                                            </div>
-                                        </div>
                                         <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-[2rem] shadow-xl">
                                             <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-6 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" /> Distribución</h4>
                                             <div className="space-y-4">
@@ -349,12 +406,6 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                                         </div>
                                     </div>
                                 ) : <div className="bg-zinc-900/50 p-12 rounded-[2rem] border border-dashed border-zinc-800 text-center"><Scissors className="w-12 h-12 text-zinc-800 mx-auto mb-4" /><p className="text-zinc-500 font-bold">Sin actividad confirmada</p></div>}
-                                <div className="mt-8 bg-gradient-to-br from-amber-500 to-rose-600 p-8 rounded-[2rem] text-center shadow-2xl relative overflow-hidden group">
-                                    <div className="absolute inset-0 bg-black/10 mix-blend-overlay"></div>
-                                    <Scissors className="w-12 h-12 text-white/50 mx-auto mb-4" />
-                                    <p className="text-7xl font-black text-white tracking-tighter mb-2">{cutsData?.total || 0}</p>
-                                    <p className="text-white/80 font-medium uppercase tracking-widest text-sm italic">Citas Confirmadas</p>
-                                </div>
                             </div>
                         )}
 
@@ -362,7 +413,20 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pt-2 md:pt-6">
                                 <div className="text-center mb-8"><h3 className="text-2xl font-black text-white italic uppercase tracking-tighter">Control de Presencia</h3><p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1">Registra tu jornada de hoy</p></div>
                                 <div className="w-full grid gap-3 z-10">
-                                    {(!attendanceStatus || attendanceStatus === 'salida') && <button onClick={() => handlePunch('entrada')} disabled={isSubmitting} className="w-full bg-green-500 hover:bg-green-400 text-black font-black uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-3 transition-colors active:scale-95">{isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Play className="w-5 h-5 fill-current" /> Entrar al turno</>}</button>}
+                                    {(!attendanceStatus || attendanceStatus === 'salida') && (
+                                        <button 
+                                            onClick={() => handlePunch('entrada')} 
+                                            disabled={isSubmitting} 
+                                            className="w-full bg-green-500 hover:bg-green-400 text-black font-black uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-3 transition-colors active:scale-95 shadow-lg shadow-green-500/10 text-[11px] md:text-sm"
+                                        >
+                                            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                                                <>
+                                                    <Play className="w-5 h-5 fill-current" /> 
+                                                    {isRegisterClosed ? 'Fichar entrada y abrir caja' : 'Entrar al turno'}
+                                                </>
+                                            )}
+                                        </button>
+                                    )}
                                     {(attendanceStatus === 'entrada' || attendanceStatus === 'pausa_fin') && (
                                         <div className="grid grid-cols-2 gap-3 w-full">
                                             <button onClick={() => handlePunch('pausa_inicio')} disabled={isSubmitting} className="bg-zinc-800 text-amber-500 font-bold uppercase tracking-widest py-4 rounded-2xl flex flex-col items-center justify-center gap-1.5 border border-zinc-700">{isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Pause className="w-5 h-5" /> Iniciar Pausa</>}</button>
@@ -537,39 +601,52 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                         className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
                     >
                         <motion.div 
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl relative overflow-hidden text-center"
+                            initial={{ scale: 0.9, y: 30, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 30, opacity: 0 }}
+                            className="bg-zinc-950/80 border border-white/5 rounded-[3.5rem] p-10 max-w-[420px] w-full shadow-[0_30px_70px_rgba(0,0,0,0.8)] relative overflow-hidden text-center backdrop-blur-3xl"
                         >
-                            <div className="absolute top-0 left-0 w-full h-1 bg-amber-500" />
+                            {/* Decorative Elements */}
+                            <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/10 blur-[80px] rounded-full" />
+                            <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-rose-500/5 blur-[80px] rounded-full" />
                             
-                            <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-6">
-                                <Clock className="w-10 h-10 text-amber-500" />
-                            </div>
+                            <div className="relative z-10">
+                                <div className="w-24 h-24 rounded-[2.5rem] bg-gradient-to-br from-amber-400 to-amber-600 p-[1px] mx-auto mb-8 shadow-2xl shadow-amber-500/20">
+                                    <div className="w-full h-full rounded-[2.5rem] bg-zinc-900 flex items-center justify-center">
+                                        <Clock className="w-12 h-12 text-amber-500 animate-pulse" strokeWidth={1.5} />
+                                    </div>
+                                </div>
 
-                            <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter mb-2">¡Hola {barber.nombre.split(' ')[0]}! 💈</h3>
-                            <p className="text-sm text-zinc-400 font-medium leading-relaxed mb-8">
-                                Parece que aún no has registrado tu <span className="text-white font-bold">entrada</span> de hoy. ¿Quieres fichar ahora?
-                            </p>
+                                <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-3 leading-tight">
+                                    ¡Muy buenas,<br />
+                                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200">
+                                        {barber.nombre.split(' ')[0]}!
+                                    </span> 💈
+                                </h3>
+                                
+                                <p className="text-zinc-400 text-sm font-medium leading-relaxed mb-10 px-4">
+                                    El equipo te está esperando. Registra tu <span className="text-zinc-100 font-bold uppercase tracking-widest text-[10px]">{isRegisterClosed ? 'Entrada y Apertura de Caja' : 'Entrada de hoy'}</span> para empezar a gestionar tus citas.
+                                </p>
 
-                            <div className="space-y-3">
-                                <button 
-                                    onClick={() => {
-                                        handlePunch('entrada')
-                                        setShowAttendanceReminder(false)
-                                    }}
-                                    className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-black font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-amber-500/10 active:scale-95 flex items-center justify-center gap-2"
-                                >
-                                    <Play className="w-4 h-4 fill-current" />
-                                    Fichar Entrada
-                                </button>
-                                <button 
-                                    onClick={() => setShowAttendanceReminder(false)}
-                                    className="w-full py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-bold uppercase tracking-widest rounded-2xl transition-all text-[10px]"
-                                >
-                                    Más tarde
-                                </button>
+                                <div className="space-y-4">
+                                    <button 
+                                        onClick={() => {
+                                            handlePunch('entrada')
+                                            setShowAttendanceReminder(false)
+                                        }}
+                                        className="w-full py-5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black uppercase tracking-[0.15em] text-[11px] rounded-[2rem] transition-all shadow-xl shadow-amber-500/10 hover:shadow-amber-500/20 active:scale-[0.97] flex items-center justify-center gap-3 group"
+                                    >
+                                        <Play className="w-4 h-4 fill-current group-hover:scale-125 transition-transform" />
+                                        {isRegisterClosed ? 'Fichar entrada y abrir caja' : 'Fichar Ahora'}
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={() => setShowAttendanceReminder(false)}
+                                        className="w-full py-4 text-zinc-500 hover:text-zinc-300 font-black uppercase tracking-widest text-[10px] transition-colors"
+                                    >
+                                        Omitir por ahora
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>

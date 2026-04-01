@@ -87,6 +87,8 @@ export default function ConfigurationPage() {
         objetivo_cortes: '',
         objetivo_productos: '',
         Autonomo: false,
+        instagram: '@',
+        tiktok: '@',
     });
 
     // Logo
@@ -144,6 +146,8 @@ export default function ConfigurationPage() {
                     objetivo_cortes: String(profile.objetivo_cortes || ''),
                     objetivo_productos: String(profile.objetivo_productos || ''),
                     Autonomo: !!profile.Autonomo,
+                    instagram: profile.instagram || '@',
+                    tiktok: profile.tiktok || '@',
                 });
                 // Intentar precarga de la dirección guardada en el primer campo
                 if (profile.Direccion) {
@@ -299,6 +303,8 @@ export default function ConfigurationPage() {
                 objetivo_productos: parseInt(formData.objetivo_productos) || 0,
                 onboarding_completado: true,
                 Autonomo: formData.Autonomo,
+                instagram: formData.instagram && formData.instagram !== '@' ? formData.instagram : null,
+                tiktok: formData.tiktok && formData.tiktok !== '@' ? formData.tiktok : null,
             }, { onConflict: 'id' });
             if (profileError) throw profileError;
 
@@ -419,6 +425,7 @@ export default function ConfigurationPage() {
                                 <Step1
                                     formData={formData}
                                     handleChange={handleChange}
+                                    setFormData={setFormData}
                                     currentAvatarUrl={currentAvatarUrl}
                                     setAvatarFile={setAvatarFile}
                                     loading={loading}
@@ -566,7 +573,7 @@ function ProgressBar({ currentStep }: { currentStep: number }) {
 
 // ─── Step 1: Info personal ────────────────────────────────────────────────────
 
-function Step1({ formData, handleChange, currentAvatarUrl, setAvatarFile, loading }: any) {
+function Step1({ formData, handleChange, setFormData, currentAvatarUrl, setAvatarFile, loading }: any) {
     return (
         <div className="space-y-5">
             <StepTitle icon={User} title="Información básica" subtitle="Cuéntanos sobre ti y tu barbería" />
@@ -586,6 +593,49 @@ function Step1({ formData, handleChange, currentAvatarUrl, setAvatarFile, loadin
                         className={inputCls}
                     />
                 </Field>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Instagram (opcional)" icon={() => (
+                        <svg className="w-3.5 h-3.5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                        </svg>
+                    )}>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                name="instagram"
+                                placeholder="@miperfil"
+                                value={formData.instagram}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const clean = val.startsWith('@') ? val : '@' + val.replace(/^@+/, '');
+                                    setFormData((p: any) => ({ ...p, instagram: clean }));
+                                }}
+                                className={inputCls}
+                            />
+                        </div>
+                    </Field>
+                    <Field label="TikTok (opcional)" icon={() => (
+                        <svg className="w-3.5 h-3.5 text-zinc-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+                        </svg>
+                    )}>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                name="tiktok"
+                                placeholder="@miperfil"
+                                value={formData.tiktok}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const clean = val.startsWith('@') ? val : '@' + val.replace(/^@+/, '');
+                                    setFormData((p: any) => ({ ...p, tiktok: clean }));
+                                }}
+                                className={inputCls}
+                            />
+                        </div>
+                    </Field>
+                </div>
                 <Field label="Nombre de la barbería" icon={Building2}>
                     <input
                         type="text"

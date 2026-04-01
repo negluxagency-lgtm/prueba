@@ -16,15 +16,19 @@ export interface BarberStat {
     isOwner?: boolean
 }
 
-export function useBarberStats(mes?: string) {
-    const [userId, setUserId] = useState<string | null>(null)
+export function useBarberStats(mes?: string, shopId?: string) {
+    const [userId, setUserId] = useState<string | null>(shopId || null)
     const targetMonth = mes || new Date().toISOString().substring(0, 7)
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => {
-            if (data.user) setUserId(data.user.id)
-        })
-    }, [])
+        if (!shopId) {
+            supabase.auth.getUser().then(({ data }) => {
+                if (data.user) setUserId(data.user.id)
+            })
+        } else {
+            setUserId(shopId)
+        }
+    }, [shopId])
 
     const { 
         data: stats = [], 

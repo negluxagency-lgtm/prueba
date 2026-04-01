@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js' // Use direct client for public data
 import { notFound } from 'next/navigation'
 import BookingFlow from '@/components/public-booking/BookingFlow'
-import { MapPin, Phone } from 'lucide-react'
+import { MapPin, Phone, Instagram } from 'lucide-react'
 import { getProxiedUrl } from '@/utils/url-helper'
 import Image from 'next/image'
 
@@ -135,9 +135,47 @@ export default async function PublicBookingPage(props: PageProps) {
 
                         {/* Text: pushed down to clear the photo */}
                         <div className="pt-16 md:pt-20">
-                            <h1 className="text-2xl md:text-4xl font-black tracking-tighter text-white mb-3">
-                                {profile.nombre_barberia || profile.nombre_negocio || 'Barbería'}
-                            </h1>
+                            <div className="flex items-center gap-4 mb-3">
+                                <h1 className="text-2xl md:text-4xl font-black tracking-tighter text-white">
+                                    {profile.nombre_barberia || profile.nombre_negocio || 'Barbería'}
+                                </h1>
+                                
+                                <div className="flex items-center gap-3 pt-1">
+                                    {profile.instagram && profile.instagram !== '@' && (
+                                        <a
+                                            href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-zinc-400 hover:text-white transition-all group"
+                                            title="Instagram"
+                                        >
+                                            <Instagram size={20} className="group-hover:scale-110 transition-transform" style={{ color: colorSecundario }} />
+                                        </a>
+                                    )}
+                                    {profile.tiktok && profile.tiktok !== '@' && (
+                                        <a
+                                            href={`https://tiktok.com/@${profile.tiktok.replace('@', '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-zinc-400 hover:text-white transition-all group"
+                                            title="TikTok"
+                                        >
+                                            <svg 
+                                                className="w-[20px] h-[20px] group-hover:scale-110 transition-transform" 
+                                                viewBox="0 0 24 24" 
+                                                fill="none" 
+                                                stroke="currentColor" 
+                                                strokeWidth="2.5" 
+                                                strokeLinecap="round" 
+                                                strokeLinejoin="round"
+                                                style={{ color: colorSecundario }}
+                                            >
+                                                <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+                                            </svg>
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
 
                             <div className="flex flex-wrap gap-2">
                                 {profile.Direccion && (

@@ -12,7 +12,7 @@ export type CashActionResponse = {
 
 export async function getCajaByDate(shopId: string, date?: string): Promise<CashActionResponse> {
     try {
-        const effectiveDate = date || new Date(Date.now() + 3600000).toISOString().split('T')[0]
+        const effectiveDate = date || new Date().toLocaleString("sv-SE", { timeZone: "Europe/Madrid" }).split(' ')[0]
         
         const { data, error } = await supabaseAdmin
             .from('arqueos_caja')
@@ -49,7 +49,7 @@ export async function abrirCaja(shopId: string, monto: number, responsable?: str
             nombreResponsable = profile?.nombre_encargado || profile?.nombre_barberia || 'Admin'
         }
         
-        const nowInSpain = new Date(Date.now() + 3600000).toISOString()
+        const nowInSpain = new Date().toLocaleString("sv-SE", { timeZone: "Europe/Madrid" }).replace(" ", "T")
         const dateSpain = nowInSpain.split('T')[0]
         
         const { error } = await supabaseAdmin
@@ -81,7 +81,7 @@ export async function abrirCaja(shopId: string, monto: number, responsable?: str
  * Calcula el efectivo esperado de hoy (Ventas Efectivo + Apertura).
  */
 export async function getExpectedCash(shopId: string): Promise<number> {
-    const today = new Date(Date.now() + 3600000).toISOString().split('T')[0]
+    const today = new Date().toLocaleString("sv-SE", { timeZone: "Europe/Madrid" }).split(' ')[0]
     
     // 1. Obtener monto apertura
     const { data: arqueo } = await supabaseAdmin
@@ -124,7 +124,7 @@ export async function getExpectedCash(shopId: string): Promise<number> {
 export async function getDashboardStats(shopId: string, date?: string): Promise<CashActionResponse> {
     try {
         // Usar la fecha local de España si no se proporciona una
-        const effectiveDate = date || new Date(Date.now() + 3600000).toISOString().split('T')[0]
+        const effectiveDate = date || new Date().toLocaleString("sv-SE", { timeZone: "Europe/Madrid" }).split(' ')[0]
 
         const { data: metrics } = await supabaseAdmin
             .from('metricas_diarias')
@@ -172,7 +172,7 @@ export async function cerrarCaja(shopId: string, montoReal: number, observacione
         const esperado = await getExpectedCash(shopId)
         const margen = montoReal - esperado
  
-        const nowInSpain = new Date(Date.now() + 3600000).toISOString()
+        const nowInSpain = new Date().toLocaleString("sv-SE", { timeZone: "Europe/Madrid" }).replace(" ", "T")
         const dateSpain = nowInSpain.split('T')[0]
  
         const { error } = await supabaseAdmin
@@ -206,8 +206,10 @@ export async function cerrarCaja(shopId: string, montoReal: number, observacione
  */
 export async function getMonthlyArqueos(shopId: string, month: string): Promise<CashActionResponse> {
     try {
+        const [year, m] = month.split('-').map(Number)
+        const lastDay = new Date(year, m, 0).getDate()
         const start = `${month}-01`
-        const end = `${month}-31`
+        const end = `${month}-${String(lastDay).padStart(2, '0')}`
 
         const { data, error } = await supabaseAdmin
             .from('arqueos_caja')

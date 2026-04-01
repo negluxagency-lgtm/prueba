@@ -473,11 +473,27 @@ export default function PreviewClient({
                                     </div>
                                 </div>
                             )}
+
+                            {/* Botón de Guardar en Móvil (debajo del banner) */}
+                            <div className="lg:hidden pt-4">
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
+                                        saved
+                                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                            : 'bg-amber-500 hover:bg-amber-400 text-black shadow-[0_0_20px_rgba(245,158,11,0.3)]'
+                                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                                >
+                                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                                    {saving ? 'Guardando...' : saved ? '¡Guardado!' : 'Guardar cambios'}
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Panel footer */}
-                    <div className="p-5 border-t border-zinc-800 space-y-3">
+                    {/* Panel footer (Oculto en móvil, visible en escritorio) */}
+                    <div className="hidden lg:block p-5 border-t border-zinc-800">
                         <button
                             onClick={handleSave}
                             disabled={saving}

@@ -62,6 +62,8 @@ export default function AjustesPage() {
         objetivo_cortes: '',
         objetivo_productos: '',
         Autonomo: false,
+        instagram: '@',
+        tiktok: '@',
     });
 
     // Address
@@ -99,6 +101,8 @@ export default function AjustesPage() {
                     objetivo_cortes: String(profile.objetivo_cortes || ''),
                     objetivo_productos: String(profile.objetivo_productos || ''),
                     Autonomo: !!profile.Autonomo,
+                    instagram: profile.instagram || '@',
+                    tiktok: profile.tiktok || '@',
                 });
                 setDireccion(profile.Direccion || '');
                 setCurrentAvatarUrl(getProxiedUrl(profile.logo_url) || null);
@@ -152,6 +156,8 @@ export default function AjustesPage() {
                 objetivo_productos: parseInt(formData.objetivo_productos) || 0,
                 Autonomo: formData.Autonomo,
                 Direccion: direccion,
+                instagram: formData.instagram && formData.instagram !== '@' ? formData.instagram : null,
+                tiktok: formData.tiktok && formData.tiktok !== '@' ? formData.tiktok : null,
                 ...(finalLogoUrl ? { logo_url: finalLogoUrl } : {}),
             }).eq('id', userId);
             if (profileError) throw profileError;
@@ -279,6 +285,39 @@ export default function AjustesPage() {
                                     className={inputCls}
                                 />
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className={labelCls}>Instagram (opcional)</label>
+                            <input
+                                type="text"
+                                name="instagram"
+                                placeholder="@miperfil"
+                                value={formData.instagram}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const clean = val.startsWith('@') ? val : '@' + val.replace(/^@+/, '');
+                                    setFormData(p => ({ ...p, instagram: clean }));
+                                }}
+                                className={inputCls}
+                            />
+                        </div>
+                        <div>
+                            <label className={labelCls}>TikTok (opcional)</label>
+                            <input
+                                type="text"
+                                name="tiktok"
+                                placeholder="@miperfil"
+                                value={formData.tiktok}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    const clean = val.startsWith('@') ? val : '@' + val.replace(/^@+/, '');
+                                    setFormData(p => ({ ...p, tiktok: clean }));
+                                }}
+                                className={inputCls}
+                            />
                         </div>
                     </div>
 
