@@ -253,3 +253,25 @@ export async function getWeeklyLogs(barberId: number) {
         return [];
     }
 }
+/**
+ * Elimina un registro de fichaje específico.
+ * Solo para uso administrativo (auditoría).
+ */
+export async function deleteAttendanceLog(logId: number) {
+    const user = await getRequiredSession();
+    try {
+        const { error } = await supabaseAdmin
+            .from('fichajes_logs')
+            .delete()
+            .eq('id', logId);
+
+        if (error) {
+            console.error('Error deleting attendance log:', error);
+            return { success: false, error: error.message };
+        }
+
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

@@ -31,6 +31,12 @@ export default function SalaryCalculatorModal({ onClose, inline, barberId, initi
     const defaultMonth = initialMonth || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
     const [selectedMonth, setSelectedMonth] = useState(defaultMonth)
+ 
+    useEffect(() => {
+        if (initialMonth) {
+            setSelectedMonth(initialMonth)
+        }
+    }, [initialMonth])
     const { stats: allStats, loading, refresh } = useBarberStats(selectedMonth) as any
 
     // Filtrar stats si se proporciona barberId (Memoizado para evitar bucles de renderizado)

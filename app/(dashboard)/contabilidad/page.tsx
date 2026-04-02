@@ -260,17 +260,6 @@ export default function AccountingPage() {
                 </motion.div>
             </AnimatePresence>
 
-            {/* Botón Flotante para Móvil (Solo en Facturas) */}
-            {activeTab === 'facturas' && (
-                <div className="fixed bottom-24 right-6 lg:hidden z-40">
-                    <button
-                        onClick={handleGlobalUpload}
-                        className="w-14 h-14 bg-amber-500 hover:bg-amber-400 text-black rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(245,158,11,0.4)] active:scale-90 transition-all border-4 border-zinc-950 animate-in fade-in slide-in-from-bottom-10 duration-500"
-                    >
-                        <Plus className="w-8 h-8" />
-                    </button>
-                </div>
-            )}
 
             <PaymentReportModal
                 isOpen={isPaymentModalOpen}

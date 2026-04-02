@@ -42,6 +42,12 @@ export function Barber360View({ perfilId, initialMonth }: Barber360ViewProps) {
     const [activeSubTab, setActiveSubTab] = useState<'asistencia' | 'liquidacion' | 'configuracion'>('asistencia')
     const [loading, setLoading] = useState(true)
     const [month, setMonth] = useState(initialMonth || new Date().toISOString().substring(0, 7))
+ 
+    useEffect(() => {
+        if (initialMonth) {
+            setMonth(initialMonth)
+        }
+    }, [initialMonth])
 
     // Add Barber state
     const [isAddModalOpen, setIsAddModalOpen] = useState(false)

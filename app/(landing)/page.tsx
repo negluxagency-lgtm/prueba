@@ -81,12 +81,13 @@ export default function InicioPage() {
 
                     {/* Headline */}
                     <h1 className="relative z-10 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-center text-white leading-[1.1] md:leading-[1.05] max-w-5xl tracking-tight">
-                        Corta más,{' '}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600">
-                            Gestiona menos
+                        <span className="block mb-8 md:mb-0">
+                            Corta más,{' '}
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600">
+                                Gestiona menos
+                            </span>
                         </span>
-                        <br className="hidden md:block" />
-                        <span className="text-zinc-500 md:text-white lg:block lg:mt-4"> El Software #1 para Barberías en España</span>
+                        <span className="block text-white lg:mt-4"> El Software #1 para Barberías en España</span>
                     </h1>
 
                     {/* Subheadline */}
@@ -858,8 +859,15 @@ export default function InicioPage() {
                 </section>
 
                 <footer className="border-t border-zinc-800 py-8 px-4 md:px-8 lg:px-6">
-                    <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-zinc-500 text-sm">
-                        <div className="flex flex-col items-center md:items-start gap-1">
+                    <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 md:gap-4 text-zinc-500 text-sm">
+                        <div className="flex flex-wrap justify-center md:justify-end items-center gap-4 md:gap-6 order-1 md:order-2">
+                            <Link href="/" className="hover:text-white transition-colors" title="El mejor Software para Barberos">Software para Barberos</Link>
+                            <Link href="/pricing" className="hover:text-white transition-colors">Planes y Precios</Link>
+                            <Link href="/login" className="hover:text-white transition-colors">Iniciar sesión en la App</Link>
+                            <Link href="/register" className="hover:text-white transition-colors">Crear Barbería</Link>
+                            <a href="https://nelux.es" target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 transition-colors font-bold">Nelux</a>
+                        </div>
+                        <div className="flex flex-col items-center md:items-start gap-1 order-2 md:order-1 border-t border-zinc-900 md:border-none pt-8 md:pt-0 w-full md:w-auto">
                             <p>© 2026 Nelux. El software #1 para barberías en España.</p>
                             <p className="flex items-center gap-3 text-xs mt-2 md:mt-1 font-medium">
                                 <a href="tel:+34623064127" className="hover:text-white transition-colors flex items-center gap-1">
@@ -870,13 +878,6 @@ export default function InicioPage() {
                                     contacto@nelux.es
                                 </a>
                             </p>
-                        </div>
-                        <div className="flex flex-wrap justify-center md:justify-end items-center gap-4 md:gap-6 mt-4 md:mt-0">
-                            <Link href="/" className="hover:text-white transition-colors" title="El mejor Software para Barberos">Software para Barberos</Link>
-                            <Link href="/pricing" className="hover:text-white transition-colors">Planes y Precios</Link>
-                            <Link href="/login" className="hover:text-white transition-colors">Iniciar sesión en la App</Link>
-                            <Link href="/register" className="hover:text-white transition-colors">Crear Barbería</Link>
-                            <a href="https://nelux.es" target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 transition-colors font-bold">Nelux</a>
                         </div>
                     </div>
                 </footer>

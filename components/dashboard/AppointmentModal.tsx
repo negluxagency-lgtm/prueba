@@ -170,7 +170,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({ isOpen, onCl
                             )}
                             {!isFastMode && (
                                 <>
-                                    <div className="grid grid-cols-2 gap-2 md:gap-4 w-full min-w-0">
+                                    <div className="grid grid-cols-2 gap-3 md:gap-4 w-full min-w-0">
                                         <div className="space-y-1 min-w-0 w-full">
                                             <label className="text-[10px] text-zinc-500 font-bold uppercase ml-2">Día</label>
                                             <input type="date" required className="w-full min-w-0 max-w-full bg-zinc-800 border border-zinc-700 rounded-lg md:rounded-xl px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-white focus:outline-none focus:border-amber-500 transition-colors h-[40px] md:h-[52px] [color-scheme:dark]" value={formData.Dia || ""} onChange={(e) => setFormData({ ...formData, Dia: e.target.value })} />

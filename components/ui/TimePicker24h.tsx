@@ -85,15 +85,15 @@ export const TimePicker24h: React.FC<TimePicker24hProps> = ({ value, onChange, c
     };
 
     return (
-        <div className={cn("relative inline-block w-full", className)} ref={containerRef}>
+        <div className={cn("relative w-full", className)} ref={containerRef}>
             <button
                 ref={buttonRef}
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2 md:px-3 py-1 md:py-2 text-[11px] md:text-sm text-white flex items-center justify-between hover:border-amber-500/50 transition-all focus:border-amber-500 outline-none h-full"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg md:rounded-xl px-3 py-2 md:px-4 md:py-3 text-sm md:text-base text-white flex items-center justify-between hover:border-amber-500/50 transition-all focus:border-amber-500 outline-none h-full"
             >
-                <span className="font-mono font-bold">{value || '09:00'}</span>
-                <Clock className="w-3 md:w-3.5 h-3 md:h-3.5 text-zinc-500" />
+                <span className="font-bold">{value || '09:00'}</span>
+                <Clock className="w-4 h-4 text-zinc-500" />
             </button>
 
             {isOpen && typeof document !== 'undefined' && createPortal(
@@ -104,9 +104,9 @@ export const TimePicker24h: React.FC<TimePicker24hProps> = ({ value, onChange, c
                         top: coords.top,
                         left: coords.left,
                         minWidth: coords.width,
-                        zIndex: 9999
+                        zIndex: 99999 // High z-index to stay above modal
                     }}
-                    className="p-2 md:p-3 bg-zinc-900 border border-zinc-800 rounded-xl md:rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex gap-2 md:gap-3 z-[9999]"
+                    className="p-2 md:p-3 bg-zinc-950 border border-zinc-800 rounded-xl md:rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] flex gap-2 md:gap-3"
                 >
                     <div
                         ref={hourScrollRef}

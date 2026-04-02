@@ -11,7 +11,7 @@ import { useTrends } from '@/hooks/useTrends';
 import { useBarberStats } from '@/hooks/useBarberStats';
 import { MetricType } from '@/components/trends/DetailedRevenueChart';
 import BarberRankingCard from '@/components/trends/BarberRankingCard';
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 
 // ─── Inline TrendItem (sin tarjeta individual) ─────────────────────────────
 interface TrendItemProps {
@@ -74,9 +74,23 @@ export default function TrendsPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().substring(0, 7));
   const [activeMetric, setActiveMetric] = React.useState<MetricType>('revenue');
 
-  const { loading, chartData, metrics, previousMetrics, range, setRange } = useTrends(selectedMonth);
-  const { metrics: monthlyMetrics, loading: loadingMonthly } = useTrends(selectedMonth, 'month');
-  const { stats: barberStats, loading: barberLoading } = useBarberStats(selectedMonth);
+  // 1. Resolver el ID de barbería (Soporte Staff)
+  const { data: shopId, isLoading: idLoading } = useSWR('resolved-shop-id', async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // Intentar buscar en perfiles (Jefe/Admin)
+    const { data: profile } = await supabase.from('perfiles').select('id').eq('id', user.id).single();
+    if (profile) return profile.id;
+
+    // Si no es admin, buscar en barberos para ver a qué barbería pertenece
+    const { data: barber } = await supabase.from('barberos').select('barberia_id').eq('user_id', user.id).single();
+    return barber?.barberia_id || user.id;
+  });
+
+  const { loading, chartData, metrics, previousMetrics, range, setRange } = useTrends(shopId, selectedMonth);
+  const { metrics: monthlyMetrics, loading: loadingMonthly } = useTrends(shopId, selectedMonth, 'month');
+  const { stats: barberStats, loading: barberLoading } = useBarberStats(selectedMonth, shopId);
 
   const getFormattedMonth = () => {
     if (!selectedMonth) return '';
@@ -88,13 +102,11 @@ export default function TrendsPage() {
   };
   const selectedMonthText = getFormattedMonth();
 
-  const { data: profileData, isLoading: loadingObjectives } = useSWR('user-objectives', async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+  const { data: profileData, isLoading: loadingObjectives } = useSWR(shopId ? ['user-objectives', shopId] : null, async () => {
     const { data: profile } = await supabase
       .from('perfiles')
       .select('objetivo_ingresos, objetivo_cortes, objetivo_productos, Autonomo')
-      .eq('id', user.id)
+      .eq('id', shopId)
       .single();
     return profile;
   });
@@ -112,7 +124,7 @@ export default function TrendsPage() {
     { id: 'noShows' as MetricType,   label: 'No-Shows',    val: metrics.noShows,              icon: Users,     color: 'text-red-400',     bg: 'bg-red-500/10'    },
   ];
 
-  const isLoadingSplitView = loadingMonthly || loadingObjectives;
+  const isLoadingSplitView = loadingMonthly || loadingObjectives || idLoading;
 
   return (
     <main className="flex-1 px-3 pt-4 pb-24 lg:px-10 lg:pt-8 lg:pb-10 max-w-[1600px] mx-auto w-full">

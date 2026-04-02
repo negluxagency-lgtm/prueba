@@ -290,7 +290,7 @@ export default function InvoicesSection({ initialMonth, externalShowAdd, onClose
                                             value={newFactura.titulo}
                                             onChange={e => setNewFactura({ ...newFactura, titulo: e.target.value })}
                                             placeholder="Ej: Factura Alquiler Febrero..."
-                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
+                                            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
                                         />
                                     </div>
                                     <div className="space-y-1.5">
@@ -300,7 +300,7 @@ export default function InvoicesSection({ initialMonth, externalShowAdd, onClose
                                             type="date"
                                             value={newFactura.fecha_documento}
                                             onChange={e => setNewFactura({ ...newFactura, fecha_documento: e.target.value })}
-                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold [color-scheme:dark]"
+                                            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold [color-scheme:dark]"
                                         />
                                     </div>
                                     <div className="space-y-1.5 md:col-span-2">
@@ -309,7 +309,7 @@ export default function InvoicesSection({ initialMonth, externalShowAdd, onClose
                                             required
                                             value={newFactura.tipo}
                                             onChange={e => setNewFactura({ ...newFactura, tipo: e.target.value })}
-                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold appearance-none cursor-pointer"
+                                            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold appearance-none cursor-pointer"
                                         >
                                             <option value="alquiler">Alquiler</option>
                                             <option value="suministros">Suministros</option>

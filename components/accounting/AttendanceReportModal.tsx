@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
-import { X, Download, Plus, Clock, Loader2, Calendar as CalendarIcon, User, AlertTriangle, MapPin, Zap, TrendingUp, ChevronDown, Trash2 } from 'lucide-react'
+import { X, Download, Plus, Clock, Loader2, Calendar as CalendarIcon, User, AlertTriangle, MapPin, Zap, TrendingUp, ChevronDown, Trash2, Edit3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
-import { getMonthlyLogs, auditPunch, TipoFichaje, FichajeLog } from '@/app/actions/attendance'
+import { getMonthlyLogs, auditPunch, TipoFichaje, FichajeLog, deleteAttendanceLog } from '@/app/actions/attendance'
 import { getBarberOvertimeFromSchedule, type BarberOvertimeResult } from '@/app/actions/overtime'
 import { getBarberAbsences, markBarberAbsence } from '@/app/actions/staff'
 import { format, parseISO } from 'date-fns'
@@ -250,6 +250,21 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
         finally { setSubmittingAudit(false) }
     }
 
+    const handleDeletePunch = async (logId: number) => {
+        if (!confirm('¿Estás seguro de que deseas eliminar este registro de fichaje? Esta acción no se puede deshacer.')) return
+        try {
+            const res = await deleteAttendanceLog(logId)
+            if (res.success) {
+                toast.success('Registro eliminado correctamente')
+                fetchLogs(selectedBarber.id, attendanceDate.substring(0, 7))
+            } else {
+                toast.error(res.error || 'Error al eliminar')
+            }
+        } catch {
+            toast.error('Error de conexión')
+        }
+    }
+
     const generatePDF = () => {
         if (!selectedBarber || logs.length === 0) { toast.error('No hay datos para generar el PDF.'); return }
         const doc = new jsPDF()
@@ -457,6 +472,24 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                                             <div className="flex items-center gap-3">
                                                                 {dayOt && dayOt.minutos_extra > 0 && <span className="hidden md:inline-flex text-[9px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-lg">+{(dayOt.minutos_extra / 60).toFixed(1)}h extra</span>}
                                                                 <div className="text-right"><p className="text-sm font-black text-white tabular-nums">{formatHours(d.totalSeconds)}</p><p className="text-[9px] text-zinc-600 font-medium">efectivas</p></div>
+                                                                
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setAttendanceDate(date);
+                                                                        setAuditForm({
+                                                                            tipo: 'entrada',
+                                                                            fechaHora: `${date}T09:00`,
+                                                                            motivo: ''
+                                                                        });
+                                                                        setIsAuditing(true);
+                                                                        setActiveView('day');
+                                                                    }}
+                                                                    className="p-2 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-xl transition-all"
+                                                                    title="Editar fichajes de este día"
+                                                                >
+                                                                    <Edit3 className="w-4 h-4" />
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     )
@@ -497,6 +530,13 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                                         <div className="flex items-center gap-3">
                                                             {log.geolocalizacion && <a href={`https://www.google.com/maps?q=${log.geolocalizacion.replace('(', '').replace(')', '').split(',')[1]?.trim()},${log.geolocalizacion.replace('(', '').replace(')', '').split(',')[0]?.trim()}`} target="_blank" rel="noopener noreferrer" className="text-amber-500 hover:text-amber-400"><MapPin className="w-4 h-4" /></a>}
                                                             <span className="text-lg font-black text-white tabular-nums">{format(new Date(log.timestamp_servidor), 'HH:mm')}</span>
+                                                            <button
+                                                                onClick={() => handleDeletePunch(log.id)}
+                                                                className="p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all ml-1"
+                                                                title="Eliminar registro"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 )
@@ -822,6 +862,24 @@ export default function AttendanceReportModal({ onClose, month, inline, barberId
                                                                         <p className="text-sm font-black text-white tabular-nums">{formatHours(d.totalSeconds)}</p>
                                                                         <p className="text-[9px] text-zinc-600 font-medium">efectivas</p>
                                                                     </div>
+
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setAttendanceDate(date);
+                                                                            setAuditForm({
+                                                                                tipo: 'entrada',
+                                                                                fechaHora: `${date}T09:00`,
+                                                                                motivo: ''
+                                                                            });
+                                                                            setIsAuditing(true);
+                                                                            setActiveView('day');
+                                                                        }}
+                                                                        className="p-2 text-zinc-500 hover:text-amber-500 hover:bg-amber-500/10 rounded-xl transition-all"
+                                                                        title="Editar fichajes de este día"
+                                                                    >
+                                                                        <Edit3 className="w-4 h-4" />
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         )

@@ -208,7 +208,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                                 value={newGasto.concepto}
                                 onChange={e => setNewGasto({ ...newGasto, concepto: e.target.value })}
                                 placeholder="Ej: Café clientes, Pilas..."
-                                className="w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
+                                className="w-full min-w-0 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold"
                             />
                         </div>
                         <div className="space-y-1.5 min-w-0">
@@ -220,25 +220,25 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                                 value={newGasto.monto}
                                 onChange={e => setNewGasto({ ...newGasto, monto: e.target.value })}
                                 placeholder="0.00"
-                                className="w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm font-black outline-none focus:border-amber-500/50 transition-all font-mono"
+                                className="w-full min-w-0 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm font-black outline-none focus:border-amber-500/50 transition-all"
                             />
                         </div>
                         <div className="space-y-1.5 min-w-0">
                             <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1 block truncate">Fecha</label>
-                            <input
-                                required
-                                type="date"
-                                value={newGasto.fecha}
-                                onChange={e => setNewGasto({ ...newGasto, fecha: e.target.value })}
-                                className="w-full min-w-0 max-w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold [color-scheme:dark]"
-                            />
+                                <input
+                                    required
+                                    type="date"
+                                    value={newGasto.fecha}
+                                    onChange={e => setNewGasto({ ...newGasto, fecha: e.target.value })}
+                                    className="w-full min-w-0 max-w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 transition-all font-bold [color-scheme:dark]"
+                                />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest px-1">Método de Pago</label>
                             <select
                                 value={newGasto.metodo_pago}
                                 onChange={e => setNewGasto({ ...newGasto, metodo_pago: e.target.value })}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 appearance-none transition-all cursor-pointer font-bold"
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 appearance-none transition-all cursor-pointer font-bold"
                             >
                                 <option value="Efectivo">Efectivo</option>
                                 <option value="Tarjeta">Tarjeta</option>
@@ -251,7 +251,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                             <select
                                 value={newGasto.categoria}
                                 onChange={e => setNewGasto({ ...newGasto, categoria: e.target.value })}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 appearance-none transition-all cursor-pointer font-bold"
+                                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-amber-500/50 appearance-none transition-all cursor-pointer font-bold"
                             >
                                 <option value="Alquiler">Alquiler</option>
                                 <option value="Suministros">Suministros</option>
@@ -275,7 +275,7 @@ export default function ExpensesSection({ selectedMonth }: ExpensesSectionProps)
                                 />
                                 <div className={cn(
                                     "border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center transition-all",
-                                    file ? "border-amber-500/50 bg-amber-500/5" : "border-zinc-800 bg-zinc-950 group-hover/upload:border-zinc-700"
+                                    file ? "border-amber-500/50 bg-amber-500/5" : "border-zinc-700 bg-zinc-800 group-hover/upload:border-zinc-600"
                                 )}>
                                     <Upload className={cn("w-6 h-6 mb-2 transition-colors", file ? "text-amber-500" : "text-zinc-600")} />
                                     <p className="text-xs font-bold text-zinc-400 text-center px-4">
