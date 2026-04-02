@@ -105,7 +105,7 @@ export default function InicioPage() {
                             <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                         </Link>
                         <Link
-                            href="https://app.nelux.es/demo"
+                            href="https://app.nelux.es/neluxbarber"
                             className="flex items-center justify-center gap-2 bg-zinc-900/50 hover:bg-zinc-800 text-white font-bold px-10 py-5 rounded-2xl text-xl transition-all border border-zinc-800 backdrop-blur-md"
                         >
                             Ver Demo Live

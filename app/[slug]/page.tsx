@@ -179,16 +179,28 @@ export default async function PublicBookingPage(props: PageProps) {
 
                             <div className="flex flex-wrap gap-2">
                                 {profile.Direccion && (
-                                    <div className="px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center gap-2 text-xs text-zinc-400 backdrop-blur-sm">
-                                        <MapPin size={11} style={{ color: colorSecundario }} className="shrink-0" />
+                                    <a 
+                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.Direccion)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center gap-2 text-xs text-zinc-400 backdrop-blur-sm hover:border-zinc-600 hover:text-white transition-all group"
+                                        title="Ver en Google Maps"
+                                    >
+                                        <MapPin size={11} style={{ color: colorSecundario }} className="shrink-0 group-hover:scale-110 transition-transform" />
                                         <span>{profile.Direccion}</span>
-                                    </div>
+                                    </a>
                                 )}
                                 {profile.telefono && (
-                                    <div className="px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center gap-2 text-xs text-zinc-400 backdrop-blur-sm">
-                                        <Phone size={11} style={{ color: colorSecundario }} className="shrink-0" />
+                                    <a 
+                                        href={`https://wa.me/34${String(profile.telefono).replace(/\D/g, '')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-3 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center gap-2 text-xs text-zinc-400 backdrop-blur-sm hover:border-zinc-600 hover:text-white transition-all group"
+                                        title="Escribir por WhatsApp"
+                                    >
+                                        <Phone size={11} style={{ color: colorSecundario }} className="shrink-0 group-hover:scale-110 transition-transform" />
                                         <span>{profile.telefono}</span>
-                                    </div>
+                                    </a>
                                 )}
                             </div>
                         </div>

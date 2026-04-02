@@ -16,9 +16,10 @@ interface CashRegisterManagerProps {
     onStatusChange?: () => void
     selectedDate?: string
     forceOpenModal?: boolean
+    showHistoryButton?: boolean
 }
 
-export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId, userName, onStatusChange, selectedDate, forceOpenModal }) => {
+export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId, userName, onStatusChange, selectedDate, forceOpenModal, showHistoryButton = true }) => {
     const [isOpeningModal, setIsOpeningModal] = useState(false)
     const [isClosingModal, setIsClosingModal] = useState(false)
     const [monto, setMonto] = useState('')
@@ -173,12 +174,14 @@ export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId
                                 </p>
                             )}
                         </div>
-                        <Link 
-                            href="/historial_caja"
-                            className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all flex items-center justify-center gap-1.5"
-                        >
-                            Ver Historial <ArrowRight className="w-3 h-3" />
-                        </Link>
+                        {showHistoryButton && (
+                            <Link 
+                                href="/historial_caja"
+                                className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all flex items-center justify-center gap-1.5"
+                            >
+                                Ver Historial <ArrowRight className="w-3 h-3" />
+                            </Link>
+                        )}
                     </div>
                 ) : isFuture ? (
                     <div className="w-full space-y-3 lg:space-y-4 relative z-10 mt-auto opacity-50">
@@ -214,12 +217,14 @@ export const CashRegisterManager: React.FC<CashRegisterManagerProps> = ({ shopId
                                 Cierre: <span className="text-emerald-400">{caja?.monto_cierre_real || 0}€</span>
                             </p>
                         </div>
-                        <Link 
-                            href="/historial_caja"
-                            className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all flex items-center justify-center gap-1.5"
-                        >
-                            Ver Historial <ArrowRight className="w-3 h-3" />
-                        </Link>
+                        {showHistoryButton && (
+                            <Link 
+                                href="/historial_caja"
+                                className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-[8px] lg:text-[10px] font-black uppercase tracking-widest rounded-lg lg:rounded-xl transition-all flex items-center justify-center gap-1.5"
+                            >
+                                Ver Historial <ArrowRight className="w-3 h-3" />
+                            </Link>
+                        )}
                     </div>
                 ) : (
                     <div className="w-full space-y-3 lg:space-y-4 relative z-10 mt-auto">

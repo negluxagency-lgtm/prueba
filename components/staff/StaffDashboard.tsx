@@ -292,6 +292,7 @@ export default function StaffDashboard({ shopData, barber, onLogout }: StaffDash
                     shopId={shopData.id} 
                     userName={barber.nombre}
                     forceOpenModal={isForcingCashOpen}
+                    showHistoryButton={false}
                     onStatusChange={() => { 
                         mutateCuts(); 
                         mutateAgenda(); 
