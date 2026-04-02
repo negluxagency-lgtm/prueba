@@ -129,13 +129,12 @@ export default function ProductosPage() {
             toast.error(`Stock insuficiente.`);
             return;
         }
-        const totalPrecio = Number(selectedProduct.precio) * cantidad;
         try {
             const { registerProductSale } = await import('@/app/actions/register-product-sale');
             const result = await registerProductSale({
                 productoId: selectedProduct.id,
                 nombreProducto: selectedProduct.nombre,
-                precioVenta: totalPrecio,
+                precioVenta: Number(selectedProduct.precio),
                 cantidad: cantidad,
                 metodoPago: metodoPago
             });

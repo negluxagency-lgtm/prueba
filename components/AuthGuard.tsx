@@ -71,8 +71,29 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     if (loading && !session) {
         return (
-            <div className="h-screen flex items-center justify-center bg-[#0a0a0a] ">
-                <div className="text-amber-500 font-bold animate-pulse">CARGANDO SISTEMA...</div>
+            <div className="h-screen flex items-center justify-center bg-[#0a0a0a]">
+                <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-700">
+                    <div className="relative w-20 h-20">
+                        {/* Efecto de pulso exterior */}
+                        <div className="absolute inset-0 bg-amber-500/20 rounded-full animate-ping duration-[2000ms]" />
+                        <div className="relative bg-[#0d0d0d] border border-amber-500/30 rounded-2xl w-full h-full flex items-center justify-center p-4 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+                            <span className="font-black text-2xl tracking-tighter italic">
+                                <span className="text-white">N</span>
+                                <span className="text-amber-500">B</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-3">
+                        <h2 className="text-amber-500/90 font-bold tracking-[0.3em] text-[10px] uppercase animate-pulse">
+                            Estableciendo Conexión
+                        </h2>
+                        <div className="flex gap-1.5">
+                            <div className="w-1 h-1 rounded-full bg-amber-500/30 animate-bounce [animation-delay:-0.3s]" />
+                            <div className="w-1 h-1 rounded-full bg-amber-500/50 animate-bounce [animation-delay:-0.15s]" />
+                            <div className="w-1 h-1 rounded-full bg-amber-500 animate-bounce" />
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
