@@ -17,8 +17,8 @@ export const viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://nelux.es'),
-  title: 'NeluxBarber | Software para Barberos y App de Reservas',
-  description: 'El mejor software de gestión para barberías en España. Automatiza citas con IA, controla tu facturación Verifactu 2026, barberos y stock en una sola app.',
+  title: 'NeluxBarber - Software para Barberos y Barberías en España',
+  description: 'NeluxBarber: software de gestión para barberías y barberos en España. Agenda citas, app de reservas sin descarga y control de tu equipo. Prueba gratis.',
   keywords: [
     'software para barberos', 'app para barberías', 'gestión barbería', 'programa para barberías',
     'agenda citas barbería', 'software barbería España', 'app citas barbero', 'NeluxBarber',
@@ -37,8 +37,8 @@ export const metadata: Metadata = {
     languages: { 'es-ES': 'https://nelux.es' },
   },
   openGraph: {
-    title: 'NeluxBarber | El Software Líder para Barberos en España',
-    description: 'Automatiza tu barbería con IA. Agenda de citas, facturación Verifactu 2026 y gestión total en una misma app. Prueba gratis 7 días.',
+    title: 'NeluxBarber - Software para Barberos y Barberías en España',
+    description: 'NeluxBarber: software de gestión para barberías y barberos en España. Agenda citas, app de reservas sin descarga y control de tu equipo. Prueba gratis.',
     url: 'https://nelux.es',
     siteName: 'NeluxBarber',
     images: [
@@ -54,8 +54,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NeluxBarber | Software #1 para Barberos en España',
-    description: 'Gestiona citas, facturación y equipo desde una sola app. Powered by AI. Prueba gratuita de 7 días.',
+    title: 'NeluxBarber - Software para Barberos y Barberías en España',
+    description: 'NeluxBarber: software de gestión para barberías y barberos en España. Agenda citas, app de reservas sin descarga y control de tu equipo. Prueba gratis.',
     images: ['https://nelux.es/og-image.jpg'],
     site: '@neluxbarber',
     creator: '@neluxbarber',

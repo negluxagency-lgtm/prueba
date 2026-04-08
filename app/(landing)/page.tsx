@@ -15,8 +15,8 @@ const DemoStaffVisual = dynamic(() => import('@/components/landing/DemoStaffVisu
 
 
 export const metadata = {
-    title: 'NeluxBarber - Software para Barberos y Barberías en España | Gestión con IA',
-    description: 'NeluxBarber: software de gestión para barberías y barberos en España. Agenda citas con IA, facturación Verifactu 2026, app de reservas sin descarga y control total de tu equipo. Prueba 7 días gratis.',
+    title: 'NeluxBarber - Software para Barberos y Barberías en España',
+    description: 'NeluxBarber: software de gestión para barberías y barberos en España. Agenda citas, app de reservas sin descarga y control de tu equipo. Prueba gratis.',
     keywords: [
         'software para barberos', 'app para barberías', 'gestión barbería España',
         'programa barbería', 'agenda citas automatica barberia', 'software barberia gratis',
@@ -26,8 +26,8 @@ export const metadata = {
         canonical: 'https://nelux.es',
     },
     openGraph: {
-        title: 'NeluxBarber - El Software #1 para Barberos en España',
-        description: 'Gestiona tu barbería con IA: citas automáticas, facturación Verifactu, control de equipo y productos. Prueba gratis 7 días. Sin tarjeta.',
+        title: 'NeluxBarber - Software para Barberos y Barberías en España',
+        description: 'NeluxBarber: software de gestión para barberías y barberos en España. Agenda citas, app de reservas sin descarga y control de tu equipo. Prueba gratis.',
         url: 'https://nelux.es',
         type: 'website',
     },
@@ -54,13 +54,13 @@ export default function InicioPage() {
                                 href="/login"
                                 className="text-zinc-400 hover:text-white text-[10px] md:text-xs font-bold uppercase tracking-widest transition-colors px-2 md:px-4 py-2"
                             >
-                                Log In
+                                Acceder al Panel
                             </Link>
                             <Link
                                 href="/register"
                                 className="bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 md:px-6 py-2 md:py-3 rounded-xl transition-all"
                             >
-                                Registro
+                                Regístrate Gratis
                             </Link>
                         </div>
                     </div>
@@ -92,7 +92,7 @@ export default function InicioPage() {
 
                     {/* Subheadline */}
                     <p className="relative z-10 text-zinc-400 text-base md:text-xl text-center max-w-2xl mt-8 leading-relaxed px-4">
-                        La evolución digital de tu barbería. Todos lo que necesitas para gestionar tu negocio en un solo lugar.
+                        La evolución digital de tu barbería en España. Nuestro software integral te ayuda a enfocarte en lo que importa: corta más y gestiona menos con un panel de control avanzado.
                     </p>
 
                     {/* CTA Buttons */}
@@ -172,10 +172,10 @@ export default function InicioPage() {
 
                             {/* Lista de Ventajas (Derecha) */}
                             <div className="bg-zinc-950 border border-zinc-800/80 rounded-3xl p-8 md:p-10 shadow-xl shadow-black/50">
-                                <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
+                                <div className="text-xl font-bold text-white mb-8 flex items-center gap-3">
                                     <CheckCircle2 className="w-5 h-5 text-amber-500" />
                                     ¿Qué ganas usando Nelux?
-                                </h3>
+                                </div>
                                 <ul className="space-y-6">
                                     {[
                                         { title: 'Panel Personalizado', desc: 'Landing exclusiva de reservas para tus clientes sin que tengan que descargar ninguna app ni registrarse.' },
@@ -189,7 +189,7 @@ export default function InicioPage() {
                                                 <span className="text-amber-500 text-sm font-bold">{idx + 1}</span>
                                             </div>
                                             <div>
-                                                <h4 className="text-white font-bold mb-1">{item.title}</h4>
+                                                <div className="text-white font-bold mb-1">{item.title}</div>
                                                 <p className="text-zinc-500 text-sm leading-relaxed">{item.desc}</p>
                                             </div>
                                         </li>
@@ -521,7 +521,7 @@ export default function InicioPage() {
                             {/* Plan Básico */}
                             <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 flex flex-col transition-all hover:border-zinc-700">
                                 <div className="mb-8">
-                                    <h3 className="text-white text-xl font-bold mb-2">Básico</h3>
+                                    <div className="text-white text-xl font-bold mb-2">Básico</div>
                                     <p className="text-zinc-500 text-sm">Perfecto para empezar solo.</p>
                                 </div>
                                 <div className="mb-8">
@@ -545,7 +545,7 @@ export default function InicioPage() {
                                     ))}
                                 </ul>
                                 <Link href="/register" className="mt-auto block text-center bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-4 rounded-xl border border-zinc-800 transition-colors">
-                                    Seleccionar Plan
+                                    Elegir Plan Básico
                                 </Link>
                             </div>
 
@@ -555,7 +555,7 @@ export default function InicioPage() {
                                     Más Popular
                                 </div>
                                 <div className="mb-8">
-                                    <h3 className="text-white text-2xl font-black mb-2 uppercase tracking-tight italic">Profesional</h3>
+                                    <div className="text-white text-2xl font-black mb-2 uppercase tracking-tight italic">Profesional</div>
                                     <p className="text-zinc-400 text-sm">Escala tu equipo y visibilidad.</p>
                                 </div>
                                 <div className="mb-8">
@@ -587,7 +587,7 @@ export default function InicioPage() {
                             {/* Plan Premium / IA */}
                             <div className="bg-zinc-950 border border-zinc-800 rounded-3xl p-8 flex flex-col transition-all hover:border-zinc-700">
                                 <div className="mb-8">
-                                    <h3 className="text-white text-xl font-bold mb-2">Premium IA</h3>
+                                    <div className="text-white text-xl font-bold mb-2">Premium IA</div>
                                     <p className="text-zinc-500 text-sm">Automatización total 24/7.</p>
                                 </div>
                                 <div className="mb-8">
@@ -611,7 +611,7 @@ export default function InicioPage() {
                                     ))}
                                 </ul>
                                 <Link href="/register" className="mt-auto block text-center bg-zinc-900 hover:bg-zinc-800 text-white font-bold py-4 rounded-xl border border-zinc-800 transition-colors">
-                                    Seleccionar Plan
+                                    Contratar Plan IA
                                 </Link>
                             </div>
                         </div>
@@ -648,9 +648,9 @@ export default function InicioPage() {
 
                                     {/* Content */}
                                     <div className="relative z-10">
-                                        <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
+                                        <div className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
                                             TU BARBERÍA ONLINE EN MINUTOS
-                                        </h3>
+                                        </div>
                                         <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
                                             Configura tu perfil, servicios y horarios en un par de clics. Tu nueva Web de Citas exclusiva se genera al instante. Sin registros tediosos para tus clientes: solo seleccionar y reservar. Tu negocio, digitalizado y listo para recibir citas.
                                         </p>
@@ -675,9 +675,9 @@ export default function InicioPage() {
 
                                     {/* Content */}
                                     <div className="relative z-10">
-                                        <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
+                                        <div className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
                                             RESERVAS SIN INTERRUPCIONES
-                                        </h3>
+                                        </div>
                                         <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
                                             Olvida interrumpir tus cortes para contestar llamadas. Tus clientes reservan desde su móvil mientras tú te centras en el degradado. Una experiencia premium que tus clientes agradecerán y que elevará el valor percibido de tu marca.
                                         </p>
@@ -702,9 +702,9 @@ export default function InicioPage() {
 
                                     {/* Content */}
                                     <div className="relative z-10">
-                                        <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
+                                        <div className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
                                             AGENDA SIEMPRE LLENA Y SEGURA
-                                        </h3>
+                                        </div>
                                         <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
                                             Nuestra IA gestiona los huecos por ti las 24 horas. Sincronización en tiempo real: si un cliente cancela, el hueco se libera automáticamente para otro. Olvídate de los errores de citas duplicadas o huecos vacíos por descuido.
                                         </p>
@@ -729,9 +729,9 @@ export default function InicioPage() {
 
                                     {/* Content */}
                                     <div className="relative z-10">
-                                        <h3 className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
+                                        <div className="text-xl md:text-2xl font-black text-white mb-3 uppercase tracking-tight">
                                             TU NEGOCIO EN TU BOLSILLO
-                                        </h3>
+                                        </div>
                                         <p className="text-zinc-400 text-sm md:text-base leading-relaxed">
                                             Controla ingresos, productos, nóminas y facturación legal al instante. Un panel central diseñado para que gestiones tu barbería desde cualquier parte del mundo. Libertad real para que dejes de ser un esclavo de la administración.
                                         </p>
@@ -789,12 +789,12 @@ export default function InicioPage() {
                                 >
                                     <details className="group">
                                         <summary className="flex items-center justify-between p-6 cursor-pointer list-none hover:bg-zinc-800/50 transition-colors">
-                                            <h3
+                                            <div
                                                 className="text-white font-bold text-sm md:text-base pr-4"
                                                 itemProp="name"
                                             >
                                                 {item.q}
-                                            </h3>
+                                            </div>
                                             <div className="shrink-0 w-6 h-6 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 font-bold text-lg group-open:rotate-45 transition-transform">
                                                 +
                                             </div>
@@ -862,8 +862,8 @@ export default function InicioPage() {
                     <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8 md:gap-4 text-zinc-500 text-sm">
                         <div className="flex flex-wrap justify-center md:justify-end items-center gap-4 md:gap-6 order-1 md:order-2">
                             <Link href="/" className="hover:text-white transition-colors" title="El mejor Software para Barberos">Software para Barberos</Link>
-                            <Link href="/pricing" className="hover:text-white transition-colors">Planes y Precios</Link>
-                            <Link href="/login" className="hover:text-white transition-colors">Iniciar sesión en la App</Link>
+                            <Link href="/pricing" className="hover:text-white transition-colors">Ver Todos los Planes</Link>
+                            <Link href="/login" className="hover:text-white transition-colors">Acceso a tu Barbería</Link>
                             <Link href="/register" className="hover:text-white transition-colors">Crear Barbería</Link>
                             <a href="https://nelux.es" target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 transition-colors font-bold">Nelux</a>
                         </div>
